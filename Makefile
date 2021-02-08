@@ -16,7 +16,7 @@ DEPENDS = $(patsubst $(SRCDIR)/%,$(OBJDIR)/%,$(SOURCES:.cpp=.d))
 all: $(EXECNAME)
 
 clean:
-	\rm $(OBJDIR)/*.o $(OBJDIR)/*.d $(EXECNAME)
+	\rm $(OBJDIR)/*.o $(OBJDIR)/*.d $(BUILDDIR)/$(EXECNAME)
 
 -include $(DEPENDS)
 
