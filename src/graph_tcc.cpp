@@ -25,7 +25,7 @@ std::vector<int_t> solve_cut_vertices(const Graph& graph) {
     auto reduced_graph = construct_reduced_graph(graph, dt); // graph_tcc_reduce.hpp; dt matches reduced_graph after.
     auto cut_edge_pairs = solve_cut_edge_pairs(reduced_graph); // graph_tecc.hpp.
     check_type_b_cut_pairs(reduced_graph, dt, cut_edge_pairs, cut_vertices_set); // Check remaining type B cut pairs.
-    for (auto cv : cut_vertices_set) cut_vertices.push_back(cv);
+    for (auto cv : cut_vertices_set) cut_vertices.push_back(graph[cv].id());
     return cut_vertices;
 }
 
