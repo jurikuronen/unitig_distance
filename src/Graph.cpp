@@ -1,5 +1,4 @@
 #include <algorithm>
-#include <iostream>
 #include <vector>
 
 #include "Dfs_tree.hpp"
@@ -7,36 +6,18 @@
 #include "Node.hpp"
 #include "types.hpp"
 
-/*
-    Finds and marks all connected components in the graph.
-*/
+// Finds and marks all connected components in the graph.
 void Graph::solve_connected_components() {
     std::vector<bool> visited(size());
     int_t component_id = -1;
-    #ifdef DEBUG
-        std::vector<int_t> component_sizes;
-    #endif
     for (int_t v = 0; v < size(); ++v) {
         if (visited[v]) continue;
-        auto component_size = connected_component_dfs(visited, v, ++component_id);
-        #ifdef DEBUG
-            component_sizes.push_back(component_size);
-        #endif
+        connected_component_dfs(visited, v, ++component_id);
     }
-    #ifdef DEBUG
-        std::sort(component_sizes.rbegin(), component_sizes.rend());
-        std::cout << "Found " << component_sizes.size() << " connected components. Top 5 largest:";
-        for (auto i = 0; i < std::min<std::size_t>(5, component_sizes.size()); ++i) std::cout << ' ' << component_sizes[i];
-        std::cout << ".\n";
-    #endif
 }
 
-/*
-    Runs a dfs which marks all nodes in the connected component.
-    Returns component size for possible debugging.
-*/
-int_t Graph::connected_component_dfs(std::vector<bool>& visited, int_t v, int_t component_id) {
-    int_t component_size = 0;
+// Runs a dfs which marks all nodes in the connected component.
+void Graph::connected_component_dfs(std::vector<bool>& visited, int_t v, int_t component_id) {
     std::vector<int_t> stack{v};
     while (!stack.empty()) {
         v = stack.back();
@@ -44,10 +25,8 @@ int_t Graph::connected_component_dfs(std::vector<bool>& visited, int_t v, int_t 
         if (visited[v]) continue;
         visited[v] = true;
         m_nodes[v].set_component_id(component_id);
-        ++component_size;
         for (auto w : m_nodes[v].neighbors()) if (!visited[w]) stack.push_back(w);
     }
-    return component_size;
 }
 
 // Finds and marks all articulation points in the graph and returns vectors of node ids for all biconnected subgraphs.
@@ -58,18 +37,6 @@ std::vector<std::vector<int_t>> Graph::solve_biconnected_components() {
         if (dt.dfs(v) >= 0) continue; // Node already processed.
         biconnected_components_dfs(dt, blocks, v);
     }
-    #ifdef DEBUG
-        int_t n_articulation_points = 0;
-        for (int_t v = 0; v < size(); ++v) n_articulation_points += m_nodes[v].is_articulation_point();
-        std::cout << "Found " << n_articulation_points << " articulation points.\n";
-
-        std::vector<int_t> block_sizes;
-        for (const auto& block : blocks) block_sizes.push_back(block.size());
-        std::sort(block_sizes.rbegin(), block_sizes.rend());
-        std::cout << "Found " << blocks.size() << " biconnected components. Top 5 largest:";
-        for (auto i = 0; i < std::min<std::size_t>(5, block_sizes.size()); ++i) std::cout << ' ' << block_sizes[i];
-        std::cout << ".\n";
-    #endif
     return blocks;
 }
 
