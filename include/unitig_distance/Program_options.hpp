@@ -113,7 +113,7 @@ private:
             "Required arguments.", "",
             "  -v [ --vertices-file ] arg", "Path to file containing vertices.",
             "  -e [ --edges-file ] arg", "Path to file containing edges.",
-            "  -v [ --couplings-file ] arg", "Path to file containing couplings.",
+            "  -c [ --couplings-file ] arg", "Path to file containing couplings.",
             "Optional arguments.", "",
             "  -o [ --output-file ] arg (=ud_output.txt)", "Path to output file.",
             "  -n [ --n-couplings ] arg (=all)", "Number of couplings to read from the couplings file.",
