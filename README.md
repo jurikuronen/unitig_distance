@@ -8,6 +8,11 @@ make
 ```
 
 ## Run
+Basic use with default options:
 ```
-./bin/ud <path_to_nodes> <path_to_edges> <path_to_couplings>
+./bin/ud -v <path_to_nodes> -e <path_to_edges> -c <path_to_couplings>
+```
+List of available options with:
+```
+./bin/ud -h
 ```
