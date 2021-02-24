@@ -5,5 +5,7 @@
 #pragma once
 
 #include <cstdint>
+#include <limits>
 
-typedef int64_t int_t;
+using int_t = int64_t;
+const int_t INT_T_MAX = std::numeric_limits<int_t>::max();
