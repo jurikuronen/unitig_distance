@@ -9,7 +9,6 @@
 
 #include <algorithm>
 #include <fstream>
-#include <iostream>
 #include <string>
 #include <unordered_map>
 #include <vector>
@@ -29,24 +28,16 @@ public:
     */
     Graph(const std::string& nodes_filename, const std::string& edges_filename) {
         std::ifstream nodes_file(nodes_filename);
-        for (std::string node, sequence; nodes_file >> node >> sequence; ) {
-            add_node(std::stoll(node), sequence.size());
-        }
+        // Check for one-basedness before adding nodes.
+        std::string node, sequence; nodes_file >> node >> sequence;
+        m_one_based = (node == "1");
+        do add_node(std::stoll(node) - m_one_based, sequence.size());
+        while (nodes_file >> node >> sequence);
         std::ifstream edges_file(edges_filename);
         for (std::string node_1, node_2, edge_type; edges_file >> node_1 >> node_2 >> edge_type; ) {
-            add_edge(std::stoll(node_1), std::stoll(node_2)); // Ignore edge type (for now).
+            add_edge(std::stoll(node_1) - m_one_based, std::stoll(node_2) - m_one_based); // Ignore edge type (for now).
         }
         sort_neighbors();
-        #ifdef DEBUG
-            int_t n_edges = 0, max_degree = 0;
-            for (int_t v = 0; v < size(); ++v) {
-                int_t sz = m_nodes[v].neighbors().size();
-                n_edges += sz;
-                max_degree = std::max(max_degree, sz);
-            }
-            std::cout << "Constructed graph after reading \"" << nodes_filename << "\" and \"" << edges_filename << "\".\n";
-            std::cout << "Graph has " << size() << " nodes and " << n_edges / 2 << " edges. Max degree is " << max_degree << ".\n";
-        #endif
     }
     /*
         Constructs the subgraph of this graph induced by the nodes given in block.
@@ -93,13 +84,18 @@ public:
     // Finds and marks all articulation points in the graph and returns vectors of node ids for all biconnected subgraphs.
     std::vector<std::vector<int_t>> solve_biconnected_components();
 
+    // Read graph was one-based.
+    bool one_based() const { return m_one_based; }
+
 private:
+    bool m_one_based = false;
+
     std::vector<Node> m_nodes;
 
     void sort_neighbors() { for (int_t v = 0; v < size(); ++v) m_nodes[v].sort_neighbors(); }
 
-    // Runs a dfs which marks all nodes in the component. Returns component size for possible debugging.
-    int_t connected_component_dfs(std::vector<bool>& visited, int_t v, int_t component_id);
+    // Runs a dfs which marks all nodes in the component.
+    void connected_component_dfs(std::vector<bool>& visited, int_t v, int_t component_id);
 
     // Runs a dfs which marks all articulation points in the component. Builds the blocks of a block-cut tree.
     void biconnected_components_dfs(Dfs_tree& dt, std::vector<std::vector<int_t>>& blocks, int_t v);
