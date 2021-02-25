@@ -97,19 +97,21 @@ int main(int argc, char** argv) {
         std::cout << "optimize_cut_vertices  ::  " << timer.get_time_since_mark() << "  ::  " << timer.get_time_since_start_and_set_mark() << '\n';
     }
 
-    // Read couplings and calculate distances.
-    Couplings couplings(po.couplings_filename(), po.n_couplings(), po.one_based());
-    po.set_n_couplings(couplings.size());
-    if (po.verbose()) {
-        std::cout << "Couplings  ::  Read " << couplings.size() << " couplings.\n";
-        std::cout << "Couplings  ::  " << timer.get_time_since_mark() << "  ::  " << timer.get_time_since_start_and_set_mark() << '\n';
-    }
+    if (po.n_couplings() > 0) {
+        // Read couplings.
+        Couplings couplings(po.couplings_filename(), po.n_couplings(), po.one_based());
+        po.set_n_couplings(couplings.size());
+        if (po.verbose()) {
+            std::cout << "Couplings  ::  Read " << couplings.size() << " couplings.\n";
+            std::cout << "Couplings  ::  " << timer.get_time_since_mark() << "  ::  " << timer.get_time_since_start_and_set_mark() << '\n';
+        }
 
-    // Calculate distances.
-    if (po.use_smart_search()) {
-        calculate_distances_brute_smart(graph, couplings, po.out_filename(), timer, po.n_threads(), po.block_size(), po.max_distance(), po.verbose());
-    } else {
-        calculate_distances_brute(graph, couplings, po.out_filename(), timer, po.n_threads(), po.block_size(), po.max_distance(), po.verbose());
+        // Calculate distances.
+        if (po.use_smart_search()) {
+            calculate_distances_brute_smart(graph, couplings, po.out_filename(), timer, po.n_threads(), po.block_size(), po.max_distance(), po.verbose());
+        } else {
+            calculate_distances_brute(graph, couplings, po.out_filename(), timer, po.n_threads(), po.block_size(), po.max_distance(), po.verbose());
+        }
     }
     std::cout << "unitig_distance  ::  " << timer.get_time_since_start() << '\n';
 }
