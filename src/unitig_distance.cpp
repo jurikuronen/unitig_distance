@@ -40,6 +40,11 @@ int main(int argc, char** argv) {
         std::cout << "Graph  ::  " << timer.get_time_since_mark() << "  ::  " << timer.get_time_since_start_and_set_mark() << '\n';
     }
 
+    if (po.run_diagnostics()) {
+        run_diagnostics(graph);
+        std::cout << "graph_diagnostics  ::  " << timer.get_time_since_mark() << "  ::  " << timer.get_time_since_start_and_set_mark() << '\n';
+    }
+
     // Connected components.
     graph.solve_connected_components();
     if (po.verbose())  {

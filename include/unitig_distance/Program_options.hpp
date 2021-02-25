@@ -50,6 +50,8 @@ public:
         if (arg_reader) m_n_threads = std::stoll(arg_reader);
         arg_reader = find_arg_name(argv, argv_end, "--verbose");
         if (arg_reader) m_verbose = true;
+        arg_reader = find_arg_name(argv, argv_end, "-d", "--run-graph-diagnostics");
+        if (arg_reader) m_run_diagnostics = true;
         m_valid_state = all_required_arguments_provided();
         if (verbose()) print_arguments();
     }
@@ -65,6 +67,7 @@ public:
     bool one_based() const { return m_one_based; }
     bool use_smart_search() const { return m_use_smart_search; }
     bool verbose() const { return m_verbose; }
+    bool run_diagnostics() const { return m_run_diagnostics; }
     bool valid_state() const { return m_valid_state; }
 
     // Update after couplings were read.
@@ -82,6 +85,7 @@ private:
     bool m_use_smart_search = false;
     bool m_one_based = false;
     bool m_verbose = false;
+    bool m_run_diagnostics = false;
     bool m_valid_state;
 
     char* find_arg_name(char** begin, char** end, const std::string& opt) { return find_arg_name(begin, end, opt, opt); }
@@ -123,6 +127,7 @@ private:
             "  -d [ --max-distance ] arg (=inf)", "Maximum allowed graph distance for constraining searches.",
             "  -t [ --threads ] arg (=1)", "Number of threads.",
             "  --verbose", "Be verbose.",
+            "  -d [ --run-graph-diagnostics ]", "Get various details about the graph.",
             "  -h [ --help ]", "Print this list."
         };
         for (auto i = 0; i < options.size(); i += 2) std::printf("%-45s %s\n", options[i].data(), options[i + 1].data());
@@ -141,7 +146,8 @@ private:
             "  --block-size", std::to_string(block_size()),
             "  --max-distance", max_distance() == INT_T_MAX ? "INF" : std::to_string(max_distance()),
             "  --threads", std::to_string(n_threads()),
-            "  --verbose", verbose() ? "TRUE" : "FALSE"
+            "  --verbose", verbose() ? "TRUE" : "FALSE",
+            "  --run-graph-diagnostics", run_diagnostics() ? "TRUE" : "FALSE"
         };
         for (auto i = 0; i < arguments.size(); i += 2) std::printf("%-25s %s\n", arguments[i].data(), arguments[i + 1].data());
         std::cout << '\n';
