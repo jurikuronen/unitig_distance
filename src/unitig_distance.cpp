@@ -41,7 +41,7 @@ int main(int argc, char** argv) {
     }
 
     if (po.run_diagnostics()) {
-        run_diagnostics(graph);
+        run_diagnostics(graph, po.graph_diagnostics_depth());
         std::cout << "graph_diagnostics  ::  " << timer.get_time_since_mark() << "  ::  " << timer.get_time_since_start_and_set_mark() << '\n';
     }
 

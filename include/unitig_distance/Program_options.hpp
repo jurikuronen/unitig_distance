@@ -21,16 +21,12 @@ public:
             m_valid_state = false;
             return;
         }
-        if (argc < 1 + 6) { // Check if user provided enough arguments to read required arguments.
-            print_no_args();
-            m_valid_state = false;
-            return;
-        }
         // Parse required arguments.
         arg_reader = find_arg_value(argv, argv_end, "-v", "--vertices-file");
         if (arg_reader) m_nodes_filename = std::string(arg_reader);
         arg_reader = find_arg_value(argv, argv_end, "-e", "--edges-file");
         if (arg_reader) m_edges_filename = std::string(arg_reader);
+        // Required if --n_coupligns > 0.
         arg_reader = find_arg_value(argv, argv_end, "-c", "--couplings-file");
         if (arg_reader) m_couplings_filename = std::string(arg_reader);
         // Parse optional arguments.
@@ -50,8 +46,10 @@ public:
         if (arg_reader) m_n_threads = std::stoll(arg_reader);
         arg_reader = find_arg_name(argv, argv_end, "--verbose");
         if (arg_reader) m_verbose = true;
-        arg_reader = find_arg_name(argv, argv_end, "-d", "--run-graph-diagnostics");
+        arg_reader = find_arg_name(argv, argv_end, "-D", "--run-graph-diagnostics");
         if (arg_reader) m_run_diagnostics = true;
+        arg_reader = find_arg_value(argv, argv_end, "--graph-diagnostics-depth");
+        if (arg_reader) m_graph_diagnostics_depth = std::stoll(arg_reader);
         m_valid_state = all_required_arguments_provided();
         if (verbose()) print_arguments();
     }
@@ -64,6 +62,7 @@ public:
     int_t block_size() const { return m_block_size; }
     int_t max_distance() const { return m_max_distance; }
     int_t n_threads() const { return m_n_threads; }
+    int_t graph_diagnostics_depth() const { return m_graph_diagnostics_depth; }
     bool one_based() const { return m_one_based; }
     bool use_smart_search() const { return m_use_smart_search; }
     bool verbose() const { return m_verbose; }
@@ -82,6 +81,7 @@ private:
     int_t m_block_size = 100000;
     int_t m_max_distance = INT_T_MAX;
     int_t m_n_threads = 1;
+    int_t m_graph_diagnostics_depth = 7;
     bool m_use_smart_search = false;
     bool m_one_based = false;
     bool m_verbose = false;
@@ -105,7 +105,7 @@ private:
         bool ok = true;
         if (!m_nodes_filename.size()) std::cout << "Missing vertices filename.\n", ok = false;
         if (!m_edges_filename.size()) std::cout << "Missing edges filename.\n", ok = false;
-        if (!m_couplings_filename.size()) std::cout << "Missing couplings filename.\n", ok = false;
+        if (n_couplings() > 0 && !m_couplings_filename.size()) std::cout << "Missing couplings filename.\n", ok = false;
         if (!ok) print_no_args();
         return ok;
     }
@@ -117,6 +117,7 @@ private:
             "Required arguments.", "",
             "  -v [ --vertices-file ] arg", "Path to file containing vertices.",
             "  -e [ --edges-file ] arg", "Path to file containing edges.",
+            "Required argument if --n-couplings > 0.", "",
             "  -c [ --couplings-file ] arg", "Path to file containing couplings.",
             "Optional arguments.", "",
             "  -o [ --output-file ] arg (=ud_output.txt)", "Path to output file.",
@@ -127,29 +128,33 @@ private:
             "  -d [ --max-distance ] arg (=inf)", "Maximum allowed graph distance for constraining searches.",
             "  -t [ --threads ] arg (=1)", "Number of threads.",
             "  --verbose", "Be verbose.",
-            "  -d [ --run-graph-diagnostics ]", "Get various details about the graph.",
+            "  -D [ --run-graph-diagnostics ]", "Get various details about the graph.",
+            "  --graph-diagnostics-depth arg (=7)", "Maximum allowed search depth for graph diagnostics.",
             "  -h [ --help ]", "Print this list."
         };
         for (auto i = 0; i < options.size(); i += 2) std::printf("%-45s %s\n", options[i].data(), options[i + 1].data());
     }
 
+    void push_back(std::vector<std::string>& arguments, const std::string& opt, const std::string& val) {
+        arguments.push_back(opt);
+        arguments.push_back(val);
+    }
+
     void print_arguments() {
         std::cout << "Printing out provided arguments.\n";
-        std::vector<std::string> arguments{
-            "  --vertices-file", nodes_filename(),
-            "  --edges-file", edges_filename(),
-            "  --couplings-file", couplings_filename(),
-            "  --output-file", out_filename(),
-            "  --n-couplings", n_couplings() == INT_T_MAX ? "ALL" : std::to_string(n_couplings()),
-            "  --couplings-one-based", one_based() ? "TRUE" : "FALSE",
-            "  --smart-search", use_smart_search() ? "TRUE" : "FALSE",
-            "  --block-size", std::to_string(block_size()),
-            "  --max-distance", max_distance() == INT_T_MAX ? "INF" : std::to_string(max_distance()),
-            "  --threads", std::to_string(n_threads()),
-            "  --verbose", verbose() ? "TRUE" : "FALSE",
-            "  --run-graph-diagnostics", run_diagnostics() ? "TRUE" : "FALSE"
-        };
-        for (auto i = 0; i < arguments.size(); i += 2) std::printf("%-25s %s\n", arguments[i].data(), arguments[i + 1].data());
+        std::vector<std::string> arguments{"  --vertices-file", nodes_filename(),"  --edges-file", edges_filename()};
+        if (n_couplings() > 0) push_back(arguments, "  --couplings-file", couplings_filename());
+        push_back(arguments, "  --output-file", out_filename());
+        push_back(arguments, "  --n-couplings", n_couplings() == INT_T_MAX ? "ALL" : std::to_string(n_couplings()));
+        if (n_couplings() > 0) push_back(arguments, "  --couplings-one-based", one_based() ? "TRUE" : "FALSE");
+        push_back(arguments, "  --smart-search", use_smart_search() ? "TRUE" : "FALSE");
+        push_back(arguments, "  --block-size", std::to_string(block_size()));
+        push_back(arguments, "  --max-distance", max_distance() == INT_T_MAX ? "INF" : std::to_string(max_distance()));
+        push_back(arguments, "  --threads", std::to_string(n_threads()));
+        push_back(arguments, "  --verbose", verbose() ? "TRUE" : "FALSE");
+        push_back(arguments, "  --run-graph-diagnostics", run_diagnostics() ? "TRUE" : "FALSE");
+        if (run_diagnostics()) push_back(arguments, "  --graph-diagnostics-depth", std::to_string(m_graph_diagnostics_depth));
+        for (auto i = 0; i < arguments.size(); i += 2) std::printf("%-30s %s\n", arguments[i].data(), arguments[i + 1].data());
         std::cout << '\n';
     }
 

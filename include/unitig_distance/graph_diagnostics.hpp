@@ -85,8 +85,8 @@ void neighborhood_sizes(const Graph& graph, int_t max_depth) {
     }
 }
 
-void run_diagnostics(const Graph& graph) {
+void run_diagnostics(const Graph& graph, int_t max_depth) {
     vertex_degrees(graph);
     weight_distribution(graph);
-    neighborhood_sizes(graph, 7);
+    neighborhood_sizes(graph, max_depth);
 }
