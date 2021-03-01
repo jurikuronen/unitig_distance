@@ -123,7 +123,7 @@ private:
             "  -o [ --output-file ] arg (=ud_output.txt)", "Path to output file.",
             "  -n [ --n-couplings ] arg (=all)", "Number of couplings to read from the couplings file.",
             "  -1 [ --couplings-one-based ]", "Reads couplings with one-based numbering.",
-            "  -s [ --smart-search ]", "Aggregate couplings into bfs tasks for smarter searches.",
+            "  -s [ --smart-search ]", "Aggregate couplings into search tasks for smarter searches.",
             "  -b [ --block-size ] arg (=100000)", "Process this many couplings/tasks at a time (for printing).",
             "  -d [ --max-distance ] arg (=inf)", "Maximum allowed graph distance for constraining searches.",
             "  -t [ --threads ] arg (=1)", "Number of threads.",
