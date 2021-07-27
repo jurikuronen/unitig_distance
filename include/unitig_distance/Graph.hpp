@@ -28,12 +28,12 @@ public:
         Nodes file should contain ordered space-separated id and sequence lines.
         Edges file should contain space-separated id1, id2 and edge type lines.
     */
-    Graph(const std::string& nodes_filename, const std::string& edges_filename) {
+    Graph(const std::string& nodes_filename, const std::string& edges_filename, int_t kmer_length) {
         std::ifstream nodes_file(nodes_filename);
         // Check for one-basedness before adding nodes.
         std::string node, sequence; nodes_file >> node >> sequence;
         m_one_based = (node == "1");
-        do add_node(std::stoll(node) - m_one_based, sequence.size());
+        do add_node(std::stoll(node) - m_one_based, sequence.size() - kmer_length + 1);
         while (nodes_file >> node >> sequence);
         std::ifstream edges_file(edges_filename);
         for (std::string node_1, node_2, edge_type; edges_file >> node_1 >> node_2 >> edge_type; ) {

@@ -26,6 +26,8 @@ public:
         if (arg_reader) m_nodes_filename = std::string(arg_reader);
         arg_reader = find_arg_value(argv, argv_end, "-e", "--edges-file");
         if (arg_reader) m_edges_filename = std::string(arg_reader);
+        arg_reader = find_arg_value(argv, argv_end, "-k", "--k-mer-length");
+        if (arg_reader) m_k = std::stoll(arg_reader);
         // Required if --n_couplings > 0.
         arg_reader = find_arg_value(argv, argv_end, "-c", "--couplings-file");
         if (arg_reader) m_couplings_filename = std::string(arg_reader);
@@ -63,6 +65,7 @@ public:
     const std::string& couplings_filename() const { return m_couplings_filename; }
     const std::string& repeating_filename() const { return m_repeating_filename; }
     const std::string& out_filename() const { return m_out_filename; }
+    int_t k() const { return m_k; }
     int_t n_couplings() const { return m_n_couplings; }
     int_t block_size() const { return m_block_size; }
     int_t max_distance() const { return m_max_distance; }
@@ -84,6 +87,7 @@ private:
     std::string m_couplings_filename = "";
     std::string m_repeating_filename = "";
     std::string m_out_filename = "ud_output.txt";
+    int_t m_k = -1;
     int_t m_n_couplings = INT_T_MAX;
     int_t m_block_size = 100000;
     int_t m_max_distance = INT_T_MAX;
@@ -111,8 +115,9 @@ private:
 
     bool all_required_arguments_provided() {
         bool ok = true;
-        if (!m_nodes_filename.size()) std::cout << "Missing vertices filename.\n", ok = false;
-        if (!m_edges_filename.size()) std::cout << "Missing edges filename.\n", ok = false;
+        if (!nodes_filename().size()) std::cout << "Missing vertices filename.\n", ok = false;
+        if (!edges_filename().size()) std::cout << "Missing edges filename.\n", ok = false;
+        if (k() <= 0) std::cout << "Missing k-mer length.\n", ok = false;
         if (n_couplings() > 0 && !m_couplings_filename.size()) std::cout << "Missing couplings filename.\n", ok = false;
         if (!ok) print_no_args();
         return ok;
@@ -125,6 +130,7 @@ private:
             "Required arguments.", "",
             "  -v [ --vertices-file ] arg", "Path to file containing vertices.",
             "  -e [ --edges-file ] arg", "Path to file containing edges.",
+            "  -k [ --k-mer-length ] arg", "k-mer length.",
             "Required argument if --n-couplings > 0.", "",
             "  -c [ --couplings-file ] arg", "Path to file containing couplings.",
             "Optional arguments.", "",
@@ -155,6 +161,7 @@ private:
         std::vector<std::string> arguments{"  --vertices-file", nodes_filename(),"  --edges-file", edges_filename()};
         if (n_couplings() > 0) push_back(arguments, "  --couplings-file", couplings_filename());
         push_back(arguments, "  --output-file", out_filename());
+        push_back(arguments, "  --k-mer-length", std::to_string(k()));
         push_back(arguments, "  --n-couplings", n_couplings() == INT_T_MAX ? "ALL" : std::to_string(n_couplings()));
         if (n_couplings() > 0) push_back(arguments, "  --couplings-one-based", one_based() ? "TRUE" : "FALSE");
         push_back(arguments, "  --smart-search", use_smart_search() ? "TRUE" : "FALSE");

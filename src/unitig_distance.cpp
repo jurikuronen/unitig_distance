@@ -27,7 +27,7 @@ int main(int argc, char** argv) {
     Timer timer;
 
     // Read graph from provided files.
-    Graph graph(po.nodes_filename(), po.edges_filename());
+    Graph graph(po.nodes_filename(), po.edges_filename(), po.k());
     if (po.verbose()) {
         int_t n_edges = 0, max_degree = 0;
         for (const auto& node : graph) {
