@@ -57,6 +57,23 @@ int main(int argc, char** argv) {
         }
     }
 
+    if (po.gerry_filename() != "") {
+        auto gerry_filter_result = graph.apply_gerry_filter(po.gerry_filename(), po.gerry_criterion());
+        if (po.verbose()) {
+            int_t removed_edges = gerry_filter_result.first, added_edges = gerry_filter_result.second;
+            std::cout << "Graph  ::  Applied Gerry filter (criterion: " << po.gerry_criterion() << ") and disconnected " << neat_number_str(removed_edges) << " edges, while adding " << neat_number_str(added_edges) << " edges." << std::endl;
+            int_t n_edges = 0, max_degree = 0;
+            for (const auto& node : graph) {
+                int_t sz = node.neighbors().size();
+                n_edges += sz;
+                max_degree = std::max(max_degree, sz);
+            }
+            std::cout << "Graph  ::  Graph has " << neat_number_str(n_edges / 2) << " edges left. Max degree is " << neat_number_str(max_degree) << '.' << std::endl;
+            std::cout << "Graph  ::  " << timer.get_time_since_mark() << "  ::  " << timer.get_time_since_start_and_set_mark() << std::endl;
+
+        }
+    }
+
     if (po.run_diagnostics()) {
         run_diagnostics(graph, po.graph_diagnostics_depth());
         std::cout << "graph_diagnostics  ::  " << timer.get_time_since_mark() << "  ::  " << timer.get_time_since_start_and_set_mark() << std::endl;

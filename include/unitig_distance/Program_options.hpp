@@ -56,6 +56,10 @@ public:
         if (arg_reader) m_repeating_filename = std::string(arg_reader);
         arg_reader = find_arg_value(argv, argv_end, "--repeating-criterion");
         if (arg_reader) m_repeating_criterion = std::stod(arg_reader);
+        arg_reader = find_arg_value(argv, argv_end, "--gerry-file");
+        if (arg_reader) m_gerry_filename = std::string(arg_reader);
+        arg_reader = find_arg_value(argv, argv_end, "--gerry-criterion");
+        if (arg_reader) m_gerry_criterion = std::stod(arg_reader);
         m_valid_state = all_required_arguments_provided();
         if (verbose()) print_arguments();
     }
@@ -64,6 +68,7 @@ public:
     const std::string& edges_filename() const { return m_edges_filename; }
     const std::string& couplings_filename() const { return m_couplings_filename; }
     const std::string& repeating_filename() const { return m_repeating_filename; }
+    const std::string& gerry_filename() const { return m_gerry_filename; }
     const std::string& out_filename() const { return m_out_filename; }
     int_t k() const { return m_k; }
     int_t n_couplings() const { return m_n_couplings; }
@@ -72,6 +77,7 @@ public:
     int_t n_threads() const { return m_n_threads; }
     int_t graph_diagnostics_depth() const { return m_graph_diagnostics_depth; }
     int_t repeating_criterion() const { return m_repeating_criterion; }
+    int_t gerry_criterion() const { return m_gerry_criterion; }
     bool one_based() const { return m_one_based; }
     bool use_smart_search() const { return m_use_smart_search; }
     bool verbose() const { return m_verbose; }
@@ -86,6 +92,7 @@ private:
     std::string m_edges_filename = "";
     std::string m_couplings_filename = "";
     std::string m_repeating_filename = "";
+    std::string m_gerry_filename = "";
     std::string m_out_filename = "ud_output.txt";
     int_t m_k = -1;
     int_t m_n_couplings = INT_T_MAX;
@@ -94,6 +101,7 @@ private:
     int_t m_n_threads = 1;
     int_t m_graph_diagnostics_depth = 7;
     int_t m_repeating_criterion = 3;
+    int_t m_gerry_criterion = 1;
     bool m_use_smart_search = false;
     bool m_one_based = false;
     bool m_verbose = false;
@@ -115,10 +123,11 @@ private:
 
     bool all_required_arguments_provided() {
         bool ok = true;
-        if (!nodes_filename().size()) std::cout << "Missing vertices filename.\n", ok = false;
-        if (!edges_filename().size()) std::cout << "Missing edges filename.\n", ok = false;
+        if (nodes_filename() == "") std::cout << "Missing vertices filename.\n", ok = false;
+        if (edges_filename() == "") std::cout << "Missing edges filename.\n", ok = false;
         if (k() <= 0) std::cout << "Missing k-mer length.\n", ok = false;
         if (n_couplings() > 0 && !m_couplings_filename.size()) std::cout << "Missing couplings filename.\n", ok = false;
+        if (repeating_filename() != "" && gerry_filename() != "") std::cout << "Can't use two filters at the same time.\n", ok = false;
         if (!ok) print_no_args();
         return ok;
     }
@@ -146,6 +155,8 @@ private:
             "  --graph-diagnostics-depth arg (=7)", "Maximum allowed search depth for graph diagnostics.",
             "  --repeating-file arg", "Path to file containing repeating unitigs.",
             "  --repeating-criterion arg (=3)", "Criterion for repeating-unitigs-based edge filtering.",
+            "  --gerry-file arg", "Path to file containing Gerry paths.",
+            "  --gerry-criterion arg (=1)", "Criterion for Gerry filtering.",
             "  -h [ --help ]", "Print this list."
         };
         for (auto i = 0; i < options.size(); i += 2) std::printf("%-45s %s\n", options[i].data(), options[i + 1].data());
@@ -172,6 +183,8 @@ private:
         push_back(arguments, "  --run-graph-diagnostics", run_diagnostics() ? "TRUE" : "FALSE");
         if (repeating_filename() != "") push_back(arguments, "  --repeating-file", repeating_filename());
         if (repeating_filename() != "") push_back(arguments, "  --repeating-criterion", std::to_string(repeating_criterion()));
+        if (gerry_filename() != "") push_back(arguments, "  --gerry-file", gerry_filename());
+        if (gerry_filename() != "") push_back(arguments, "  --gerry-criterion", std::to_string(gerry_criterion()));
         if (run_diagnostics()) push_back(arguments, "  --graph-diagnostics-depth", std::to_string(m_graph_diagnostics_depth));
         for (auto i = 0; i < arguments.size(); i += 2) std::printf("%-30s %s\n", arguments[i].data(), arguments[i + 1].data());
         std::cout << '\n';

@@ -1,4 +1,7 @@
 #include <algorithm>
+#include <sstream>
+#include <string>
+#include <utility>
 #include <vector>
 
 #include "Dfs_tree.hpp"
@@ -100,6 +103,59 @@ std::pair<int_t, int_t> Graph::apply_repeating_unitigs_filter(const std::string&
         removed_edges += neighbors.size();
     }
     return {removed_nodes, removed_edges};
+}
+
+std::vector<int_t> Graph::read_gerry_filter_data(const std::string& data_line) {
+    std::vector<int_t> data;
+    std::stringstream ss(data_line);
+    for (std::string word; ss >> word; ) {
+        data.emplace_back(std::stoll(word));
+    }
+    return data;
+}
+
+// Apply Gerry's filter. Return counts for verbose/debugging.
+std::pair<int_t, int_t> Graph::apply_gerry_filter(const std::string& gerry_filename, int_t criterion) {
+    std::ifstream gerry_file(gerry_filename);
+    std::vector<std::pair<int_t, int_t>> edges_to_remove;
+    std::vector<std::pair<int_t, int_t>> edges_to_add;
+    m_gerry_edges.resize(size());
+    for (std::string line, word; std::getline(gerry_file, line); ) {
+        auto data = read_gerry_filter_data(line);
+        int_t start_type = data[0];
+        int_t end_type = data[1];
+        // Criterion 0: Don't filter paths with repeating end points (happens when an end point is at the beginning or end of the assembly path).
+        if (criterion == 0 && start_type + end_type != 0) continue;
+        int_t new_edge_weight = m_nodes[data[2]].weight();
+        for (int_t i = 3; i < data.size(); ++i) {
+            int_t node_i = data[i - 1];
+            int_t node_j = data[i];
+            edges_to_remove.emplace_back(node_i, node_j);
+            new_edge_weight += m_nodes[node_j].weight();
+        }
+        // Criterion 1: Filter paths with repeating end points and add the new edge (including at least one repeated node).
+        // Criterion 2: Remove paths with repeating end points without adding a new edge.
+        if (criterion == 2 && start_type + end_type != 0) continue;
+        edges_to_add.emplace_back(data[2], data.back());
+        m_gerry_edges[data[2]][data.back()] += new_edge_weight;
+    }
+    int_t removed_edges = 0, added_edges = 0;
+    for (auto& p : edges_to_remove) {
+        int_t node_i, node_j;
+        std::tie(node_i, node_j) = p;
+        if (m_nodes[node_i].has_neighbor(node_j) && get_gerry_edge_weight(node_i, node_j) == 0) {
+            remove_edge(node_i, node_j);
+            ++removed_edges;
+        }
+    }
+    for (auto& p : edges_to_add) {
+        int_t node_i, node_j;
+        std::tie(node_i, node_j) = p;
+        if (m_nodes[node_i].has_neighbor(node_j)) continue;
+        add_edge(node_i, node_j);
+        ++added_edges;
+    }
+    return {removed_edges, added_edges};
 }
 
 

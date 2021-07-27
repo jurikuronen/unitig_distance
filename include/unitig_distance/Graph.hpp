@@ -96,10 +96,20 @@ public:
     // Filter edges based on repeating unitigs. Return counts for verbose/debugging.
     std::pair<int_t, int_t> apply_repeating_unitigs_filter(const std::string& repeating_filename, int_t criterion);
 
+    // Apply Gerry's filter. Return counts for verbose/debugging.
+    std::pair<int_t, int_t> apply_gerry_filter(const std::string& gerry_filename, int_t criterion);
+
+    int_t get_gerry_edge_weight(int_t idx_1, int_t idx_2) const {
+        if (m_gerry_edges.size() == 0) return 0;
+        auto it = m_gerry_edges[idx_1].find(idx_2);
+        if (it == m_gerry_edges[idx_1].end()) return 0;
+        return it->second;
+    }
+
 private:
     bool m_one_based = false;
-
     std::vector<Node> m_nodes;
+    std::vector<std::unordered_map<int_t, int_t>> m_gerry_edges;
 
     void sort_neighbors() { for (int_t v = 0; v < size(); ++v) m_nodes[v].sort_neighbors(); }
 
@@ -111,4 +121,6 @@ private:
 
     // Assembles a block from block_stack.
     std::vector<int_t> get_biconnected_block(std::vector<int_t>& block_stack, int_t v, int_t w);
+
+    std::vector<int_t> read_gerry_filter_data(const std::string& data_line);
 };
