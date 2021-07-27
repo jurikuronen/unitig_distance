@@ -17,6 +17,8 @@
 #include "Node.hpp"
 #include "types.hpp"
 
+#include <map>
+
 class Graph {
 public:
     Graph() { }
@@ -64,6 +66,10 @@ public:
         m_nodes[idx_1].add_neighbor(idx_2);
         m_nodes[idx_2].add_neighbor(idx_1);
     }
+    void remove_node(std::size_t idx) {
+        auto neighbors = m_nodes[idx].neighbors();
+        for (auto neighbor_idx : neighbors) remove_edge(idx, neighbor_idx);
+    }
     void remove_edge(std::size_t idx_1, std::size_t idx_2) {
         m_nodes[idx_1].remove_neighbor(idx_2);
         m_nodes[idx_2].remove_neighbor(idx_1);
@@ -86,6 +92,9 @@ public:
 
     // Read graph was one-based.
     bool one_based() const { return m_one_based; }
+
+    // Filter edges based on repeating unitigs. Return counts for verbose/debugging.
+    std::pair<int_t, int_t> apply_repeating_unitigs_filter(const std::string& repeating_filename, int_t criterion);
 
 private:
     bool m_one_based = false;

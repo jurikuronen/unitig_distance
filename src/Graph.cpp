@@ -83,3 +83,23 @@ std::vector<int_t> Graph::get_biconnected_block(std::vector<int_t>& block_stack,
     return block;
 }
 
+// Filter edges based on repeating unitigs. Return counts for verbose/debugging.
+std::pair<int_t, int_t> Graph::apply_repeating_unitigs_filter(const std::string& repeating_filename, int_t criterion) {
+    std::vector<int_t> repeats(size());
+    std::ifstream repeating_file(repeating_filename);
+    for (std::string node_id, repeating, unitig; repeating_file >> node_id >> repeating >> unitig; ) {
+        repeats[std::stoll(node_id)] = std::stoll(repeating);
+    }
+    int_t removed_nodes = 0, removed_edges = 0;
+    for (int_t v = 0; v < size(); ++v) {
+        if (repeats[v] < criterion) continue;
+        auto neighbors = m_nodes[v].neighbors();
+        for (int_t w : neighbors) remove_edge(v, w);
+        // Take counts for verbose/debugging.
+        ++removed_nodes;
+        removed_edges += neighbors.size();
+    }
+    return {removed_nodes, removed_edges};
+}
+
+

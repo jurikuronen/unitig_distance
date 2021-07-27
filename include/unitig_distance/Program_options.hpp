@@ -26,7 +26,7 @@ public:
         if (arg_reader) m_nodes_filename = std::string(arg_reader);
         arg_reader = find_arg_value(argv, argv_end, "-e", "--edges-file");
         if (arg_reader) m_edges_filename = std::string(arg_reader);
-        // Required if --n_coupligns > 0.
+        // Required if --n_couplings > 0.
         arg_reader = find_arg_value(argv, argv_end, "-c", "--couplings-file");
         if (arg_reader) m_couplings_filename = std::string(arg_reader);
         // Parse optional arguments.
@@ -50,6 +50,10 @@ public:
         if (arg_reader) m_run_diagnostics = true;
         arg_reader = find_arg_value(argv, argv_end, "--graph-diagnostics-depth");
         if (arg_reader) m_graph_diagnostics_depth = std::stoll(arg_reader);
+        arg_reader = find_arg_value(argv, argv_end, "--repeating-file");
+        if (arg_reader) m_repeating_filename = std::string(arg_reader);
+        arg_reader = find_arg_value(argv, argv_end, "--repeating-criterion");
+        if (arg_reader) m_repeating_criterion = std::stod(arg_reader);
         m_valid_state = all_required_arguments_provided();
         if (verbose()) print_arguments();
     }
@@ -57,12 +61,14 @@ public:
     const std::string& nodes_filename() const { return m_nodes_filename; }
     const std::string& edges_filename() const { return m_edges_filename; }
     const std::string& couplings_filename() const { return m_couplings_filename; }
+    const std::string& repeating_filename() const { return m_repeating_filename; }
     const std::string& out_filename() const { return m_out_filename; }
     int_t n_couplings() const { return m_n_couplings; }
     int_t block_size() const { return m_block_size; }
     int_t max_distance() const { return m_max_distance; }
     int_t n_threads() const { return m_n_threads; }
     int_t graph_diagnostics_depth() const { return m_graph_diagnostics_depth; }
+    int_t repeating_criterion() const { return m_repeating_criterion; }
     bool one_based() const { return m_one_based; }
     bool use_smart_search() const { return m_use_smart_search; }
     bool verbose() const { return m_verbose; }
@@ -76,12 +82,14 @@ private:
     std::string m_nodes_filename = "";
     std::string m_edges_filename = "";
     std::string m_couplings_filename = "";
+    std::string m_repeating_filename = "";
     std::string m_out_filename = "ud_output.txt";
     int_t m_n_couplings = INT_T_MAX;
     int_t m_block_size = 100000;
     int_t m_max_distance = INT_T_MAX;
     int_t m_n_threads = 1;
     int_t m_graph_diagnostics_depth = 7;
+    int_t m_repeating_criterion = 3;
     bool m_use_smart_search = false;
     bool m_one_based = false;
     bool m_verbose = false;
@@ -130,6 +138,8 @@ private:
             "  --verbose", "Be verbose.",
             "  -D [ --run-graph-diagnostics ]", "Get various details about the graph.",
             "  --graph-diagnostics-depth arg (=7)", "Maximum allowed search depth for graph diagnostics.",
+            "  --repeating-file arg", "Path to file containing repeating unitigs.",
+            "  --repeating-criterion arg (=3)", "Criterion for repeating-unitigs-based edge filtering.",
             "  -h [ --help ]", "Print this list."
         };
         for (auto i = 0; i < options.size(); i += 2) std::printf("%-45s %s\n", options[i].data(), options[i + 1].data());
@@ -153,6 +163,8 @@ private:
         push_back(arguments, "  --threads", std::to_string(n_threads()));
         push_back(arguments, "  --verbose", verbose() ? "TRUE" : "FALSE");
         push_back(arguments, "  --run-graph-diagnostics", run_diagnostics() ? "TRUE" : "FALSE");
+        if (repeating_filename() != "") push_back(arguments, "  --repeating-file", repeating_filename());
+        if (repeating_filename() != "") push_back(arguments, "  --repeating-criterion", std::to_string(repeating_criterion()));
         if (run_diagnostics()) push_back(arguments, "  --graph-diagnostics-depth", std::to_string(m_graph_diagnostics_depth));
         for (auto i = 0; i < arguments.size(); i += 2) std::printf("%-30s %s\n", arguments[i].data(), arguments[i + 1].data());
         std::cout << '\n';
