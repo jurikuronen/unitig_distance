@@ -79,7 +79,7 @@ void calculate_distances_brute(const Graph& graph, const Couplings& couplings, c
         for (int_t thr = 0; thr < n_threads; ++thr) threads[thr] = std::thread(lambda, thr, start, end);
         for (auto& thr : threads) thr.join();
         for (int_t i = start; i < end; ++i) ofs << couplings.line(i) << ' ' << res[i] << '\n';
-        std::cout << "calculate_distances_brute  ::  " << start + 1 << '-' << end << " / " << couplings.size() << " (" << n_threads << " threads)  ::  " << t.get_time_since_start() << "  ::  " << timer.get_time_since_start() << '\n';
+        std::cout << "calculate_distances_brute  ::  " << neat_number_str(start + 1) << " - " << neat_number_str(end) << " / " << neat_number_str(couplings.size()) << " (" << neat_number_str(n_threads) << " threads)  ::  " << t.get_time_since_start() << "  ::  " << timer.get_time_since_start() << '\n';
     }
     std::cout << "calculate_distances_brute  ::  " << couplings.size() << " couplings ::  " << timer.get_time_since_mark() << "  ::  " << timer.get_time_since_start_and_set_mark() << '\n';
 }
@@ -88,7 +88,7 @@ void calculate_distances_brute(const Graph& graph, const Couplings& couplings, c
 void calculate_distances_brute_smart(const Graph& graph, const Couplings& couplings, const std::string& out_filename, Timer& timer, int_t n_threads, int_t block_size, int_t max_distance, bool verbose) {
     auto search_tasks = compute_search_tasks(couplings);
     if (verbose) {
-        std::cout << "calculate_distances_brute_smart  ::  Prepared " << search_tasks.size() << " search tasks.\n";
+        std::cout << "calculate_distances_brute_smart  ::  Prepared " << neat_number_str(search_tasks.size()) << " search tasks.\n";
         std::cout << "calculate_distances_brute_smart  ::  " << timer.get_time_since_mark() << "  ::  " << timer.get_time_since_start_and_set_mark() << '\n';
     }
     std::vector<int_t> res(couplings.size());
@@ -108,7 +108,7 @@ void calculate_distances_brute_smart(const Graph& graph, const Couplings& coupli
         std::cout << "calculate_distances_brute_smart  ::  " << start + 1 << '-' << end << " / " << search_tasks.size() << " (" << n_threads << " threads)  ::  " << t.get_time_since_start() << "  ::  " << timer.get_time_since_start() << '\n';
     }
     for (int_t i = 0; i < couplings.size(); ++i) ofs << couplings.line(i) << ' ' << res[i] << '\n';
-    std::cout << "calculate_distances_brute_smart  ::  Stored result for " << couplings.size() << " couplings ::  " << timer.get_time_since_mark() << "  ::  " << timer.get_time_since_start_and_set_mark() << '\n';
+    std::cout << "calculate_distances_brute_smart  ::  Stored result for " << neat_number_str(couplings.size()) << " couplings ::  " << timer.get_time_since_mark() << "  ::  " << timer.get_time_since_start_and_set_mark() << '\n';
 }
 
 // Compute distances between source and targets.

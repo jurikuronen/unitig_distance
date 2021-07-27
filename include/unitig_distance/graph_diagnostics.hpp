@@ -21,7 +21,7 @@ void vertex_degrees(const Graph& graph) {
     std::vector<int_t> degrees_count(max_degree + 1);
     for (int_t i = 0; i < graph.size(); ++i) ++degrees_count[degrees[i]];
     for (int_t degree = 0; degree <= max_degree; ++degree) {
-        std::printf("graph_diagnostics  ::  Vertices with degree %2d: %d\n", (int) degree, (int) degrees_count[degree]);
+        if (degrees_count[degree]) std::printf("graph_diagnostics  ::  Vertices with degree %2d: %d\n", (int) degree, (int) degrees_count[degree]);
     };
     std::vector<double> quantiles{0.1, 0.25, 0.5, 0.75, 0.9, 0.95, 0.99, 0.999, 1.0};
     std::set<int_t> degrees_seen;
