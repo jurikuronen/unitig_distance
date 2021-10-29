@@ -1,158 +1,177 @@
-/*
-    Main function.
-*/
-
 #include <fstream>
 #include <iostream>
-#include <map>
-#include <sstream>
 #include <string>
 #include <thread>
+#include <utility>
 #include <vector>
 
 #include "Couplings.hpp"
 #include "Graph.hpp"
-#include "graph_algorithms.hpp"
+#include "graph_distance.hpp"
 #include "Program_options.hpp"
+#include "search_job.hpp"
+#include "SingleGenomeGraph.hpp"
 #include "Timer.hpp"
 #include "types.hpp"
 
+bool check(const std::string& filename) {
+    auto ok = std::ifstream(filename).good();
+    if (!ok) std::cout << "Can't open file " << filename << "\n";
+    return ok;
+}
+
+bool sanity_check_input_files(const Program_options& po) {
+    bool ok = check(po.nodes_filename()) && check(po.edges_filename());
+    if (po.n_couplings() > 0) ok &= check(po.couplings_filename());    
+    if (ok) {
+        if (po.paths_filename() != "") ok &= check(po.paths_filename());
+        std::ifstream ifs(po.paths_filename());
+        for (std::string path_edges; ok && std::getline(ifs, path_edges); ok &= check(path_edges));
+    }
+    return ok;
+}
+
+std::string neat_number_str(int_t number) {
+    std::vector<int_t> parts;
+    do parts.push_back(number % 1000);
+    while (number /= 1000);
+    std::string number_str = std::to_string(parts.back());
+    for (int_t i = parts.size() - 2; i >= 0; --i) {
+        number_str += ' ' + std::string(3 - std::to_string(parts[i]).size(), '0') + std::to_string(parts[i]);
+    }
+    return number_str;
+}
+
 int main(int argc, char** argv) {
+    Timer timer;
+
     std::cout << "unitig_distance | MIT License | Copyright (c) 2021 Juri Kuronen\n\n";
 
     // Read command line arguments.
     Program_options po(argc, argv);
     if (!po.valid_state()) return 1;
+    if (!sanity_check_input_files(po)) return 1;
 
-    Timer timer;
-
-    // Read graph from provided files.
-    Graph graph(po.nodes_filename(), po.edges_filename(), po.k());
+    // Construct the combined graph from provided files.
+    Graph combined_graph(po.nodes_filename(), po.edges_filename(), po.k());
     if (po.verbose()) {
-        int_t n_edges = 0, max_degree = 0;
-        for (const auto& node : graph) {
-            int_t sz = node.neighbors().size();
-            n_edges += sz;
-            max_degree = std::max(max_degree, sz);
-        }
-        if (graph.one_based()) std::cout << "Graph  ::  Detected that graph files were one-based." << std::endl;
-        std::cout << "Graph  ::  Graph has " << neat_number_str(graph.size()) << " nodes and " << neat_number_str(n_edges / 2) << " edges. Max degree is " << neat_number_str(max_degree) << '.' << std::endl;
-        std::cout << "Graph  ::  " << timer.get_time_since_mark() << "  ::  " << timer.get_time_since_start_and_set_mark() << std::endl;
+        int_t n_nodes, n_edges, max_degree;
+        std::tie(n_nodes, n_edges, max_degree) = combined_graph.get_details();
+        std::cout << timer.get_time_block_since_start() << " Created combined graph in " << timer.get_time_since_mark_and_set_mark() << ". The graph has " << neat_number_str(n_nodes) << " connected (half) nodes and " << neat_number_str(n_edges) << " edges. Max degree is " << neat_number_str(max_degree) << "." << std::endl;
     }
 
-    if (po.repeating_filename() != "") {
-        auto repeating_filter_result = graph.apply_repeating_unitigs_filter(po.repeating_filename(), po.repeating_criterion());
-        if (po.verbose()) {
-            int_t removed_nodes = repeating_filter_result.first, removed_edges = repeating_filter_result.second;
-            std::cout << "Graph  ::  Applied repeating unitigs filter (criterion: >=" << po.repeating_criterion() << ") and disconnected " << neat_number_str(removed_nodes) << " nodes by removing " << neat_number_str(removed_edges) << " edges." << std::endl;
-            int_t n_edges = 0, max_degree = 0;
-            for (const auto& node : graph) {
-                int_t sz = node.neighbors().size();
-                n_edges += sz;
-                max_degree = std::max(max_degree, sz);
-            }
-            std::cout << "Graph  ::  Graph has " << neat_number_str(graph.size() - removed_nodes) << " unaffected nodes and " << neat_number_str(n_edges / 2) << " edges left. Max degree is " << neat_number_str(max_degree) << '.' << std::endl;
-            std::cout << "Graph  ::  " << timer.get_time_since_mark() << "  ::  " << timer.get_time_since_start_and_set_mark() << std::endl;
-
-        }
-    }
-
-    if (po.gerry_filename() != "") {
-        auto gerry_filter_result = graph.apply_gerry_filter(po.gerry_filename(), po.gerry_criterion());
-        if (po.verbose()) {
-            int_t removed_edges = gerry_filter_result.first, added_edges = gerry_filter_result.second;
-            std::cout << "Graph  ::  Applied Gerry filter (criterion: " << po.gerry_criterion() << ") and disconnected " << neat_number_str(removed_edges) << " edges, while adding " << neat_number_str(added_edges) << " edges." << std::endl;
-            int_t n_edges = 0, max_degree = 0;
-            for (const auto& node : graph) {
-                int_t sz = node.neighbors().size();
-                n_edges += sz;
-                max_degree = std::max(max_degree, sz);
-            }
-            std::cout << "Graph  ::  Graph has " << neat_number_str(n_edges / 2) << " edges left. Max degree is " << neat_number_str(max_degree) << '.' << std::endl;
-            std::cout << "Graph  ::  " << timer.get_time_since_mark() << "  ::  " << timer.get_time_since_start_and_set_mark() << std::endl;
-
-        }
-    }
-
-    if (po.run_diagnostics()) {
-        run_diagnostics(graph, po.graph_diagnostics_depth());
-        std::cout << "graph_diagnostics  ::  " << timer.get_time_since_mark() << "  ::  " << timer.get_time_since_start_and_set_mark() << std::endl;
-    }
-
-    std::cout << "********************************************************************************" << std::endl;
-    std::cout << "*** Note: The decomposition calculated below is currently not used.          ***" << std::endl;
-    std::cout << "***       Printing statistics for informational purposes only.               ***" << std::endl;
-    std::cout << "********************************************************************************" << std::endl;
-
-    // Connected components.
-    graph.solve_connected_components();
-    if (po.verbose())  {
-        std::vector<int_t> component_sizes;
-        std::map<int_t, int_t> component_sizes_map;
-        for (const auto& node : graph) ++component_sizes_map[node.component_id()];
-        for (auto p : component_sizes_map) component_sizes.push_back(p.second);
-        std::sort(component_sizes.rbegin(), component_sizes.rend());
-        std::cout << "solve_connected_components  ::  Found " << component_sizes.size() << " connected components. Top 5 largest:";
-        for (auto i = 0; i < std::min<std::size_t>(5, component_sizes.size()); ++i) std::cout << ' ' << component_sizes[i];
-        std::cout << '.' << std::endl;
-        std::cout << "solve_connected_components  ::  " << timer.get_time_since_mark() << "  ::  " << timer.get_time_since_start_and_set_mark() << std::endl;
-    }
-
-    // Biconnected components.
-    auto blocks = graph.solve_biconnected_components();
-    if (po.verbose()) {
-        int_t n_articulation_points = 0;
-        for (const auto& node : graph) n_articulation_points += node.is_articulation_point();
-        std::cout << "solve_biconnected_components  ::  Found " << n_articulation_points << " articulation points." << std::endl;
-        std::vector<int_t> block_sizes;
-        for (const auto& block : blocks) block_sizes.push_back(block.size());
-        std::sort(block_sizes.rbegin(), block_sizes.rend());
-        std::cout << "solve_biconnected_components  ::  Found " << blocks.size() << " biconnected components. Top 5 largest:";
-        for (auto i = 0; i < std::min<std::size_t>(5, block_sizes.size()); ++i) std::cout << ' ' << block_sizes[i];
-        std::cout << '.' << std::endl;
-        std::cout << "solve_biconnected_components  ::  " << timer.get_time_since_mark() << "  ::  " << timer.get_time_since_start_and_set_mark() << std::endl;
-    }
-
-    // Triconnected components and cut vertices.
-    for (const auto& block : blocks) {
-        if (block.size() <= 50) continue; // No need to process such small blocks.
-        Graph subgraph(graph, block);
-        auto cv = solve_cut_vertices(subgraph);
-        for (auto v : cv) graph[v].set_cut_node();
-    }
-    if (po.verbose()) {
-        int_t n_cut_vertices = 0;
-        for (const auto& node : graph) n_cut_vertices += node.is_cut_node();
-        std::cout << "solve_cut_vertices  ::  Found " << n_cut_vertices << " cut vertices (before optimization)." << std::endl;
-        std::cout << "solve_cut_vertices  ::  " << timer.get_time_since_mark() << "  ::  " << timer.get_time_since_start_and_set_mark() << std::endl;
-    }
-
-    // Cut vertex optimization routines.
-    optimize_cut_vertices_along_paths(graph);
-    if (po.verbose()) {
-        int_t n_cut_vertices = 0;
-        for (const auto& node : graph) n_cut_vertices += node.is_cut_node();
-        std::cout << "optimize_cut_vertices  ::  Cleaned paths, " << n_cut_vertices << " cut vertices left after optimization." << std::endl;
-        std::cout << "optimize_cut_vertices  ::  " << timer.get_time_since_mark() << "  ::  " << timer.get_time_since_start_and_set_mark() << std::endl;
-    }
-
-    std::cout << "********************************************************************************" << std::endl;
-
+    // Calculate coupling distances in the graph(s).
     if (po.n_couplings() > 0) {
         // Read couplings.
         Couplings couplings(po.couplings_filename(), po.n_couplings(), po.one_based());
+        if (po.print_unitigs()) couplings.read_unitigs(po.nodes_filename());
         po.set_n_couplings(couplings.size());
         if (po.verbose()) {
-            std::cout << "Couplings  ::  Read " << neat_number_str(couplings.size()) << " couplings." << std::endl;
-            std::cout << "Couplings  ::  " << timer.get_time_since_mark() << "  ::  " << timer.get_time_since_start_and_set_mark() << std::endl;
+            std::cout << timer.get_time_block_since_start() << " Read " << neat_number_str(couplings.size()) << " couplings in " << timer.get_time_since_mark_and_set_mark() << "." << std::endl;
         }
 
-        // Calculate distances.
-        if (po.use_smart_search()) {
-            calculate_distances_brute_smart(graph, couplings, po.out_filename(), timer, po.n_threads(), po.block_size(), po.max_distance(), po.verbose());
-        } else {
-            calculate_distances_brute(graph, couplings, po.out_filename(), timer, po.n_threads(), po.block_size(), po.max_distance(), po.verbose());
+        // Compute search jobs.
+        auto search_jobs = compute_search_jobs(couplings);
+        if (po.verbose()) {
+            std::cout << timer.get_time_block_since_start() << " Prepared " << neat_number_str(search_jobs.size()) << " search jobs in " << timer.get_time_since_mark_and_set_mark() << "." << std::endl;
         }
+
+        if (!po.run_sggs_only()) {
+            // Calculate distances in the combined graph.
+            if (po.verbose()) std::cout << timer.get_time_block_since_start_and_set_mark() << " Calculating distances in the combined graph." << std::endl;
+            std::vector<real_t> graph_distances = calculate_distances(combined_graph, search_jobs, timer, couplings.size(), po.n_threads(), po.block_size(), po.max_distance(), po.verbose());
+
+            // Output distances for the combined graph.
+            couplings.output_distances(po.out_cg_filename(), graph_distances);
+            if (po.verbose()) std::cout << timer.get_time_block_since_start() << " Output combined graph distances to file " << po.out_cg_filename() << " in " << timer.get_time_since_mark_and_set_mark() << "." << std::endl;
+
+            if (po.filter_filename() != "") {
+                // Create filtered graph by applying filter to the combined graph.
+                auto filtered_graph = Graph(combined_graph, po.filter_filename(), po.filter_criterion());
+                if (po.verbose()) {
+                    int_t n_nodes, n_edges, max_degree;
+                    std::tie(n_nodes, n_edges, max_degree) = combined_graph.get_details();
+                    std::cout << timer.get_time_block_since_start_and_set_mark() << " Created filtered graph (criterion: >=" << po.filter_criterion() << ") from the combined graph. The graph has " << neat_number_str(n_nodes) << " connected (half) nodes and " << neat_number_str(n_edges) << " edges (max degree " << neat_number_str(max_degree) << ")." << std::endl;
+                }
+                // Calculate distances in the filtered graph.
+                if (po.verbose()) std::cout << timer.get_time_block_since_start_and_set_mark() << " Calculating distances in the filtered graph." << std::endl;
+                graph_distances = calculate_distances(filtered_graph, search_jobs, timer, couplings.size(), po.n_threads(), po.block_size(), po.max_distance(), po.verbose());
+
+                // Output distances for the filtered graph.
+                couplings.output_distances(po.out_fcg_filename(), graph_distances);
+                if (po.verbose()) std::cout << timer.get_time_block_since_start() << " Output filtered graph distances to file " << po.out_fcg_filename() << " in " << timer.get_time_since_mark_and_set_mark() << "." << std::endl;
+            }
+        }
+
+        if (po.paths_filename() != "") {
+            // Read edge files for the single genome graphs.
+            std::vector<std::string> path_edge_files;
+            std::ifstream ifs(po.paths_filename());
+            for (std::string path_edges; std::getline(ifs, path_edges); ) path_edge_files.emplace_back(path_edges);
+            auto n_sggs = path_edge_files.size();
+            
+            Timer t_sgg, t_sgg_distances;
+            int_t batch_size = po.concurrent_graphs(), n_nodes = 0, n_edges = 0;
+
+            std::vector<SingleGenomeGraph> sg_graphs(batch_size);
+            auto lambda = [&combined_graph, &sg_graphs](int_t thr, const std::string& path_edges) { sg_graphs[thr] = SingleGenomeGraph(combined_graph, path_edges); };
+
+            std::vector<std::tuple<real_t, real_t, real_t, int_t>> sgg_distances(po.n_couplings(), std::make_tuple(REAL_T_MAX, 0.0, 0.0, 0));
+
+            for (auto i = 0; i < path_edge_files.size(); i += batch_size) {
+                auto batch = std::min(i + batch_size, (int_t) path_edge_files.size()) - i;
+                // Construct a batch of single genome graphs.
+                if (po.verbose()) t_sgg.set_mark();
+                std::vector<std::thread> threads;
+                for (auto thr = 0; thr < batch; ++thr) threads.emplace_back(lambda, thr, path_edge_files[i + thr]);
+                for (auto& thr : threads) thr.join();
+                if (po.verbose()) {
+                    t_sgg.add_time_since_mark();
+                    std::cout << timer.get_time_block_since_start() << " Created single genome graphs " << i + 1 << "-" << i + batch << " / " << n_sggs << " in " << t_sgg.get_time_since_mark() << "." << std::endl;
+                    for (const auto& sg_graph : sg_graphs) {
+                        n_nodes += sg_graph.size();
+                        for (const auto& node : sg_graph) n_edges += node.neighbors().size();
+                    }
+                    t_sgg_distances.set_mark();
+                }
+
+                // Calculate distances in the single genome graphs.
+                for (const auto& sg_graph : sg_graphs) {
+                    calculate_sgg_distances(sg_graph, search_jobs, sgg_distances, timer, couplings.size(), po.n_threads(), po.block_size(), po.max_distance());
+                }
+                if (po.verbose()) {
+                    t_sgg_distances.add_time_since_mark();
+                    std::cout << timer.get_time_block_since_start() << " Calculated distances for single genome graphs " << i + 1 << "-" << i + batch << " / " << n_sggs << " in " << t_sgg_distances.get_time_since_mark() << "." << std::endl;
+                }
+            }
+            if (po.verbose()) {
+                n_nodes /= n_sggs;
+                n_edges /= 2 * n_sggs;
+                std::cout << timer.get_time_block_since_start() << " Creating " << n_sggs << " single genome graphs took " << t_sgg.get_stopwatch_time() << ". The processed graphs have on average " << neat_number_str(n_nodes) << " connected nodes and " << neat_number_str(n_edges) << " edges." << std::endl;
+                std::cout << timer.get_time_block_since_start_and_set_mark() << " Calculating distances for the " << n_sggs << " single genome graphs took " << t_sgg_distances.get_stopwatch_time() << "." << std::endl;
+            }
+
+            // Output distances for the single genome graphs graph.
+            for (auto& dist : sgg_distances) if (std::get<3>(dist) == 0) dist = std::make_tuple(REAL_T_MAX, REAL_T_MAX, REAL_T_MAX, 0); // Set distance correctly for disconnected couplings.
+            std::vector<real_t> distances(sgg_distances.size());
+            std::transform(sgg_distances.begin(), sgg_distances.end(), distances.begin(), [](const std::tuple<real_t, real_t, real_t, int_t>& dist) { return std::get<0>(dist); });
+            couplings.output_distances(po.out_sgg_min_filename(), distances);
+            if (po.verbose()) std::cout << timer.get_time_block_since_start() << " Output single genome graph min distances to file " << po.out_sgg_min_filename() << " in " << timer.get_time_since_mark_and_set_mark() << "." << std::endl;
+
+            std::transform(sgg_distances.begin(), sgg_distances.end(), distances.begin(), [](const std::tuple<real_t, real_t, real_t, int_t>& dist) { return std::get<1>(dist); });
+            couplings.output_distances(po.out_sgg_max_filename(), distances);
+            if (po.verbose()) std::cout << timer.get_time_block_since_start() << " Output single genome graph max distances to file " << po.out_sgg_max_filename() << " in " << timer.get_time_since_mark_and_set_mark() << "." << std::endl;
+
+            std::transform(sgg_distances.begin(), sgg_distances.end(), distances.begin(), [](const std::tuple<real_t, real_t, real_t, int_t>& dist) { return std::get<2>(dist); });
+            couplings.output_distances(po.out_sgg_mean_filename(), distances);
+            if (po.verbose()) std::cout << timer.get_time_block_since_start() << " Output single genome graph mean distances to file " << po.out_sgg_mean_filename() << " in " << timer.get_time_since_mark_and_set_mark() << "." << std::endl;
+
+            std::vector<int_t> counts(sgg_distances.size());
+            std::transform(sgg_distances.begin(), sgg_distances.end(), counts.begin(), [](const std::tuple<real_t, real_t, real_t, int_t>& dist) { return std::get<3>(dist); });
+            couplings.output_counts(po.out_sgg_counts_filename(), counts);
+            if (po.verbose()) std::cout << timer.get_time_block_since_start() << " Output connected coupling counts in the single genome graphs to file " << po.out_sgg_counts_filename() << " in " << timer.get_time_since_mark_and_set_mark() << "." << std::endl;
+        }
+
+        if (po.verbose()) std::cout << timer.get_time_block_since_start() << " Finished." << std::endl;
     }
-    std::cout << "unitig_distance  ::  " << timer.get_time_since_start() << std::endl;
 }

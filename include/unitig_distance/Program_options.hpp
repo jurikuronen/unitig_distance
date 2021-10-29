@@ -1,7 +1,3 @@
-/*
-    Simple command line argument handler class.
-*/
-
 #pragma once
 
 #include <algorithm>
@@ -11,6 +7,7 @@
 
 #include "types.hpp"
 
+// A command line argument handler class.
 class Program_options {
 public:
     Program_options(int argc, char** argv) {
@@ -21,45 +18,32 @@ public:
             m_valid_state = false;
             return;
         }
+        arg_reader = find_arg_name(argv, argv_end, "-?", "--help-argument");
+        if (arg_reader) {
+            print_manual();
+            m_valid_state = false;
+            return;
+        }
         // Parse required arguments.
-        arg_reader = find_arg_value(argv, argv_end, "-v", "--vertices-file");
-        if (arg_reader) m_nodes_filename = std::string(arg_reader);
-        arg_reader = find_arg_value(argv, argv_end, "-e", "--edges-file");
-        if (arg_reader) m_edges_filename = std::string(arg_reader);
-        arg_reader = find_arg_value(argv, argv_end, "-k", "--k-mer-length");
-        if (arg_reader) m_k = std::stoll(arg_reader);
+        if (arg_reader = find_arg_value(argv, argv_end, "-V", "--vertices-file")) m_nodes_filename = std::string(arg_reader);
+        if (arg_reader = find_arg_value(argv, argv_end, "-E", "--edges-file")) m_edges_filename = std::string(arg_reader);
+        if (arg_reader = find_arg_value(argv, argv_end, "-k", "--k-mer-length")) m_k = std::stoll(arg_reader);
         // Required if --n_couplings > 0.
-        arg_reader = find_arg_value(argv, argv_end, "-c", "--couplings-file");
-        if (arg_reader) m_couplings_filename = std::string(arg_reader);
+        if (arg_reader = find_arg_value(argv, argv_end, "-C", "--couplings-file")) m_couplings_filename = std::string(arg_reader);
         // Parse optional arguments.
-        arg_reader = find_arg_value(argv, argv_end, "-o", "--output-file");
-        if (arg_reader) m_out_filename = std::string(arg_reader);
-        arg_reader = find_arg_value(argv, argv_end, "-n", "--n-couplings");
-        if (arg_reader) m_n_couplings = std::stoll(arg_reader);
-        arg_reader = find_arg_name(argv, argv_end, "-1", "--couplings-one-based");
-        if (arg_reader) m_one_based = true;
-        arg_reader = find_arg_name(argv, argv_end, "-s", "--smart-search");
-        if (arg_reader) m_use_smart_search = true;
-        arg_reader = find_arg_value(argv, argv_end, "-b", "--block-size");
-        if (arg_reader) m_block_size = std::stoll(arg_reader);
-        arg_reader = find_arg_value(argv, argv_end, "-d", "--max-distance");
-        if (arg_reader) m_max_distance = std::stoll(arg_reader);
-        arg_reader = find_arg_value(argv, argv_end, "-t", "--threads");
-        if (arg_reader) m_n_threads = std::stoll(arg_reader);
-        arg_reader = find_arg_name(argv, argv_end, "--verbose");
-        if (arg_reader) m_verbose = true;
-        arg_reader = find_arg_name(argv, argv_end, "-D", "--run-graph-diagnostics");
-        if (arg_reader) m_run_diagnostics = true;
-        arg_reader = find_arg_value(argv, argv_end, "--graph-diagnostics-depth");
-        if (arg_reader) m_graph_diagnostics_depth = std::stoll(arg_reader);
-        arg_reader = find_arg_value(argv, argv_end, "--repeating-file");
-        if (arg_reader) m_repeating_filename = std::string(arg_reader);
-        arg_reader = find_arg_value(argv, argv_end, "--repeating-criterion");
-        if (arg_reader) m_repeating_criterion = std::stod(arg_reader);
-        arg_reader = find_arg_value(argv, argv_end, "--gerry-file");
-        if (arg_reader) m_gerry_filename = std::string(arg_reader);
-        arg_reader = find_arg_value(argv, argv_end, "--gerry-criterion");
-        if (arg_reader) m_gerry_criterion = std::stod(arg_reader);
+        if (arg_reader = find_arg_value(argv, argv_end, "-P", "--paths-file")) m_paths_filename = std::string(arg_reader);
+        if (arg_reader = find_arg_value(argv, argv_end, "-o", "--output-stem")) m_out_stem = std::string(arg_reader);
+        if (arg_reader = find_arg_value(argv, argv_end, "-n", "--n-couplings")) m_n_couplings = std::stoll(arg_reader);
+        if (arg_reader = find_arg_name(argv, argv_end, "-1", "--couplings-one-based")) m_one_based = true;
+        if (arg_reader = find_arg_name(argv, argv_end, "-r", "--run-sggs-only")) m_run_sggs_only = true;
+        if (arg_reader = find_arg_value(argv, argv_end, "-b", "--block-size")) m_block_size = std::stoll(arg_reader);
+        if (arg_reader = find_arg_value(argv, argv_end, "-d", "--max-distance")) m_max_distance = std::stoll(arg_reader);
+        if (arg_reader = find_arg_value(argv, argv_end, "-t", "--threads")) m_n_threads = std::stoll(arg_reader);
+        if (arg_reader = find_arg_name(argv, argv_end, "-v", "--verbose")) m_verbose = true;
+        if (arg_reader = find_arg_value(argv, argv_end, "-F", "--filter-file")) m_filter_filename = std::string(arg_reader);
+        if (arg_reader = find_arg_value(argv, argv_end, "-c", "--filter-criterion")) m_filter_criterion = std::stod(arg_reader);
+        if (arg_reader = find_arg_value(argv, argv_end, "-g", "--concurrent-graphs")) m_concurrent_graphs = std::stod(arg_reader); else m_concurrent_graphs = n_threads();
+        if (arg_reader = find_arg_name(argv, argv_end, "-p", "--print-unitigs")) m_print_unitigs = true;
         m_valid_state = all_required_arguments_provided();
         if (verbose()) print_arguments();
     }
@@ -67,45 +51,50 @@ public:
     const std::string& nodes_filename() const { return m_nodes_filename; }
     const std::string& edges_filename() const { return m_edges_filename; }
     const std::string& couplings_filename() const { return m_couplings_filename; }
-    const std::string& repeating_filename() const { return m_repeating_filename; }
-    const std::string& gerry_filename() const { return m_gerry_filename; }
-    const std::string& out_filename() const { return m_out_filename; }
+    const std::string& paths_filename() const { return m_paths_filename; }
+    const std::string& out_stem() const { return m_out_stem; }
+    const std::string& filter_filename() const { return m_filter_filename; }
     int_t k() const { return m_k; }
     int_t n_couplings() const { return m_n_couplings; }
     int_t block_size() const { return m_block_size; }
-    int_t max_distance() const { return m_max_distance; }
+    real_t max_distance() const { return m_max_distance; }
     int_t n_threads() const { return m_n_threads; }
-    int_t graph_diagnostics_depth() const { return m_graph_diagnostics_depth; }
-    int_t repeating_criterion() const { return m_repeating_criterion; }
-    int_t gerry_criterion() const { return m_gerry_criterion; }
+    int_t filter_criterion() const { return m_filter_criterion; }
+    int_t concurrent_graphs() const { return m_concurrent_graphs; }
     bool one_based() const { return m_one_based; }
-    bool use_smart_search() const { return m_use_smart_search; }
+    bool run_sggs_only() const { return m_run_sggs_only; }
     bool verbose() const { return m_verbose; }
-    bool run_diagnostics() const { return m_run_diagnostics; }
+    bool print_unitigs() const { return m_print_unitigs; }
     bool valid_state() const { return m_valid_state; }
 
-    // Update after couplings were read.
+    const std::string out_cg_filename() const { return out_stem() + ".ud_cg_couplings"; }
+    const std::string out_fcg_filename() const { return out_stem() + ".ud_fcg_couplings"; }
+    const std::string out_sgg_min_filename() const { return out_stem() + ".ud_sgg_min_couplings"; }
+    const std::string out_sgg_max_filename() const { return out_stem() + ".ud_sgg_max_couplings"; }
+    const std::string out_sgg_mean_filename() const { return out_stem() + ".ud_sgg_mean_couplings"; }
+    const std::string out_sgg_counts_filename() const { return out_stem() + ".ud_sgg_coupling_counts"; }
+
+    // For updating the value after couplings were read.
     void set_n_couplings(int_t n_couplings) { m_n_couplings = n_couplings; }
 
 private:
     std::string m_nodes_filename = "";
     std::string m_edges_filename = "";
     std::string m_couplings_filename = "";
-    std::string m_repeating_filename = "";
-    std::string m_gerry_filename = "";
-    std::string m_out_filename = "ud_output.txt";
-    int_t m_k = -1;
+    std::string m_paths_filename = "";
+    std::string m_out_stem = "ud_output";
+    std::string m_filter_filename = "";
+    int_t m_k = 0;
     int_t m_n_couplings = INT_T_MAX;
-    int_t m_block_size = 100000;
-    int_t m_max_distance = INT_T_MAX;
+    int_t m_block_size = 10000;
+    real_t m_max_distance = REAL_T_MAX;
     int_t m_n_threads = 1;
-    int_t m_graph_diagnostics_depth = 7;
-    int_t m_repeating_criterion = 3;
-    int_t m_gerry_criterion = 1;
-    bool m_use_smart_search = false;
+    int_t m_filter_criterion = 2;
+    int_t m_concurrent_graphs = 1;
     bool m_one_based = false;
+    bool m_run_sggs_only = false;
     bool m_verbose = false;
-    bool m_run_diagnostics = false;
+    bool m_print_unitigs = false;
     bool m_valid_state;
 
     char* find_arg_name(char** begin, char** end, const std::string& opt) { return find_arg_name(begin, end, opt, opt); }
@@ -127,7 +116,6 @@ private:
         if (edges_filename() == "") std::cout << "Missing edges filename.\n", ok = false;
         if (k() <= 0) std::cout << "Missing k-mer length.\n", ok = false;
         if (n_couplings() > 0 && !m_couplings_filename.size()) std::cout << "Missing couplings filename.\n", ok = false;
-        if (repeating_filename() != "" && gerry_filename() != "") std::cout << "Can't use two filters at the same time.\n", ok = false;
         if (!ok) print_no_args();
         return ok;
     }
@@ -137,29 +125,47 @@ private:
     void print_help() {
         std::vector<std::string> options{
             "Required arguments.", "",
-            "  -v [ --vertices-file ] arg", "Path to file containing vertices.",
-            "  -e [ --edges-file ] arg", "Path to file containing edges.",
+            "  -V [ --vertices-file ] arg", "Path to file containing vertices.",
+            "  -E [ --edges-file ] arg", "Path to file containing edges.",
             "  -k [ --k-mer-length ] arg", "k-mer length.",
-            "Required argument if --n-couplings > 0.", "",
-            "  -c [ --couplings-file ] arg", "Path to file containing couplings.",
+            "", "",
+            "Required argument if -n [ --n-couplings ] is greater than 0.", "",
+            "  -C [ --couplings-file ] arg", "Path to file containing couplings.",
+            "", "",
             "Optional arguments.", "",
-            "  -o [ --output-file ] arg (=ud_output.txt)", "Path to output file.",
-            "  -n [ --n-couplings ] arg (=all)", "Number of couplings to read from the couplings file.",
+            "  -P [ --paths-file ] arg", "Path to text file containing paths to single reference edge files.",
+            "  -o [ --output-stem ] arg (=ud_output)", "Path for output files (without extension).",
+            "  -n [ --n-couplings ] arg (=inf)", "Number of couplings to read from the couplings file.",
             "  -1 [ --couplings-one-based ]", "Reads couplings with one-based numbering.",
-            "  -s [ --smart-search ]", "Aggregate couplings into search tasks for smarter searches.",
-            "  -b [ --block-size ] arg (=100000)", "Process this many couplings/tasks at a time (for printing).",
+            "  -r [ --run-sggs-only ]", "Don't calculate couplings for the combined graph.",
+            "  -b [ --block-size ] arg (=10000)", "Process this many couplings/tasks at a time.",
             "  -d [ --max-distance ] arg (=inf)", "Maximum allowed graph distance for constraining searches.",
             "  -t [ --threads ] arg (=1)", "Number of threads.",
-            "  --verbose", "Be verbose.",
-            "  -D [ --run-graph-diagnostics ]", "Get various details about the graph.",
-            "  --graph-diagnostics-depth arg (=7)", "Maximum allowed search depth for graph diagnostics.",
-            "  --repeating-file arg", "Path to file containing repeating unitigs.",
-            "  --repeating-criterion arg (=3)", "Criterion for repeating-unitigs-based edge filtering.",
-            "  --gerry-file arg", "Path to file containing Gerry paths.",
-            "  --gerry-criterion arg (=1)", "Criterion for Gerry filtering.",
-            "  -h [ --help ]", "Print this list."
+            "  -v [--verbose]", "Be verbose.",
+            "  -F [--filter-file] arg", "Path to file containing unitigs that will be filtered.",
+            "  -c [--filter-criterion] arg (=2)", "Criterion for the filter.",
+            "  -g [--concurrent-graphs] arg (=--threads)", "Number of single genome graphs to hold in memory.",
+            "  -p [--print-unitigs]", "Print unitigs.",
+            "  -h [ --help ]", "Print this list.",
+            "  -? [ --help-argument ] arg?", "More information about a specific argument. If arg not provided, print everything."
         };
         for (auto i = 0; i < options.size(); i += 2) std::printf("%-45s %s\n", options[i].data(), options[i + 1].data());
+    }
+
+    void print_manual() {
+        // blank: print everything
+        // -V, -E, -C, -P -> format info
+        // -k -> required for correct weights
+        // -o -> what files will be created from this, cg, fcg, etc explanation
+        // -n -> self-explanatory
+        // -1 -> explain spydrpick thingy
+        // -r -> skip cg calculations
+        // -b -> self-expl
+        // -v -> self-expl
+        // -F -> what it does
+        // -c -> what it does
+        // -g -> why set to threads, why faster etc
+        // -h+-? -> self-expl
     }
 
     void push_back(std::vector<std::string>& arguments, const std::string& opt, const std::string& val) {
@@ -171,21 +177,20 @@ private:
         std::cout << "Printing out provided arguments.\n";
         std::vector<std::string> arguments{"  --vertices-file", nodes_filename(),"  --edges-file", edges_filename()};
         if (n_couplings() > 0) push_back(arguments, "  --couplings-file", couplings_filename());
-        push_back(arguments, "  --output-file", out_filename());
+        if (paths_filename() != "") push_back(arguments, "  --paths-file", paths_filename());
+        push_back(arguments, "  --output-stem", out_stem());
         push_back(arguments, "  --k-mer-length", std::to_string(k()));
         push_back(arguments, "  --n-couplings", n_couplings() == INT_T_MAX ? "ALL" : std::to_string(n_couplings()));
+        push_back(arguments, "  --run-sggs-only", run_sggs_only() ? "TRUE" : "FALSE");
         if (n_couplings() > 0) push_back(arguments, "  --couplings-one-based", one_based() ? "TRUE" : "FALSE");
-        push_back(arguments, "  --smart-search", use_smart_search() ? "TRUE" : "FALSE");
         push_back(arguments, "  --block-size", std::to_string(block_size()));
-        push_back(arguments, "  --max-distance", max_distance() == INT_T_MAX ? "INF" : std::to_string(max_distance()));
+        push_back(arguments, "  --max-distance", max_distance() == REAL_T_MAX ? "INF" : std::to_string(max_distance()));
         push_back(arguments, "  --threads", std::to_string(n_threads()));
         push_back(arguments, "  --verbose", verbose() ? "TRUE" : "FALSE");
-        push_back(arguments, "  --run-graph-diagnostics", run_diagnostics() ? "TRUE" : "FALSE");
-        if (repeating_filename() != "") push_back(arguments, "  --repeating-file", repeating_filename());
-        if (repeating_filename() != "") push_back(arguments, "  --repeating-criterion", std::to_string(repeating_criterion()));
-        if (gerry_filename() != "") push_back(arguments, "  --gerry-file", gerry_filename());
-        if (gerry_filename() != "") push_back(arguments, "  --gerry-criterion", std::to_string(gerry_criterion()));
-        if (run_diagnostics()) push_back(arguments, "  --graph-diagnostics-depth", std::to_string(m_graph_diagnostics_depth));
+        if (filter_filename() != "") push_back(arguments, "  --filter-file", filter_filename());
+        if (filter_filename() != "") push_back(arguments, "  --filter-criterion", std::to_string(filter_criterion()));
+        push_back(arguments, "  --concurrent-graphs", std::to_string(concurrent_graphs()));
+        push_back(arguments, "  --print-unitigs", print_unitigs() ? "TRUE" : "FALSE");
         for (auto i = 0; i < arguments.size(); i += 2) std::printf("%-30s %s\n", arguments[i].data(), arguments[i + 1].data());
         std::cout << '\n';
     }

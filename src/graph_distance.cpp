@@ -1,165 +1,192 @@
-/*
-    This file contains various distance calculation routines.
-*/
-
 #include <iostream>
 #include <map>
 #include <set>
 #include <thread>
-#include <unordered_map>
-#include <unordered_set>
 #include <utility>
 #include <vector>
 
 #include "Couplings.hpp"
 #include "Graph.hpp"
 #include "graph_distance.hpp"
+#include "search_job.hpp"
+#include "SingleGenomeGraph.hpp"
 #include "Timer.hpp"
 #include "types.hpp"
 
-// Data structure for searches.
-struct search_task {
-    int_t v;
-    std::vector<int_t> ws;
-    std::vector<int_t> coupling_indices;
-
-    search_task(int_t v_) : v(v_) { }
-    void add(int_t w, int_t idx) {
-        ws.push_back(w);
-        coupling_indices.push_back(idx);
-    }
-    std::size_t size() const { return ws.size(); }
-};
-
-// Compute number of queries for each vertex and aggregate into search tasks.
-std::vector<search_task> compute_search_tasks(const Couplings& couplings) {
-    std::vector<search_task> search_tasks;
-    // Get queries for each vertex, storing also the coupling index.
-    std::unordered_map<int_t, std::unordered_map<int_t, int_t>> queries;
-    for (int_t i = 0; i < couplings.size(); ++i) {
-        int_t v = couplings.v(i);
-        int_t w = couplings.w(i);
-        queries[v].emplace(w, i);
-        queries[w].emplace(v, i);
-    }
-    // Compute number of queries and sort.
-    std::vector<std::pair<int_t, int_t>> n_queries;
-    for (const auto& q : queries) n_queries.emplace_back(q.second.size(), q.first);
-    std::sort(n_queries.rbegin(), n_queries.rend());
-    // Form search tasks.
-    for (auto p : n_queries) {
-        int_t v = p.second;
-        if (queries[v].size() == 0) continue; // Overlapping queries were removed.
-        search_task bt(v);
-        for (auto q : queries[v]) {
-            int_t w = q.first;
-            int_t idx = q.second;
-            bt.add(w, idx);
-            queries[w].erase(v);
-        }
-        search_tasks.push_back(std::move(bt));
-    }
-    return search_tasks;
+void update_source(std::vector<std::pair<int_t, real_t>>& sources, std::size_t mapped_idx, real_t distance) {
+    auto it = sources.begin();
+    while (it != sources.end() && it->first != mapped_idx) ++it;
+    if (it == sources.end()) sources.emplace_back(mapped_idx, distance);
+    else it->second = std::min(it->second, distance);
 }
 
-// Calculate distances for all couplings with a brute-force search.
-void calculate_distances_brute(const Graph& graph, const Couplings& couplings, const std::string& out_filename, Timer& timer, int_t n_threads, int_t block_size, int_t max_distance, bool verbose) {
-    std::vector<int_t> res(couplings.size());
-    auto lambda = [&graph, &couplings, &res, n_threads, max_distance](int_t thr, int_t start, int_t end) {
+void add_sgg_source(const SingleGenomeGraph& sg_graph, std::vector<std::pair<int_t, real_t>>& sources, std::size_t v_original_idx) {
+    auto v_path_idx = sg_graph.path_idx(v_original_idx);
+    auto v_mapped_idx = sg_graph.mapped_idx(v_original_idx);
+    if (v_path_idx == INT_T_MAX) {
+        update_source(sources, v_mapped_idx, 0.0);
+    } else {
+        std::size_t path_endpoint;
+        real_t distance;
+        // Add path start node.
+        std::tie(path_endpoint, distance) = sg_graph.distance_to_start(v_path_idx, v_mapped_idx);
+        update_source(sources, path_endpoint, distance);
+        // Add path end node.
+        std::tie(path_endpoint, distance) = sg_graph.distance_to_end(v_path_idx, v_mapped_idx);
+        update_source(sources, path_endpoint, distance);
+    }
+}
+
+std::vector<std::pair<int_t, real_t>> get_sgg_sources(const SingleGenomeGraph& sg_graph, int_t v) {
+    std::vector<std::pair<int_t, real_t>> sources;
+    add_sgg_source(sg_graph, sources, sg_graph.left_node(v));
+    add_sgg_source(sg_graph, sources, sg_graph.right_node(v));
+    return sources;
+}
+
+void add_sgg_target(const SingleGenomeGraph& sg_graph, std::set<int_t>& target_set, std::size_t original_idx) {
+    auto path_idx = sg_graph.path_idx(original_idx);
+    auto mapped_idx = sg_graph.mapped_idx(original_idx);
+    if (path_idx == INT_T_MAX) {
+        target_set.insert(mapped_idx);
+    } else {
+        target_set.insert(sg_graph.start_node(path_idx));
+        target_set.insert(sg_graph.end_node(path_idx));
+    }
+}
+
+std::vector<int_t> get_sgg_targets(const SingleGenomeGraph& sg_graph, const std::vector<int_t>& ws) {
+    std::set<int_t> target_set;
+    for (auto w : ws) {
+        if (!sg_graph.contains(sg_graph.left_node(w))) continue;
+        add_sgg_target(sg_graph, target_set, sg_graph.left_node(w));
+        add_sgg_target(sg_graph, target_set, sg_graph.right_node(w));
+    }
+    std::vector<int_t> targets;
+    for (auto t : target_set) targets.push_back(t);
+    return targets;
+}
+
+real_t get_correct_distance(const SingleGenomeGraph& sg_graph, std::size_t v_path_idx, std::size_t v_mapped_idx, std::size_t w_original_idx, std::map<std::size_t, real_t>& dist) {
+    auto w_path_idx = sg_graph.path_idx(w_original_idx);
+    auto w_mapped_idx = sg_graph.mapped_idx(w_original_idx);
+    if (w_path_idx == INT_T_MAX) return dist[w_mapped_idx]; // w not on path.
+    if (v_path_idx == w_path_idx) return sg_graph.distance_in_path(v_path_idx, v_mapped_idx, w_mapped_idx); // v and w on same path.
+    // w on path.
+    std::size_t w_path_start, w_path_end;
+    real_t w_path_start_distance, w_path_end_distance;
+    std::tie(w_path_start, w_path_start_distance) = sg_graph.distance_to_start(w_path_idx, w_mapped_idx);
+    std::tie(w_path_end, w_path_end_distance) = sg_graph.distance_to_end(w_path_idx, w_mapped_idx);
+    return std::min(dist[w_path_start] + w_path_start_distance, dist[w_path_end] + w_path_end_distance);
+}
+
+void update_sgg_res(const SingleGenomeGraph& sg_graph, std::vector<real_t>& job_dist, std::size_t v_original_idx, const std::vector<int_t>& ws, std::map<std::size_t, real_t>& dist) {
+    auto v_path_idx = sg_graph.path_idx(v_original_idx);
+    auto v_mapped_idx = sg_graph.mapped_idx(v_original_idx);
+    for (auto w_idx = 0; w_idx < ws.size(); ++w_idx) { 
+        auto w = ws[w_idx];
+        if (!sg_graph.contains(sg_graph.left_node(w))) continue;
+        auto distance = get_correct_distance(sg_graph, v_path_idx, v_mapped_idx, sg_graph.left_node(w), dist);
+        distance = std::min(distance, get_correct_distance(sg_graph, v_path_idx, v_mapped_idx, sg_graph.right_node(w), dist));
+        job_dist[w_idx] = std::min(job_dist[w_idx], distance);
+    }
+}
+
+void calculate_sgg_distances(const SingleGenomeGraph& sg_graph, const std::vector<search_job>& search_jobs, std::vector<std::tuple<real_t, real_t, real_t, int_t>>& res, Timer& timer, int_t n_couplings, int_t n_threads, int_t block_size, real_t max_distance) {
+    auto lambda = [&sg_graph, &search_jobs, &res, n_threads, max_distance](int_t thr, int_t start, int_t end) {
+        real_t min, max, mean;
+        int_t count;
         for (auto i = thr + start; i < end; i += n_threads) {
-            res[i] = distance(graph, couplings.v(i), couplings.w(i), max_distance);
+            const auto& job = search_jobs[i];
+            auto v = job.v();
+            if (!sg_graph.contains(sg_graph.left_node(v))) continue;
+            auto sources = get_sgg_sources(sg_graph, v);
+            auto targets = get_sgg_targets(sg_graph, job.ws());
+            auto target_dist = distance(sg_graph, sources, targets, max_distance);
+            std::vector<real_t> job_dist(job.ws().size(), REAL_T_MAX);
+            std::map<std::size_t, real_t> dist;
+            for (auto i = 0; i < targets.size(); ++i) dist[targets[i]] = target_dist[i];
+            update_sgg_res(sg_graph, job_dist, sg_graph.left_node(v), job.ws(), dist);
+            update_sgg_res(sg_graph, job_dist, sg_graph.right_node(v), job.ws(), dist);
+            for (auto w_idx = 0; w_idx < job_dist.size(); ++w_idx) {
+                auto distance = job_dist[w_idx];
+                if (distance == REAL_T_MAX) continue;
+                auto coupling_index = job.coupling_index(w_idx);
+                std::tie(min, max, mean, count) = res[coupling_index];
+                min = std::min(min, distance);
+                max = std::max(max, distance);
+                mean = (mean * count + distance) / (count + 1);
+                ++count;
+                res[coupling_index] = std::make_tuple(min, max, mean, count);
+            }
         }
     };
     std::vector<std::thread> threads(n_threads);
-    std::ofstream ofs(out_filename);
-
-    for (int_t start = 0; start < couplings.size(); start += block_size) {
+    for (int_t start = 0; start < search_jobs.size(); start += block_size) {
         Timer t;
-        int_t end = std::min(start + block_size, (int_t) couplings.size());
+        int_t end = std::min(start + block_size, (int_t) search_jobs.size());
         for (int_t thr = 0; thr < n_threads; ++thr) threads[thr] = std::thread(lambda, thr, start, end);
         for (auto& thr : threads) thr.join();
-        for (int_t i = start; i < end; ++i) ofs << couplings.line(i) << ' ' << res[i] << std::endl;
-        std::cout << "calculate_distances_brute  ::  " << neat_number_str(start + 1) << " - " << neat_number_str(end) << " / " << neat_number_str(couplings.size()) << " (" << neat_number_str(n_threads) << " threads)  ::  " << t.get_time_since_start() << "  ::  " << timer.get_time_since_start() << std::endl;
     }
-    std::cout << "calculate_distances_brute  ::  " << couplings.size() << " couplings ::  " << timer.get_time_since_mark() << "  ::  " << timer.get_time_since_start_and_set_mark() << std::endl;
 }
 
-// Calculate distances for all couplings with a smarter search.
-void calculate_distances_brute_smart(const Graph& graph, const Couplings& couplings, const std::string& out_filename, Timer& timer, int_t n_threads, int_t block_size, int_t max_distance, bool verbose) {
-    auto search_tasks = compute_search_tasks(couplings);
-    if (verbose) {
-        std::cout << "calculate_distances_brute_smart  ::  Prepared " << neat_number_str(search_tasks.size()) << " search tasks.\n";
-        std::cout << "calculate_distances_brute_smart  ::  " << timer.get_time_since_mark() << "  ::  " << timer.get_time_since_start_and_set_mark() << std::endl;
-    }
-    std::vector<int_t> res(couplings.size());
-    auto lambda = [&graph, &couplings, &res, &search_tasks, n_threads, max_distance](int_t thr, int_t start, int_t end) {
+std::vector<real_t> calculate_distances(const Graph& combined_graph, const std::vector<search_job>& search_jobs, Timer& timer, int_t n_couplings, int_t n_threads, int_t block_size, real_t max_distance, bool verbose) {
+    std::vector<real_t> res(n_couplings);
+    auto lambda = [&combined_graph, &search_jobs, &res, n_threads, max_distance](int_t thr, int_t start, int_t end) {
         for (auto i = thr + start; i < end; i += n_threads) {
-            auto ws_dist = distance(graph, search_tasks[i].v, search_tasks[i].ws, max_distance); // In same order as ws in search_task.
-            for (int_t w_idx = 0; w_idx < search_tasks[i].size(); ++w_idx) res[search_tasks[i].coupling_indices[w_idx]] = ws_dist[w_idx];
+            const auto& job = search_jobs[i];
+            std::vector<std::pair<int_t, real_t>> sources{{combined_graph.left_node(job.v()), 0.0}, {combined_graph.right_node(job.v()), 0.0}};
+            std::vector<int_t> targets;
+            for (auto w : job.ws()) {
+                targets.push_back(combined_graph.left_node(w));
+                targets.push_back(combined_graph.right_node(w));
+            }
+            auto target_dist = distance(combined_graph, sources, targets, max_distance);
+            for (int_t w_idx = 0; w_idx < job.size(); ++w_idx) res[job.coupling_index(w_idx)] = std::min(target_dist[2 * w_idx], target_dist[2 * w_idx + 1]);
         }
     };
     std::vector<std::thread> threads(n_threads);
-    std::ofstream ofs(out_filename);
-    for (int_t start = 0; start < search_tasks.size(); start += block_size) {
+    for (int_t start = 0; start < search_jobs.size(); start += block_size) {
         Timer t;
-        int_t end = std::min(start + block_size, (int_t) search_tasks.size());
+        int_t end = std::min(start + block_size, (int_t) search_jobs.size());
         for (int_t thr = 0; thr < n_threads; ++thr) threads[thr] = std::thread(lambda, thr, start, end);
         for (auto& thr : threads) thr.join();
-        std::cout << "calculate_distances_brute_smart  ::  " << start + 1 << '-' << end << " / " << search_tasks.size() << " (" << n_threads << " threads)  ::  " << t.get_time_since_start() << "  ::  " << timer.get_time_since_start() << std::endl;
+        if (verbose) std::cout << timer.get_time_block_since_start() << " Calculated distances for block " << start + 1 << '-' << end << " / " << search_jobs.size() << " in " << t.get_time_since_mark() << "." << std::endl;
     }
-    for (int_t i = 0; i < couplings.size(); ++i) ofs << couplings.line(i) << ' ' << res[i] << std::endl;
-    std::cout << "calculate_distances_brute_smart  ::  Stored result for " << neat_number_str(couplings.size()) << " couplings ::  " << timer.get_time_since_mark() << "  ::  " << timer.get_time_since_start_and_set_mark() << std::endl;
+    return res;
 }
 
-// Compute distances between source and targets.
-// Can constrain the search to not search further than a given distance by providing a max distance.
-// If not provided, its default value is INT_T_MAX.
-std::vector<int_t> distance(const Graph& graph, int_t source, const std::vector<int_t>& targets, int_t max_distance) {
-    std::vector<int_t> dist(graph.size(), max_distance), is_target(graph.size());
-    int_t targets_left = targets.size();
+// Compute shortest distance between source(s) and targets. Can constrain the search to stop at max distance (set to REAL_T_MAX by default).
+std::vector<real_t> distance(const Graph& graph, const std::vector<std::pair<int_t, real_t>>& sources, const std::vector<int_t>& targets, real_t max_distance) {
+    std::vector<real_t> dist(graph.size(), max_distance);
+    std::vector<bool> is_target(graph.size());
     for (auto w : targets) is_target[w] = true;
-    dist[source] = graph[source].weight(); // Weights are computed by nodes rather than edges.
-    std::set<std::pair<int_t, int_t>> queue{{dist[source], source}}; // (distance, node) pairs.
+    std::set<std::pair<real_t, int_t>> queue; // (distance, node) pairs.
+    for (auto s : sources) {
+        dist[s.first] = s.second;
+        queue.emplace(s.second, s.first);
+    }
+    int_t targets_left = targets.size(), neighbor_idx;
+    real_t weight;
     while (!queue.empty()) {
         auto node = queue.begin()->second;
-        if (is_target[node]) --targets_left;
+        queue.erase(queue.begin());
+        if (is_target[node]) {
+            --targets_left;
+            is_target[node] = false;
+        }
         if (targets_left == 0) break; // Calculated distances for all targets.
-        queue.erase(queue.begin());
         for (auto neighbor : graph[node].neighbors()) {
-            auto weight = graph[neighbor].weight() + graph.get_gerry_edge_weight(node, neighbor);
-            if (dist[node] + weight < dist[neighbor]) {
-                queue.erase({dist[neighbor], neighbor});
-                dist[neighbor] = dist[node] + weight;
-                queue.insert({dist[neighbor], neighbor});
+            std::tie(neighbor_idx, weight) = neighbor;
+            if (dist[node] + weight < dist[neighbor_idx]) {
+                queue.erase({dist[neighbor_idx], neighbor_idx});
+                dist[neighbor_idx] = dist[node] + weight;
+                queue.insert({dist[neighbor_idx], neighbor_idx});
             }
         }
     }
-    std::vector<int_t> target_dist(targets.size());
-    for (int_t i = 0; i < targets.size(); ++i) target_dist[i] = dist[targets[i]];
+    std::vector<real_t> target_dist;
+    for (auto target : targets) target_dist.push_back(dist[target]);
     return target_dist;
-}
-
-// Compute distance between source and destination.
-// Can constrain the search to not search further than a given distance by providing a max distance.
-// If not provided, its default value is INT_T_MAX.
-int_t distance(const Graph& graph, int_t source, int_t destination, int_t max_distance) {
-    if (graph[source].component_id() != graph[destination].component_id()) return -1;
-    std::vector<int_t> dist(graph.size(), max_distance);
-    dist[source] = graph[source].weight(); // Weights are computed by nodes rather than edges.
-    std::set<std::pair<int_t, int_t>> queue{{dist[source], source}}; // (distance, node) pairs.
-    while (!queue.empty()) {
-        auto node = queue.begin()->second;
-        if (node == destination) return dist[node];
-        queue.erase(queue.begin());
-        for (auto neighbor : graph[node].neighbors()) {
-            auto weight = graph[neighbor].weight() + graph.get_gerry_edge_weight(node, neighbor);
-            if (dist[node] + weight < dist[neighbor]) {
-                queue.erase({dist[neighbor], neighbor});
-                dist[neighbor] = dist[node] + weight;
-                queue.insert({dist[neighbor], neighbor});
-            }
-        }
-    }
-    return -1;
 }
 

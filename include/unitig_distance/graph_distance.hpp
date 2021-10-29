@@ -1,31 +1,20 @@
 #pragma once
 
 #include <string>
+#include <tuple>
 #include <vector>
 
 #include "Couplings.hpp"
 #include "Graph.hpp"
+#include "search_job.hpp"
+#include "SingleGenomeGraph.hpp"
 #include "Timer.hpp"
 #include "types.hpp"
 
-// Data structure for searches.
-struct search_task;
+void calculate_sgg_distances(const SingleGenomeGraph& sg_graph, const std::vector<search_job>& search_jobs, std::vector<std::tuple<real_t, real_t, real_t, int_t>>& res, Timer& timer, int_t n_couplings, int_t n_threads, int_t block_size, real_t max_distance = REAL_T_MAX);
 
-// Compute number of queries for each vertex and aggregate into search tasks.
-std::vector<search_task> compute_search_tasks(const Couplings& couplings);
+std::vector<real_t> calculate_distances(const Graph& graph, const std::vector<search_job>& search_jobs, Timer& timer, int_t n_couplings, int_t n_threads, int_t block_size, real_t max_distance = REAL_T_MAX, bool verbose = false);
 
-// Calculate distances for all couplings with a brute-force search.
-void calculate_distances_brute(const Graph& graph, const Couplings& couplings, const std::string& out_filename, Timer& timer, int_t n_threads, int_t block_size, int_t max_distance = INT_T_MAX, bool verbose = false);
+// Compute shortest distance between source(s) and targets. Can constrain the search to stop at max distance (set to REAL_T_MAX by default).
+std::vector<real_t> distance(const Graph& graph, const std::vector<std::pair<int_t, real_t>>& sources, const std::vector<int_t>& targets, real_t max_distance = REAL_T_MAX);
 
-// Calculate distances for all couplings with a smarter search.
-void calculate_distances_brute_smart(const Graph& graph, const Couplings& couplings, const std::string& out_filename, Timer& timer, int_t n_threads, int_t block_size, int_t max_distance = INT_T_MAX, bool verbose = false);
-
-// Compute distances between source and targets.
-// Can constrain the search to not search further than a given distance by providing a max distance.
-// If not provided, its default value is INT_T_MAX.
-std::vector<int_t> distance(const Graph& graph, int_t source, const std::vector<int_t>& targets, int_t max_distance);
-
-// Compute distance between source and destination.
-// Can constrain the search to not search further than a given distance by providing a max distance.
-// If not provided, its default value is INT_T_MAX.
-int_t distance(const Graph& graph, int_t source, int_t destination, int_t max_distance = INT_T_MAX);
