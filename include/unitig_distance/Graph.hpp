@@ -39,13 +39,8 @@ public:
     std::size_t right_node(int_t node_id) const { return node_id * 2 + 1; }
     int_t idx_to_id(std::size_t idx) const { return idx / 2; }
 
-    // Node one-basedness.
     bool one_based() const { return m_one_based; }
-    void set_one_based(bool one_based) { m_one_based = one_based; }
-
-    // Node two-sidedness.
     bool two_sided() const { return m_two_sided; }
-    void set_two_sided(bool two_sided) { m_two_sided = two_sided; }
 
     // Get details about the graph.
     std::tuple<int_t, int_t, int_t> get_details() const;
@@ -63,5 +58,8 @@ private:
 
     bool m_one_based = false;
     bool m_two_sided = false;
+
+    void set_one_based(bool one_based) { m_one_based = one_based; }
+    void set_two_sided(bool two_sided) { m_two_sided = two_sided; }
 
 };
