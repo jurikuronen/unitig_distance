@@ -22,7 +22,7 @@ clean:
 -include $(DEPENDS)
 
 $(EXECNAME): $(OBJECTS)
-	$(CXX) $(LDFLAGS) $(OBJECTS) -o $(BUILDDIR)/$(EXECNAME)
+	mkdir -p $(BUILDDIR); $(CXX) $(LDFLAGS) $(OBJECTS) -o $(BUILDDIR)/$(EXECNAME)
 
 $(OBJDIR)/%.o: $(SRCDIR)/%.cpp
-	$(CXX) $(CXXFLAGS) -MMD -MP -c $< -o $@
+	mkdir -p $(OBJDIR); $(CXX) $(CXXFLAGS) -MMD -MP -c $< -o $@
