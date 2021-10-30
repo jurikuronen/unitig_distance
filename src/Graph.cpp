@@ -10,12 +10,7 @@
 #include "types.hpp"
 
 // Copy constructor
-Graph::Graph(const Graph& graph) {
-    m_nodes.resize(graph.size());
-    set_one_based(graph.one_based());
-    set_two_sided(graph.two_sided());
-    for (auto i = 0; i < graph.size(); ++i) m_nodes[i] = graph[i];
-}
+Graph::Graph(const Graph& graph) = default;
 
 // Construct the combined graph that stores two sides for each node: one for its left side and one for its right side, considered from the canonical form.
 Graph::Graph(const std::string& nodes_filename, const std::string& edges_filename, int_t kmer_length) {
