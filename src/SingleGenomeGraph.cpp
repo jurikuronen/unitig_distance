@@ -14,8 +14,6 @@ SingleGenomeGraph::SingleGenomeGraph(const Graph& combined_graph, const std::str
     m_node_map.resize(graph.size(), std::make_pair(INT_T_MAX, INT_T_MAX));
 
     std::vector<bool> visited(graph.size());
-    std::size_t parent, idx;
-    real_t weight;
 
     // Run a DFS on the edge-induced subgraph to construct a graph with compressed paths.
     for (auto node = 0; node < graph.size(); ++node) {
@@ -25,6 +23,8 @@ SingleGenomeGraph::SingleGenomeGraph(const Graph& combined_graph, const std::str
         std::vector<std::tuple<std::size_t, std::size_t, real_t>> stack;
         dfs_add_neighbors_to_stack(graph, visited, stack, node);
         while (!stack.empty()) {
+            std::size_t parent, idx;
+            real_t weight;
             std::tie(parent, idx, weight) = stack.back();
             stack.pop_back();
             if (visited[idx]) {
