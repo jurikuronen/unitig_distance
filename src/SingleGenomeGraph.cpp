@@ -66,7 +66,7 @@ void SingleGenomeGraph::process_path(const Graph& graph, std::vector<bool>& visi
         if (idx == path_start_node || mapped_idx(idx) == 0) break; // Loop or dfs start node.
     }
     auto path_idx = n_paths();
-    for (auto i = 0; i < nodes_in_path.size() - 1; ++i) {
+    for (auto i = 0; i + 1 < nodes_in_path.size(); ++i) {
         visited[nodes_in_path[i]] = true;
         map_node(nodes_in_path[i], path_idx, i);
     }
