@@ -11,7 +11,7 @@ std::vector<search_job> compute_search_jobs(const Couplings& couplings) {
     std::vector<search_job> search_jobs;
     // Get queries for each vertex, storing also the coupling indices.
     std::unordered_map<int_t, std::unordered_map<int_t, int_t>> queries;
-    for (int_t idx = 0; idx < couplings.size(); ++idx) {
+    for (std::size_t idx = 0; idx < couplings.size(); ++idx) {
         int_t v = couplings.v(idx);
         int_t w = couplings.w(idx);
         queries[v].emplace(w, idx);

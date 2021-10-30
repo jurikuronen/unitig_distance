@@ -16,7 +16,7 @@ SingleGenomeGraph::SingleGenomeGraph(const Graph& combined_graph, const std::str
     std::vector<bool> visited(graph.size());
 
     // Run a DFS on the edge-induced subgraph to construct a graph with compressed paths.
-    for (auto node = 0; node < graph.size(); ++node) {
+    for (std::size_t node = 0; node < graph.size(); ++node) {
         if (visited[node] || graph[node].degree() == 0) continue;
         add_and_map_node(node);
         visited[node] = true;
@@ -71,7 +71,7 @@ void SingleGenomeGraph::process_path(const Graph& graph, std::vector<bool>& visi
         if (mapped_idx(idx) != INT_T_MAX) break; // Stop at already mapped node, which is dfs start node or a loop was found.
     }
     auto path_idx = n_paths();
-    for (auto i = 0; i + 1 < nodes_in_path.size(); ++i) {
+    for (std::size_t i = 0; i + 1 < nodes_in_path.size(); ++i) {
         visited[nodes_in_path[i]] = true;
         map_node(nodes_in_path[i], path_idx, i);
     }

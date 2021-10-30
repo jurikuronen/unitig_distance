@@ -5,7 +5,7 @@ SRCDIR = src
 EXECNAME = ud
 
 CXX = g++
-CXXFLAGS = -std=c++11 -pthread -march=native -O2 -pedantic -Wall -Wno-signed-compare -I$(IDIR)
+CXXFLAGS = -std=c++11 -pthread -march=native -O2 -pedantic -Wall -I$(IDIR)
 LDFLAGS = -pthread
 
 SOURCES = $(shell find $(SRCDIR) -type f -name *.cpp)

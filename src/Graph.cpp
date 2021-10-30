@@ -62,7 +62,7 @@ Graph::Graph(const Graph& combined_graph, const std::string& filter_filename, in
     for (std::string node_id, value, unitig; filter_file >> node_id >> value >> unitig; ) {
         values[std::stoll(node_id) - one_based()] = std::stoll(value);
     }
-    for (int_t v = 0; v < true_size(); ++v) {
+    for (std::size_t v = 0; v < true_size(); ++v) {
         if (values[v] >= criterion) {
             remove_neighbors(left_node(v));
             remove_neighbors(right_node(v));
@@ -101,7 +101,7 @@ void Graph::remove_edge(std::size_t idx_1, std::size_t idx_2) {
 
 std::tuple<int_t, int_t, int_t> Graph::get_details() const {
     int_t n_nodes = 0, n_edges = 0, max_degree = 0;
-    for (auto i = 0; i < size(); ++i) {
+    for (std::size_t i = 0; i < size(); ++i) {
         int_t sz = (*this)[i].neighbors().size();
         if (two_sided()) {
             sz += (*this)[i + 1].neighbors().size();
