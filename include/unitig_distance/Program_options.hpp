@@ -18,12 +18,6 @@ public:
             m_valid_state = false;
             return;
         }
-        arg_reader = find_arg_name(argv, argv_end, "-?", "--help-argument");
-        if (arg_reader) {
-            print_manual();
-            m_valid_state = false;
-            return;
-        }
         // Parse required arguments.
         if (arg_reader = find_arg_value(argv, argv_end, "-V", "--vertices-file")) m_nodes_filename = std::string(arg_reader);
         if (arg_reader = find_arg_value(argv, argv_end, "-E", "--edges-file")) m_edges_filename = std::string(arg_reader);
@@ -147,25 +141,8 @@ private:
             "  -g [--concurrent-graphs] arg (=--threads)", "Number of single genome graphs to hold in memory.",
             "  -p [--print-unitigs]", "Print unitigs.",
             "  -h [ --help ]", "Print this list.",
-            "  -? [ --help-argument ] arg?", "More information about a specific argument. If arg not provided, print everything."
         };
         for (auto i = 0; i < options.size(); i += 2) std::printf("%-45s %s\n", options[i].data(), options[i + 1].data());
-    }
-
-    void print_manual() {
-        // blank: print everything
-        // -V, -E, -C, -P -> format info
-        // -k -> required for correct weights
-        // -o -> what files will be created from this, cg, fcg, etc explanation
-        // -n -> self-explanatory
-        // -1 -> explain spydrpick thingy
-        // -r -> skip cg calculations
-        // -b -> self-expl
-        // -v -> self-expl
-        // -F -> what it does
-        // -c -> what it does
-        // -g -> why set to threads, why faster etc
-        // -h+-? -> self-expl
     }
 
     void push_back(std::vector<std::string>& arguments, const std::string& opt, const std::string& val) {
