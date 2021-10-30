@@ -31,7 +31,7 @@ public:
         ofs << "id_1 id_2 distance aracne_flag mi";
         if (m_unitigs.size()) ofs << " unitig_1 unitig_2";
         ofs << "\n";
-        for (auto i = 0; i < size(); ++i) {
+        for (std::size_t i = 0; i < size(); ++i) {
             int_t distance = distances[i] == REAL_T_MAX ? -1 : distances[i];
             ofs << v(i) << ' ' << w(i) << ' ' << distance << ' ' << aracne_flag(i) << ' ' << mi(i);
             if (m_unitigs.size()) ofs << ' ' << unitig(v(i)) << ' ' << unitig(w(i));
@@ -45,7 +45,7 @@ public:
         ofs << "id_1 id_2 count aracne_flag mi";
         if (m_unitigs.size()) ofs << " unitig_1 unitig_2";
         ofs << "\n";
-        for (auto i = 0; i < size(); ++i) {
+        for (std::size_t i = 0; i < size(); ++i) {
             ofs << v(i) << ' ' << w(i) << ' ' << counts[i] << ' ' << aracne_flag(i) << ' ' << mi(i);
             if (m_unitigs.size()) ofs << ' ' << unitig(v(i)) << ' ' << unitig(w(i));
             ofs << "\n";

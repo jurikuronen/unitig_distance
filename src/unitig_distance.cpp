@@ -142,12 +142,12 @@ int main(int argc, char** argv) {
 
             std::vector<distance_tuple_t> sgg_distances(po.n_couplings(), std::make_tuple(REAL_T_MAX, 0.0, 0.0, 0));
 
-            for (auto i = 0; i < path_edge_files.size(); i += batch_size) {
-                auto batch = std::min(i + batch_size, (int_t) path_edge_files.size()) - i;
+            for (std::size_t i = 0; i < path_edge_files.size(); i += batch_size) {
+                auto batch = std::min(i + batch_size, path_edge_files.size()) - i;
                 // Construct a batch of single genome graphs.
                 if (po.verbose()) t_sgg.set_mark();
                 std::vector<std::thread> threads;
-                for (auto thr = 0; thr < batch; ++thr) threads.emplace_back(construct_sgg, thr, path_edge_files[i + thr]);
+                for (std::size_t thr = 0; thr < batch; ++thr) threads.emplace_back(construct_sgg, thr, path_edge_files[i + thr]);
                 for (auto& thr : threads) thr.join();
                 if (po.verbose()) {
                     t_sgg.add_time_since_mark();

@@ -19,25 +19,25 @@ public:
             return;
         }
         // Parse required arguments.
-        if (arg_reader = find_arg_value(argv, argv_end, "-V", "--vertices-file")) m_nodes_filename = std::string(arg_reader);
-        if (arg_reader = find_arg_value(argv, argv_end, "-E", "--edges-file")) m_edges_filename = std::string(arg_reader);
-        if (arg_reader = find_arg_value(argv, argv_end, "-k", "--k-mer-length")) m_k = std::stoll(arg_reader);
+        if ((arg_reader = find_arg_value(argv, argv_end, "-V", "--vertices-file"))) m_nodes_filename = std::string(arg_reader);
+        if ((arg_reader = find_arg_value(argv, argv_end, "-E", "--edges-file"))) m_edges_filename = std::string(arg_reader);
+        if ((arg_reader = find_arg_value(argv, argv_end, "-k", "--k-mer-length"))) m_k = std::stoll(arg_reader);
         // Required if --n_couplings > 0.
-        if (arg_reader = find_arg_value(argv, argv_end, "-C", "--couplings-file")) m_couplings_filename = std::string(arg_reader);
+        if ((arg_reader = find_arg_value(argv, argv_end, "-C", "--couplings-file"))) m_couplings_filename = std::string(arg_reader);
         // Parse optional arguments.
-        if (arg_reader = find_arg_value(argv, argv_end, "-P", "--paths-file")) m_paths_filename = std::string(arg_reader);
-        if (arg_reader = find_arg_value(argv, argv_end, "-o", "--output-stem")) m_out_stem = std::string(arg_reader);
-        if (arg_reader = find_arg_value(argv, argv_end, "-n", "--n-couplings")) m_n_couplings = std::stoll(arg_reader);
-        if (arg_reader = find_arg_name(argv, argv_end, "-1", "--couplings-one-based")) m_one_based = true;
-        if (arg_reader = find_arg_name(argv, argv_end, "-r", "--run-sggs-only")) m_run_sggs_only = true;
-        if (arg_reader = find_arg_value(argv, argv_end, "-b", "--block-size")) m_block_size = std::stoll(arg_reader);
-        if (arg_reader = find_arg_value(argv, argv_end, "-d", "--max-distance")) m_max_distance = std::stoll(arg_reader);
-        if (arg_reader = find_arg_value(argv, argv_end, "-t", "--threads")) m_n_threads = std::stoll(arg_reader);
-        if (arg_reader = find_arg_name(argv, argv_end, "-v", "--verbose")) m_verbose = true;
-        if (arg_reader = find_arg_value(argv, argv_end, "-F", "--filter-file")) m_filter_filename = std::string(arg_reader);
-        if (arg_reader = find_arg_value(argv, argv_end, "-c", "--filter-criterion")) m_filter_criterion = std::stod(arg_reader);
-        if (arg_reader = find_arg_value(argv, argv_end, "-g", "--concurrent-graphs")) m_concurrent_graphs = std::stod(arg_reader); else m_concurrent_graphs = n_threads();
-        if (arg_reader = find_arg_name(argv, argv_end, "-p", "--print-unitigs")) m_print_unitigs = true;
+        if ((arg_reader = find_arg_value(argv, argv_end, "-P", "--paths-file"))) m_paths_filename = std::string(arg_reader);
+        if ((arg_reader = find_arg_value(argv, argv_end, "-o", "--output-stem"))) m_out_stem = std::string(arg_reader);
+        if ((arg_reader = find_arg_value(argv, argv_end, "-n", "--n-couplings"))) m_n_couplings = std::stoll(arg_reader);
+        if ((arg_reader = find_arg_name(argv, argv_end, "-1", "--couplings-one-based"))) m_one_based = true;
+        if ((arg_reader = find_arg_name(argv, argv_end, "-r", "--run-sggs-only"))) m_run_sggs_only = true;
+        if ((arg_reader = find_arg_value(argv, argv_end, "-b", "--block-size"))) m_block_size = std::stoll(arg_reader);
+        if ((arg_reader = find_arg_value(argv, argv_end, "-d", "--max-distance"))) m_max_distance = std::stoll(arg_reader);
+        if ((arg_reader = find_arg_value(argv, argv_end, "-t", "--threads"))) m_n_threads = std::stoll(arg_reader);
+        if ((arg_reader = find_arg_name(argv, argv_end, "-v", "--verbose"))) m_verbose = true;
+        if ((arg_reader = find_arg_value(argv, argv_end, "-F", "--filter-file"))) m_filter_filename = std::string(arg_reader);
+        if ((arg_reader = find_arg_value(argv, argv_end, "-c", "--filter-criterion"))) m_filter_criterion = std::stod(arg_reader);
+        if ((arg_reader = find_arg_value(argv, argv_end, "-g", "--concurrent-graphs"))) m_concurrent_graphs = std::stod(arg_reader); else m_concurrent_graphs = n_threads();
+        if ((arg_reader = find_arg_name(argv, argv_end, "-p", "--print-unitigs"))) m_print_unitigs = true;
         m_valid_state = all_required_arguments_provided();
         if (verbose()) print_arguments();
     }
@@ -142,7 +142,7 @@ private:
             "  -p [--print-unitigs]", "Print unitigs.",
             "  -h [ --help ]", "Print this list.",
         };
-        for (auto i = 0; i < options.size(); i += 2) std::printf("%-45s %s\n", options[i].data(), options[i + 1].data());
+        for (std::size_t i = 0; i < options.size(); i += 2) std::printf("%-45s %s\n", options[i].data(), options[i + 1].data());
     }
 
     void push_back(std::vector<std::string>& arguments, const std::string& opt, const std::string& val) {
@@ -168,7 +168,7 @@ private:
         if (filter_filename() != "") push_back(arguments, "  --filter-criterion", std::to_string(filter_criterion()));
         push_back(arguments, "  --concurrent-graphs", std::to_string(concurrent_graphs()));
         push_back(arguments, "  --print-unitigs", print_unitigs() ? "TRUE" : "FALSE");
-        for (auto i = 0; i < arguments.size(); i += 2) std::printf("%-30s %s\n", arguments[i].data(), arguments[i + 1].data());
+        for (std::size_t i = 0; i < arguments.size(); i += 2) std::printf("%-30s %s\n", arguments[i].data(), arguments[i + 1].data());
         std::cout << '\n';
     }
 
