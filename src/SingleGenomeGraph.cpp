@@ -63,7 +63,7 @@ void SingleGenomeGraph::process_path(const Graph& graph, std::vector<bool>& visi
         nodes_in_path.push_back(idx);
         weight += D.back();
         D.push_back(weight);
-        if (idx == path_start_node || mapped_idx(idx) == 0) break; // Loop or dfs start node.
+        if (mapped_idx(idx) != INT_T_MAX) break; // Stop at already mapped node, which is dfs start node or a loop was found.
     }
     auto path_idx = n_paths();
     for (auto i = 0; i + 1 < nodes_in_path.size(); ++i) {
