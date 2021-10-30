@@ -10,7 +10,7 @@ make
 ## Run
 Basic use with default options:
 ```
-./bin/ud -v <path_to_nodes> -e <path_to_edges> -c <path_to_couplings>
+./bin/ud -V <path_to_nodes> -E <path_to_edges> -C <path_to_couplings>
 ```
 Use `-1` if couplings are one-based. Graph nodes/edges one-basedness will be detected by the Graph constructor.
 
