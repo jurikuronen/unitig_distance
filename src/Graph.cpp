@@ -27,7 +27,6 @@ Graph::Graph(const std::string& nodes_filename, const std::string& edges_filenam
     // Check for one-basedness before adding nodes.
     set_one_based(node == "1");
     do {
-        int_t node_id = std::stoll(node) - one_based();
         real_t self_edge_weight = (real_t) sequence.size() - kmer_length;
         // Add left and right sides.
         add_node();
