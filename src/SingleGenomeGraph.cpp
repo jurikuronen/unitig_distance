@@ -41,7 +41,12 @@ SingleGenomeGraph::SingleGenomeGraph(const Graph& combined_graph, const std::str
     }
 }
 
-void SingleGenomeGraph::dfs_add_neighbors_to_stack(const Graph& graph, const std::vector<bool>& visited, std::vector<std::tuple<std::size_t, std::size_t, real_t>>& stack, std::size_t node) {
+void SingleGenomeGraph::dfs_add_neighbors_to_stack(
+    const Graph& graph,
+    const std::vector<bool>& visited,
+    std::vector<std::tuple<std::size_t, std::size_t, real_t>>& stack,
+    std::size_t node)
+{
     for (auto neighbor : graph[node]) {
         auto neighbor_idx = neighbor.first;
         auto weight = neighbor.second;
