@@ -36,7 +36,6 @@ public:
         if ((arg_reader = find_arg_name(argv, argv_end, "-v", "--verbose"))) m_verbose = true;
         if ((arg_reader = find_arg_value(argv, argv_end, "-F", "--filter-file"))) m_filter_filename = std::string(arg_reader);
         if ((arg_reader = find_arg_value(argv, argv_end, "-c", "--filter-criterion"))) m_filter_criterion = std::stod(arg_reader);
-        if ((arg_reader = find_arg_value(argv, argv_end, "-g", "--concurrent-graphs"))) m_concurrent_graphs = std::stod(arg_reader); else m_concurrent_graphs = n_threads();
         m_valid_state = all_required_arguments_provided();
         if (verbose()) print_arguments();
     }
@@ -53,7 +52,6 @@ public:
     real_t max_distance() const { return m_max_distance; }
     int_t n_threads() const { return m_n_threads; }
     int_t filter_criterion() const { return m_filter_criterion; }
-    int_t concurrent_graphs() const { return m_concurrent_graphs; }
     bool one_based() const { return m_one_based; }
     bool run_sggs_only() const { return m_run_sggs_only; }
     bool verbose() const { return m_verbose; }
@@ -82,7 +80,6 @@ private:
     real_t m_max_distance = REAL_T_MAX;
     int_t m_n_threads = 1;
     int_t m_filter_criterion = 2;
-    int_t m_concurrent_graphs = 1;
     bool m_one_based = false;
     bool m_run_sggs_only = false;
     bool m_verbose = false;
@@ -135,7 +132,6 @@ private:
             "  -v [--verbose]", "Be verbose.",
             "  -F [--filter-file] arg", "Path to file containing unitigs that will be filtered.",
             "  -c [--filter-criterion] arg (=2)", "Criterion for the filter.",
-            "  -g [--concurrent-graphs] arg (=--threads)", "Number of single genome graphs to hold in memory.",
             "  -h [ --help ]", "Print this list.",
         };
         for (std::size_t i = 0; i < options.size(); i += 2) std::printf("%-45s %s\n", options[i].data(), options[i + 1].data());

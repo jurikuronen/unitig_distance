@@ -135,7 +135,7 @@ int main(int argc, char** argv) {
             auto n_sggs = path_edge_files.size();
             
             Timer t_sgg, t_sgg_distances;
-            int_t batch_size = po.concurrent_graphs(), n_nodes = 0, n_edges = 0;
+            int_t batch_size = po.n_threads(), n_nodes = 0, n_edges = 0;
 
             std::vector<SingleGenomeGraph> sg_graphs(batch_size);
             auto construct_sgg = [&combined_graph, &sg_graphs](int_t thr, const std::string& path_edges) {
