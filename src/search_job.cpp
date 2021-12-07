@@ -3,17 +3,17 @@
 #include <utility>
 #include <vector>
 
-#include "Couplings.hpp"
 #include "search_job.hpp"
+#include "SpydrPickOutput.hpp"
 #include "types.hpp"
 
-std::vector<search_job> compute_search_jobs(const Couplings& couplings) {
+std::vector<search_job> compute_search_jobs(const SpydrPickOutput& spydrpick_output) {
     std::vector<search_job> search_jobs;
-    // Get queries for each vertex, storing also the coupling indices.
+    // Get queries for each vertex, storing also the original indices.
     std::unordered_map<int_t, std::unordered_map<int_t, int_t>> queries;
-    for (std::size_t idx = 0; idx < couplings.size(); ++idx) {
-        int_t v = couplings.v(idx);
-        int_t w = couplings.w(idx);
+    for (std::size_t idx = 0; idx < spydrpick_output.size(); ++idx) {
+        int_t v = spydrpick_output.v(idx);
+        int_t w = spydrpick_output.w(idx);
         queries[v].emplace(w, idx);
         queries[w].emplace(v, idx);
     }

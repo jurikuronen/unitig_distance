@@ -5,7 +5,6 @@
 #include <utility>
 #include <vector>
 
-#include "Couplings.hpp"
 #include "Graph.hpp"
 #include "graph_distance.hpp"
 #include "search_job.hpp"
@@ -110,15 +109,15 @@ static void add_job_distances_to_results(const search_job& job, const std::vecto
     for (std::size_t w_idx = 0; w_idx < job_dist.size(); ++w_idx) {
         auto distance = job_dist[w_idx];
         if (distance == REAL_T_MAX) continue;
-        auto coupling_index = job.coupling_index(w_idx);
+        auto original_index = job.original_index(w_idx);
         real_t min, max, mean;
         int_t count;
-        std::tie(min, max, mean, count) = res[coupling_index];
+        std::tie(min, max, mean, count) = res[original_index];
         min = std::min(min, distance);
         max = std::max(max, distance);
         mean = (mean * count + distance) / (count + 1);
         ++count;
-        res[coupling_index] = std::make_tuple(min, max, mean, count);
+        res[original_index] = std::make_tuple(min, max, mean, count);
     }
 }
 
@@ -127,7 +126,7 @@ void calculate_sgg_distances(
     const std::vector<search_job>& search_jobs,
     std::vector<distance_tuple_t>& res,
     Timer& timer,
-    int_t n_couplings,
+    int_t n_queries,
     int_t n_threads,
     int_t block_size,
     real_t max_distance)
@@ -161,13 +160,13 @@ std::vector<real_t> calculate_distances(
     const Graph& combined_graph,
     const std::vector<search_job>& search_jobs,
     Timer& timer,
-    int_t n_couplings,
+    int_t n_queries,
     int_t n_threads,
     int_t block_size,
     real_t max_distance,
     bool verbose)
 {
-    std::vector<real_t> res(n_couplings);
+    std::vector<real_t> res(n_queries);
     auto calculate_distance_block = [&combined_graph, &search_jobs, &res, n_threads, max_distance](std::size_t thr, std::size_t start, std::size_t end) {
         for (std::size_t i = thr + start; i < end; i += n_threads) {
             const auto& job = search_jobs[i];
@@ -178,7 +177,7 @@ std::vector<real_t> calculate_distances(
                 targets.push_back(combined_graph.right_node(w));
             }
             auto target_dist = distance(combined_graph, sources, targets, max_distance);
-            for (std::size_t w_idx = 0; w_idx < job.size(); ++w_idx) res[job.coupling_index(w_idx)] = std::min(target_dist[2 * w_idx], target_dist[2 * w_idx + 1]);
+            for (std::size_t w_idx = 0; w_idx < job.size(); ++w_idx) res[job.original_index(w_idx)] = std::min(target_dist[2 * w_idx], target_dist[2 * w_idx + 1]);
         }
     };
     std::vector<std::thread> threads(n_threads);

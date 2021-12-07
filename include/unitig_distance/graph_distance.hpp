@@ -4,7 +4,6 @@
 #include <tuple>
 #include <vector>
 
-#include "Couplings.hpp"
 #include "Graph.hpp"
 #include "search_job.hpp"
 #include "SingleGenomeGraph.hpp"
@@ -16,7 +15,7 @@ void calculate_sgg_distances(
     const std::vector<search_job>& search_jobs,
     std::vector<std::tuple<real_t, real_t, real_t, int_t>>& res,
     Timer& timer,
-    int_t n_couplings,
+    int_t n_queries,
     int_t n_threads,
     int_t block_size,
     real_t max_distance = REAL_T_MAX);
@@ -25,7 +24,7 @@ std::vector<real_t> calculate_distances(
     const Graph& graph,
     const std::vector<search_job>& search_jobs,
     Timer& timer,
-    int_t n_couplings,
+    int_t n_queries,
     int_t n_threads,
     int_t block_size,
     real_t max_distance = REAL_T_MAX,
