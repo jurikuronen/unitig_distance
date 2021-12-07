@@ -31,7 +31,9 @@ Graph::Graph(const std::string& nodes_filename, const std::string& edges_filenam
 
     // Add edges.
     std::ifstream edges_file(edges_filename);
-    for (std::string node_1, node_2, edge_type; edges_file >> node_1 >> node_2 >> edge_type; ) {
+    for (std::string node_1, node_2, edge_type, overlap_str; edges_file >> node_1 >> node_2 >> edge_type >> overlap_str; ) {
+        int_t overlap = std::stoull(overlap_str);
+        if (overlap == 0) continue;
         int_t v = 2 * (std::stoll(node_1) - one_based()) + (edge_type[0] == 'F'); // F* edge means link comes from v's right side.
         int_t w = 2 * (std::stoll(node_2) - one_based()) + (edge_type[1] == 'R'); // *R edge means link goes to w's right side.
         add_edge(v, w, 1.0);
@@ -43,7 +45,9 @@ Graph::Graph(const Graph& combined_graph, const std::string& edges_filename) {
     m_nodes.resize(combined_graph.size());
     set_one_based(combined_graph.one_based());
     std::ifstream edges_file(edges_filename);
-    for (std::string node_1, node_2, edge_type; edges_file >> node_1 >> node_2 >> edge_type; ) {
+    for (std::string node_1, node_2, edge_type, overlap_str; edges_file >> node_1 >> node_2 >> edge_type >> overlap_str; ) {
+        int_t overlap = std::stoull(overlap_str);
+        if (overlap == 0) continue;
         int_t v = 2 * (std::stoll(node_1) - one_based()) + (edge_type[0] == 'F'); // F* edge means link comes from v's right side.
         int_t w = 2 * (std::stoll(node_2) - one_based()) + (edge_type[1] == 'R'); // *R edge means link goes to w's right side.
         // Add self-edges if necessary.
