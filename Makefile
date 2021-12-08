@@ -2,7 +2,7 @@ IDIR = include/unitig_distance
 BUILDDIR = bin
 OBJDIR = build
 SRCDIR = src
-EXECNAME = ud
+EXECNAME = unitig_distance
 
 CXX = g++
 CXXFLAGS = -std=c++11 -pthread -march=native -O2 -pedantic -Wall -I$(IDIR)
