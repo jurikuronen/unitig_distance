@@ -1,3 +1,6 @@
+/*
+    A time-keeping class.
+*/
 #pragma once
 
 #include <chrono>
@@ -7,7 +10,6 @@
 
 #include "types.hpp"
 
-// A time-keeping class.
 class Timer {
 public:
     using clock = std::chrono::high_resolution_clock;
@@ -28,20 +30,17 @@ private:
     clock::time_point m_start; // Set when Timer is created.
     clock::time_point m_mark; // Custom time point mark.
     clock::duration m_stopwatch; // Accumulates time.
+
     clock::time_point now() const { return clock::now(); }
     clock::duration time_elapsed(const clock::time_point& tp) const { return now() - tp; }
     int_t convert_to_ms(const clock::duration& t) const { return std::chrono::duration_cast<std::chrono::milliseconds>(t).count() % 1000; }
-    int_t convert_to_s(const clock::duration& t) const { return std::chrono::duration_cast<std::chrono::seconds>(t).count() % 60; }
-    int_t convert_to_m(const clock::duration& t) const { return std::chrono::duration_cast<std::chrono::minutes>(t).count() % 60; }
-    int_t convert_to_h(const clock::duration& t) const { return std::chrono::duration_cast<std::chrono::hours>(t).count() % 24; }
-    int_t convert_to_d(const clock::duration& t) const { return std::chrono::duration_cast<std::chrono::hours>(t).count() / 24; }
     std::string get_time_block(const clock::duration& t) const {
         std::ostringstream oss;
         auto ms = convert_to_ms(t);
-        auto s = convert_to_s(t);
-        auto m = convert_to_m(t);
-        auto h = convert_to_h(t);
-        auto d = convert_to_d(t);
+        auto s = ms / 1000 % 60;
+        auto m = ms / 1000 / 60 % 60;
+        auto h = ms / 1000 / 60 / 60 % 24;
+        auto d = ms / 1000 / 60 / 60 / 24;
         oss << "[";
         if (d) oss << pad(d) << "d " << pad(h) << "h";
         else if (h) oss << pad(h) << "h " << pad(m) << "m";
