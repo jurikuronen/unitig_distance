@@ -37,7 +37,6 @@ public:
     std::size_t true_size() const { return size() / 2; }
     std::size_t left_node(int_t node_id) const { return node_id * 2; }
     std::size_t right_node(int_t node_id) const { return node_id * 2 + 1; }
-    int_t idx_to_id(std::size_t idx) const { return idx / 2; }
 
     bool one_based() const { return m_one_based; }
     bool two_sided() const { return m_two_sided; }
