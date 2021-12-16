@@ -3,19 +3,19 @@ unitig_distance is a command line program that calculates graph-theoretic shorte
 
 As the name suggests, the impetus for designing unitig_distance comes from bioinformatics. The primary motivation is to be able to calculate, in reasonable time, millions of distance queries in compacted de Bruijn graphs constructed from genome references, where graph vertices correspond to unitigs. These kind of graphs tend to be very large (millions of vertices and edges) and highly connected with vertex-connectivity in the bulk of the graph being at least 4, which means that typical graph decompositions into 2-connected or 3-connected components in order to obtain fast distance calculation algorithms are not suitable.
 
-unitig_distance can be used to supplement programs such as [SpydrPick](https://github.com/santeripuranen/SpydrPick) that calculate pairwise scores for the unitigs, but cannot calculate their distances in the underlying compacted de Bruijn graph. For such use cases, see [Input files - Distance queries](#distance-queries) and [Usage - Compacted de Bruijn graphs](#compacted-de-bruijn-graphs).
+unitig_distance can be used to supplement programs such as [SpydrPick](https://github.com/santeripuranen/SpydrPick) that calculate pairwise scores for the unitigs, but cannot calculate their distances in the underlying compacted de Bruijn graph. For such use cases, see [Input files - Distance queries file](#distance-queries-file) and [Usage - Calculating distances in compacted de Bruijn graphs](#calculating-distances-in-compacted-de-bruijn-graphs).
 
 See also the project [gfa1_parser](https://github.com/jurikuronen/gfa1_parser) which can be used to create suitable input files for unitig_distance from genome references.
 
 ## Table of contents
 
-- [Installation from source with a C++11 compliant compiler](#installation-from-source-with-a-c++11-compliant-compiler)
+- [Installation from source with a C++11 compliant compiler](#installation-from-source-with-a-c11-compliant-compiler)
 - [Input files](#input-files)
   - [General graph](#general-graph)
   - [Compacted de Bruijn Graph](#compacted-de-bruijn-graph)
     - [Single genome graphs](#single-genome-graphs)
-  - [Distance queries](#distance-queries)
-  - [Filter](#filter)
+  - [Applying a filter on the graph](#applying-a-filter-on-the-graph)
+  - [Distance queries file](#distance-queries-file)
 - [Usage](#usage)
   - [Calculating distances in general graphs](#calculating-distances-in-general-graphs)
   - [Calculating distances in compacted de Bruijn graphs](#calculating-distances-in-compacted-de-bruijn-graphs)
