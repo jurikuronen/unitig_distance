@@ -1,6 +1,7 @@
 #pragma once
 
 #include <fstream>
+#include <iostream>
 #include <string>
 #include <utility>
 #include <vector>
@@ -17,6 +18,7 @@ public:
         for (std::string line; std::getline(ifs, line); ) {
             auto fields = unitig_distance::get_fields(line);
             if (fields.size() < 2) {
+                std::cout << "Wrong number of fields in queries file: " << queries_filename << std::endl;
                 m_queries.clear();
                 return;
             }
