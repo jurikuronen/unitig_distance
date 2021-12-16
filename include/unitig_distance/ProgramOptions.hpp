@@ -65,10 +65,10 @@ public:
 
     const std::string out_filename() const { return out_stem() + ".ud_result" + one_based_str(); }
     const std::string out_filtered_filename() const { return out_stem() + ".ud_filtered_result" + one_based_str(); }
-    const std::string out_sgg_min_filename() const { return out_stem() + ".ud_sgg_min_result + one_based_str()"; }
-    const std::string out_sgg_max_filename() const { return out_stem() + ".ud_sgg_max_result + one_based_str()"; }
-    const std::string out_sgg_mean_filename() const { return out_stem() + ".ud_sgg_mean_result + one_based_str()"; }
-    const std::string out_sgg_counts_filename() const { return out_stem() + ".ud_sgg_connected_counts + one_based_str()"; }
+    const std::string out_sgg_min_filename() const { return out_stem() + ".ud_sgg_min_result" + one_based_str(); }
+    const std::string out_sgg_max_filename() const { return out_stem() + ".ud_sgg_max_result" + one_based_str(); }
+    const std::string out_sgg_mean_filename() const { return out_stem() + ".ud_sgg_mean_result" + one_based_str(); }
+    const std::string out_sgg_counts_filename() const { return out_stem() + ".ud_sgg_connected_counts" + one_based_str(); }
 
     // For updating the value after queries were read.
     void set_n_queries(int_t n_queries) { m_n_queries = n_queries; }
