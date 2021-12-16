@@ -63,12 +63,12 @@ public:
     const OperatingMode& operating_mode() const { return m_om; }
     bool operating_mode(const OperatingMode& om) const { return operating_mode_to_bool(m_om & om); }
 
-    const std::string out_filename() const { return out_stem() + ".ud_result"; }
-    const std::string out_filtered_filename() const { return out_stem() + ".ud_filtered_result"; }
-    const std::string out_sgg_min_filename() const { return out_stem() + ".ud_sgg_min_result"; }
-    const std::string out_sgg_max_filename() const { return out_stem() + ".ud_sgg_max_result"; }
-    const std::string out_sgg_mean_filename() const { return out_stem() + ".ud_sgg_mean_result"; }
-    const std::string out_sgg_counts_filename() const { return out_stem() + ".ud_sgg_connected_counts"; }
+    const std::string out_filename() const { return out_stem() + ".ud_result" + one_based_str(); }
+    const std::string out_filtered_filename() const { return out_stem() + ".ud_filtered_result" + one_based_str(); }
+    const std::string out_sgg_min_filename() const { return out_stem() + ".ud_sgg_min_result + one_based_str()"; }
+    const std::string out_sgg_max_filename() const { return out_stem() + ".ud_sgg_max_result + one_based_str()"; }
+    const std::string out_sgg_mean_filename() const { return out_stem() + ".ud_sgg_mean_result + one_based_str()"; }
+    const std::string out_sgg_counts_filename() const { return out_stem() + ".ud_sgg_connected_counts + one_based_str()"; }
 
     // For updating the value after queries were read.
     void set_n_queries(int_t n_queries) { m_n_queries = n_queries; }
@@ -142,6 +142,8 @@ private:
             if (!sggs_filename().empty()) m_om |= OperatingMode::SGGS;
         }
     }
+
+    const std::string one_based_str() const { return queries_one_based() ? "_1_based" : ""; }
 
     char** begin() const { return m_argv; }
     char** end() const { return m_argv + m_argc; }
