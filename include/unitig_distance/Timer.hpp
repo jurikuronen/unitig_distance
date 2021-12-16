@@ -33,14 +33,14 @@ private:
 
     clock::time_point now() const { return clock::now(); }
     clock::duration time_elapsed(const clock::time_point& tp) const { return now() - tp; }
-    int_t convert_to_ms(const clock::duration& t) const { return std::chrono::duration_cast<std::chrono::milliseconds>(t).count() % 1000; }
     std::string get_time_block(const clock::duration& t) const {
         std::ostringstream oss;
-        auto ms = convert_to_ms(t);
+        int_t ms = std::chrono::duration_cast<std::chrono::milliseconds>(t).count();
         auto s = ms / 1000 % 60;
         auto m = ms / 1000 / 60 % 60;
         auto h = ms / 1000 / 60 / 60 % 24;
         auto d = ms / 1000 / 60 / 60 / 24;
+        ms %= 1000;
         oss << "[";
         if (d) oss << pad(d) << "d " << pad(h) << "h";
         else if (h) oss << pad(h) << "h " << pad(m) << "m";

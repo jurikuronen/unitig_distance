@@ -5,132 +5,196 @@
 #include <utility>
 #include <vector>
 
-#include "SpydrPickOutput.hpp"
 #include "Graph.hpp"
-#include "graph_distance.hpp"
-#include "Program_options.hpp"
-#include "search_job.hpp"
+#include "GraphDistances.hpp"
+#include "OperatingMode.hpp"
+#include "Queries.hpp"
+#include "ProgramOptions.hpp"
+#include "SearchJobs.hpp"
 #include "SingleGenomeGraph.hpp"
+#include "SingleGenomeGraphDistances.hpp"
 #include "Timer.hpp"
 #include "types.hpp"
 
-bool check_file(const std::string& filename) {
-    auto ok = std::ifstream(filename).good();
-    if (!ok) std::cout << "Can't open file " << filename << "\n";
-    return ok;
-}
+namespace unitig_distance {
 
-bool sanity_check_input_files(const Program_options& po) {
-    bool ok = check_file(po.nodes_filename()) && check_file(po.edges_filename());
-    if (po.n_queries() > 0) ok &= check_file(po.spydrpick_output_filename());    
-    if (ok) {
-        if (po.paths_filename() != "") ok &= check_file(po.paths_filename());
-        std::ifstream ifs(po.paths_filename());
-        for (std::string path_edges; ok && std::getline(ifs, path_edges); ok &= check_file(path_edges));
+    std::vector<std::string> get_fields(const std::string& line, char delim) {
+        std::vector<std::string> fields;
+        std::stringstream ss(line);
+        for (std::string field; std::getline(ss, field, delim); ) fields.push_back(std::move(field));
+        return fields;
     }
-    return ok;
-}
 
-std::string neat_number_str(int_t number) {
-    std::vector<int_t> parts;
-    do parts.push_back(number % 1000);
-    while (number /= 1000);
-    std::string number_str = std::to_string(parts.back());
-    for (int_t i = parts.size() - 2; i >= 0; --i) {
-        number_str += ' ' + std::string(3 - std::to_string(parts[i]).size(), '0') + std::to_string(parts[i]);
+    bool file_is_good(const std::string& filename) {
+        return std::ifstream(filename).good();
     }
-    return number_str;
+
+    std::string neat_number_str(int_t number) {
+        std::vector<int_t> parts;
+        do parts.push_back(number % 1000);
+        while (number /= 1000);
+        std::string number_str = std::to_string(parts.back());
+        for (int_t i = parts.size() - 2; i >= 0; --i) {
+            number_str += ' ' + std::string(3 - std::to_string(parts[i]).size(), '0') + std::to_string(parts[i]);
+        }
+        return number_str;
+    }
+
+    int_t fixed_distance(real_t distance, real_t max_distance) { return distance >= max_distance ? -1 : (int_t) distance; }
+
+    int_t left_node(int_t v) { return v * 2; }
+    int_t right_node(int_t v) { return v * 2 + 1; }
+
+    template <typename T, int IDX>
+    std::vector<T> transform_distance_tuple_vector(const std::vector<std::tuple<real_t, real_t, real_t, int_t>>& tuple_vector) {
+        std::vector<T> vector(tuple_vector.size());
+        static auto get_element = [](const std::tuple<real_t, real_t, real_t, int_t>& tuple) { return (T) std::get<IDX>(tuple); };
+        std::transform(tuple_vector.begin(), tuple_vector.end(), vector.begin(), get_element);
+        return vector;
+    }
 }
 
-using distance_tuple_t = std::tuple<real_t, real_t, real_t, int_t>;
+static bool sanity_check_input_files(const ProgramOptions& po) {
+    if (!unitig_distance::file_is_good(po.edges_filename())) {
+        std::cerr << "Can't open " << po.edges_filename() << std::endl;
+        return false;
+    }
+
+    if (po.operating_mode(OperatingMode::FILTER)) {
+        if (!unitig_distance::file_is_good(po.filter_filename())) {
+            std::cerr << "Can't open " << po.filter_filename() << std::endl;
+            return false;
+        }
+    }
+
+    if (po.operating_mode(OperatingMode::CDBG)) {
+        if (!unitig_distance::file_is_good(po.unitigs_filename())) {
+            std::cerr << "Can't open " << po.unitigs_filename() << std::endl;
+            return false;
+        }
+
+        if (po.operating_mode(OperatingMode::SGGS)) {
+            if (!unitig_distance::file_is_good(po.sggs_filename())) {
+                std::cerr << "Can't open " << po.sggs_filename() << std::endl;
+                return false;
+            }
+            std::ifstream ifs(po.sggs_filename());
+            for (std::string path_edges; std::getline(ifs, path_edges); ) {
+                if (!unitig_distance::file_is_good(path_edges)) {
+                    std::cerr << "Can't open " << path_edges << std::endl;
+                    return false;
+                }
+            }
+        }
+    }
+
+    if (!po.queries_filename().empty() && po.n_queries() > 0) {
+        if (!unitig_distance::file_is_good(po.queries_filename())) {
+            std::cerr << "Can't open " << po.queries_filename() << std::endl;
+            return false;
+        }
+    }
+
+    return true;
+}
 
 int main(int argc, char** argv) {
     Timer timer;
 
-    std::cout << "unitig_distance | MIT License | Copyright (c) 2021 Juri Kuronen\n\n";
+    std::cout << "unitig_distance | MIT License | Copyright (c) 2020-2022 Juri Kuronen\n\n";
 
     // Read command line arguments.
-    Program_options po(argc, argv);
-    if (!po.valid_state()) return 1;
-    if (!sanity_check_input_files(po)) return 1;
+    ProgramOptions po(argc, argv);
+    if (!po.valid_state() || !sanity_check_input_files(po)) return 1;
 
-    // Construct the combined graph from provided files.
-    Graph combined_graph(po.nodes_filename(), po.edges_filename(), po.k());
+    if (po.verbose()) po.print_run_details();
+
+    // Construct the graph according to operating mode.
+    Graph graph;
+    if (po.operating_mode(OperatingMode::GENERAL)) {
+        graph = Graph(po.edges_filename(), po.graphs_one_based());
+    } else { // OperatingMode::CDBG.
+        graph = Graph(po.unitigs_filename(), po.edges_filename(), po.k(), po.graphs_one_based());
+    }
+    const std::string graph_name = po.operating_mode(OperatingMode::CDBG) ? "compacted de Bruijn graph" : "graph";
+
+    if (graph.size() == 0) return 1; // Failed to construct the graph.
+
     if (po.verbose()) {
-        int_t n_nodes, n_edges, max_degree;
-        std::tie(n_nodes, n_edges, max_degree) = combined_graph.get_details();
-        std::cout << timer.get_time_block_since_start() << " Created combined graph in " << timer.get_time_since_mark_and_set_mark() 
-                  << ". The graph has " << neat_number_str(n_nodes) << " connected (half) nodes and "
-                  << neat_number_str(n_edges) << " edges. Max degree is " << neat_number_str(max_degree) << "." << std::endl;
+        std::cout << timer.get_time_block_since_start() << " Constructed " << graph_name << " in "
+                  << timer.get_time_since_mark_and_set_mark() << ". ";
+        graph.print_details();
     }
 
-    // Calculate distances in the graph(s).
-    if (po.n_queries() > 0) {
-        // Read SpydrPick output.
-        SpydrPickOutput spydrpick_output(po.spydrpick_output_filename(), po.n_queries(), po.one_based());
-        po.set_n_queries(spydrpick_output.size());
+    // Construct the filtered graph if the filter file was provided.
+    Graph filtered_graph;
+    if (po.operating_mode(OperatingMode::FILTER)) {
+        filtered_graph = Graph(graph, po.filter_filename(), po.filter_criterion());
+
+        if (filtered_graph.size() == 0) return 1; // Failed to construct the filtered graph.
+
         if (po.verbose()) {
-            std::cout << timer.get_time_block_since_start() << " Read " << neat_number_str(spydrpick_output.size())
-                      << " lines from SpydrPick output in " << timer.get_time_since_mark_and_set_mark() << "." << std::endl;
+            std::cout << timer.get_time_block_since_start() << " Constructed filtered " << graph_name << " in "
+                      << timer.get_time_since_mark_and_set_mark() << ". ";
+            filtered_graph.print_details();
+        }
+    }
+
+    // Read queries and calculate distances if the queries file was provided.
+    if (!po.queries_filename().empty() && po.n_queries() > 0) {
+        const Queries queries(po.queries_filename(), po.n_queries(), po.queries_one_based(), po.max_distance());
+
+        if (queries.size() == 0) return 1; // Failed to read queries.
+
+        po.set_n_queries(queries.size());
+
+        if (po.verbose()) {
+            std::cout << timer.get_time_block_since_start() << " Read " << unitig_distance::neat_number_str(queries.size())
+                      << " lines from queries file in " << timer.get_time_since_mark_and_set_mark() << "." << std::endl;
         }
 
         // Compute search jobs.
-        auto search_jobs = compute_search_jobs(spydrpick_output);
+        const SearchJobs search_jobs(queries);
+
         if (po.verbose()) {
-            std::cout << timer.get_time_block_since_start() << " Prepared " << neat_number_str(search_jobs.size()) << " search jobs in "
-                      << timer.get_time_since_mark_and_set_mark() << "." << std::endl;
+            std::cout << timer.get_time_block_since_start() << " Prepared " << unitig_distance::neat_number_str(search_jobs.size())
+                      << " search jobs in " << timer.get_time_since_mark_and_set_mark() << "." << std::endl;
         }
 
-        if (!po.run_sggs_only()) {
-            // Calculate distances in the combined graph.
-            if (po.verbose()) std::cout << timer.get_time_block_since_start_and_set_mark() << " Calculating distances in the combined graph." << std::endl;
-            std::vector<real_t> graph_distances = calculate_distances(combined_graph,
-                                                                      search_jobs,
-                                                                      timer,
-                                                                      spydrpick_output.size(),
-                                                                      po.n_threads(),
-                                                                      po.block_size(),
-                                                                      po.max_distance(),
-                                                                      po.verbose());
+        // Skip this part if user requested distances for the single genome graphs only.
+        if (!(po.operating_mode(OperatingMode::SGGS) && po.run_sggs_only())) {
+            if (po.verbose()) std::cout << timer.get_time_block_since_start_and_set_mark()
+                                        << " Calculating distances in the " << graph_name << "." << std::endl;
 
-            // Output distances for the combined graph.
-            spydrpick_output.output_distances(po.out_cg_filename(), graph_distances);
-            if (po.verbose()) std::cout << timer.get_time_block_since_start() << " Output combined graph distances to file " << po.out_cg_filename()
-                                        << " in " << timer.get_time_since_mark_and_set_mark() << "." << std::endl;
+            // Calculate distances.
+            GraphDistances gd(graph, timer, po.n_threads(), po.block_size(), po.max_distance(), po.verbose());
+            auto graph_distances = gd.solve(search_jobs);
 
-            if (po.filter_filename() != "") {
-                // Create filtered graph by applying filter to the combined graph.
-                auto filtered_graph = Graph(combined_graph, po.filter_filename(), po.filter_criterion());
-                if (po.verbose()) {
-                    int_t n_nodes, n_edges, max_degree;
-                    std::tie(n_nodes, n_edges, max_degree) = combined_graph.get_details();
-                    std::cout << timer.get_time_block_since_start_and_set_mark() << " Created filtered graph (criterion: >=" << po.filter_criterion()
-                              << ") from the combined graph. The graph has " << neat_number_str(n_nodes) << " connected (half) nodes and "
-                              << neat_number_str(n_edges) << " edges (max degree " << neat_number_str(max_degree) << ")."
-                              << std::endl;
-                }
+            // Output distances.
+            queries.output_distances(po.out_filename(), graph_distances);
+            if (po.verbose()) std::cout << timer.get_time_block_since_start() << " Output " << graph_name << " distances to file "
+                                        << po.out_filename() << " in " << timer.get_time_since_mark_and_set_mark() << "." << std::endl;
+            
+            if (filtered_graph.size() > 0) {
+                if (po.verbose()) std::cout << timer.get_time_block_since_start_and_set_mark()
+                                            << " Calculating distances in the filtered " << graph_name << "." << std::endl;
+
                 // Calculate distances in the filtered graph.
-                if (po.verbose()) std::cout << timer.get_time_block_since_start_and_set_mark() << " Calculating distances in the filtered graph." << std::endl;
-                graph_distances = calculate_distances(filtered_graph,
-                                                      search_jobs,
-                                                      timer,
-                                                      spydrpick_output.size(),
-                                                      po.n_threads(),
-                                                      po.block_size(),
-                                                      po.max_distance(),
-                                                      po.verbose());
+                GraphDistances fgd(filtered_graph, timer, po.n_threads(), po.block_size(), po.max_distance(), po.verbose());
+                auto filtered_graph_distances = fgd.solve(search_jobs);
 
-                // Output distances for the filtered graph.
-                spydrpick_output.output_distances(po.out_fcg_filename(), graph_distances);
-                if (po.verbose()) std::cout << timer.get_time_block_since_start() << " Output filtered graph distances to file " << po.out_fcg_filename()
-                                            << " in " << timer.get_time_since_mark_and_set_mark() << "." << std::endl;
+                // Output filtered graph distances.
+                queries.output_distances(po.out_filtered_filename(), filtered_graph_distances);
+                if (po.verbose()) std::cout << timer.get_time_block_since_start() << " Output filtered " << graph_name << " distances to file "
+                                            << po.out_filtered_filename() << " in " << timer.get_time_since_mark_and_set_mark() << "." << std::endl;
             }
         }
 
-        if (po.paths_filename() != "") {
-            // Read edge files for the single genome graphs.
+        // Calculate distances in the single genome graphs if the single genome graph files were provided.
+        if (po.operating_mode(OperatingMode::SGGS)) {
+            // Read single genome graph edge files.
             std::vector<std::string> path_edge_files;
-            std::ifstream ifs(po.paths_filename());
+            std::ifstream ifs(po.sggs_filename());
             for (std::string path_edges; std::getline(ifs, path_edges); ) path_edge_files.emplace_back(path_edges);
             auto n_sggs = path_edge_files.size();
             
@@ -138,73 +202,78 @@ int main(int argc, char** argv) {
             int_t batch_size = po.n_threads(), n_nodes = 0, n_edges = 0;
 
             std::vector<SingleGenomeGraph> sg_graphs(batch_size);
-            auto construct_sgg = [&combined_graph, &sg_graphs](int_t thr, const std::string& path_edges) {
-                sg_graphs[thr] = SingleGenomeGraph(combined_graph, path_edges);
+            auto construct_sgg = [&graph, &sg_graphs](int_t thr, const std::string& path_edges) {
+                sg_graphs[thr] = SingleGenomeGraph(graph, path_edges);
             };
 
-            std::vector<distance_tuple_t> sgg_distances(po.n_queries(), std::make_tuple(REAL_T_MAX, 0.0, 0.0, 0));
+            std::vector<std::tuple<real_t, real_t, real_t, int_t>> sgg_distances(po.n_queries(), std::make_tuple(REAL_T_MAX, 0.0, 0.0, 0));
 
             for (std::size_t i = 0; i < path_edge_files.size(); i += batch_size) {
-                auto batch = std::min(i + batch_size, path_edge_files.size()) - i;
                 // Construct a batch of single genome graphs.
+                auto batch = std::min(i + batch_size, path_edge_files.size()) - i;
+
                 if (po.verbose()) t_sgg.set_mark();
+
                 std::vector<std::thread> threads;
                 for (std::size_t thr = 0; thr < batch; ++thr) threads.emplace_back(construct_sgg, thr, path_edge_files[i + thr]);
                 for (auto& thr : threads) thr.join();
+
+                for (const auto& sg_graph : sg_graphs) if (sg_graph.size() == 0) return 1;
+
                 if (po.verbose()) {
                     t_sgg.add_time_since_mark();
-                    std::cout << timer.get_time_block_since_start() << " Created single genome graphs " << i + 1 << "-" << i + batch << " / " << n_sggs
+                    std::cout << timer.get_time_block_since_start() << " Constructed single genome graphs " << i + 1 << "-" << i + batch << " / " << n_sggs
                               << " in " << t_sgg.get_time_since_mark() << "." << std::endl;
+                    // Update n_nodes and n_edges.
                     for (const auto& sg_graph : sg_graphs) {
                         n_nodes += sg_graph.size();
-                        for (const auto& node : sg_graph) n_edges += node.neighbors().size();
+                        for (const auto& adj : sg_graph) n_edges += adj.size();
                     }
                     t_sgg_distances.set_mark();
                 }
 
                 // Calculate distances in the single genome graphs.
                 for (const auto& sg_graph : sg_graphs) {
-                    calculate_sgg_distances(sg_graph, search_jobs, sgg_distances, timer, spydrpick_output.size(), po.n_threads(), po.block_size(), po.max_distance());
+                    SingleGenomeGraphDistances sggd(sg_graph, sgg_distances, po.n_threads(), po.block_size(), po.max_distance(), po.verbose());
+                    sggd.solve(search_jobs); // Updates sgg_distances.
                 }
                 if (po.verbose()) {
                     t_sgg_distances.add_time_since_mark();
-                    std::cout << timer.get_time_block_since_start() << " Calculated distances for single genome graphs " << i + 1 << "-" << i + batch
+                    std::cout << timer.get_time_block_since_start() << " Calculated distances in the single genome graphs " << i + 1 << "-" << i + batch
                               << " / " << n_sggs << " in " << t_sgg_distances.get_time_since_mark() << "." << std::endl;
                 }
             }
+
             if (po.verbose()) {
                 n_nodes /= n_sggs;
                 n_edges /= 2 * n_sggs;
-                std::cout << timer.get_time_block_since_start() << " Creating " << n_sggs << " single genome graphs took " << t_sgg.get_stopwatch_time()
-                          << ". The processed graphs have on average " << neat_number_str(n_nodes) << " connected nodes and "
-                          << neat_number_str(n_edges) << " edges." << std::endl;
-                std::cout << timer.get_time_block_since_start_and_set_mark() << " Calculating distances for the " << n_sggs << " single genome graphs took "
+                std::cout << timer.get_time_block_since_start() << " Constructing " << n_sggs << " single genome graphs took " << t_sgg.get_stopwatch_time()
+                          << ". The compressed single genome graphs have on average " << unitig_distance::neat_number_str(n_nodes) << " connected nodes and "
+                          << unitig_distance::neat_number_str(n_edges) << " edges." << std::endl;
+                std::cout << timer.get_time_block_since_start_and_set_mark() << " Calculating distances in the " << n_sggs << " single genome graphs took "
                           << t_sgg_distances.get_stopwatch_time() << "." << std::endl;
             }
 
-            // Output distances for the single genome graphs graph.
-            std::vector<real_t> distances(sgg_distances.size());
             // Set distance correctly for disconnected queries.
-            for (auto& dist : sgg_distances) if (std::get<3>(dist) == 0) dist = std::make_tuple(REAL_T_MAX, REAL_T_MAX, REAL_T_MAX, 0);
-            std::transform(sgg_distances.begin(), sgg_distances.end(), distances.begin(), [](const distance_tuple_t& dist) { return std::get<0>(dist); });
-            spydrpick_output.output_distances(po.out_sgg_min_filename(), distances);
-            if (po.verbose()) std::cout << timer.get_time_block_since_start() << " Output single genome graph min distances to file " << po.out_sgg_min_filename()
-                                        << " in " << timer.get_time_since_mark_and_set_mark() << "." << std::endl;
+            for (auto& distance : sgg_distances) {
+                if (std::get<3>(distance) == 0) distance = std::make_tuple(REAL_T_MAX, REAL_T_MAX, REAL_T_MAX, 0);
+            }
 
-            std::transform(sgg_distances.begin(), sgg_distances.end(), distances.begin(), [](const distance_tuple_t& dist) { return std::get<1>(dist); });
-            spydrpick_output.output_distances(po.out_sgg_max_filename(), distances);
-            if (po.verbose()) std::cout << timer.get_time_block_since_start() << " Output single genome graph max distances to file " << po.out_sgg_max_filename()
-                                        << " in " << timer.get_time_since_mark_and_set_mark() << "." << std::endl;
+            // Output single genome graphs graph distances.
+            queries.output_distances(po.out_sgg_min_filename(), unitig_distance::transform_distance_tuple_vector<real_t, 0>(sgg_distances));
+            if (po.verbose()) std::cout << timer.get_time_block_since_start() << " Output single genome graph min distances to file "
+                                        << po.out_sgg_min_filename() << " in " << timer.get_time_since_mark_and_set_mark() << "." << std::endl;
 
-            std::transform(sgg_distances.begin(), sgg_distances.end(), distances.begin(), [](const distance_tuple_t& dist) { return std::get<2>(dist); });
-            spydrpick_output.output_distances(po.out_sgg_mean_filename(), distances);
-            if (po.verbose()) std::cout << timer.get_time_block_since_start() << " Output single genome graph mean distances to file " << po.out_sgg_mean_filename()
-                                        << " in " << timer.get_time_since_mark_and_set_mark() << "." << std::endl;
+            queries.output_distances(po.out_sgg_max_filename(), unitig_distance::transform_distance_tuple_vector<real_t, 1>(sgg_distances));
+            if (po.verbose()) std::cout << timer.get_time_block_since_start() << " Output single genome graph max distances to file "
+                                        << po.out_sgg_max_filename() << " in " << timer.get_time_since_mark_and_set_mark() << "." << std::endl;
 
-            std::vector<int_t> counts(sgg_distances.size());
-            std::transform(sgg_distances.begin(), sgg_distances.end(), counts.begin(), [](const distance_tuple_t& dist) { return std::get<3>(dist); });
-            spydrpick_output.output_counts(po.out_sgg_counts_filename(), counts);
-            if (po.verbose()) std::cout << timer.get_time_block_since_start() << " Output successful query counts in the single genome graphs to file "
+            queries.output_distances(po.out_sgg_mean_filename(), unitig_distance::transform_distance_tuple_vector<real_t, 2>(sgg_distances));
+            if (po.verbose()) std::cout << timer.get_time_block_since_start() << " Output single genome graph mean distances to file "
+                                        << po.out_sgg_mean_filename() << " in " << timer.get_time_since_mark_and_set_mark() << "." << std::endl;
+
+            queries.output_counts(po.out_sgg_counts_filename(), unitig_distance::transform_distance_tuple_vector<int_t, 3>(sgg_distances));
+            if (po.verbose()) std::cout << timer.get_time_block_since_start() << " Output single genome graph connected vertex pair counts to file "
                                         << po.out_sgg_counts_filename() << " in " << timer.get_time_since_mark_and_set_mark() << "." << std::endl;
         }
 
