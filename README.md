@@ -113,4 +113,5 @@ The output will be written to
 - `<output_stem>.ud_sgg_max_result`
 - `<output_stem>.ud_sgg_mean_result`
 - `<output_stem>.ud_sgg_connected_counts`
+
 where the \*min\*/\*max\*/\*mean\* files contain minimum, maximum and mean distances across the single genome graphs and the \*connected_counts file contains for each query the count of connected vertex pairs across the single genome graphs.
