@@ -42,7 +42,7 @@ public:
                 for (std::size_t w_idx = 0; w_idx < job.size(); ++w_idx) {
                     auto original_idx = job.original_index(w_idx);
                     if (two_sided) {
-                        res[original_idx] = std::min(target_dist[unitig_distance::left_node(w_idx)], target_dist[unitig_distance::right_node(w_idx)]);
+                        res[original_idx] = std::min(target_dist[graph.left_node(w_idx)], target_dist[graph.right_node(w_idx)]);
                     } else {
                         res[original_idx] = target_dist[w_idx];
                     }

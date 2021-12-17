@@ -38,8 +38,9 @@ public:
                 const auto& job = search_jobs[i];
 
                 auto v = job.v();
-                if (!graph.contains(graph.left_node(v))) continue;
+                if (!graph.contains_original(v)) continue;
 
+                // First calculate distances between path start/end nodes.
                 auto sources = get_sgg_sources(v);
                 auto targets = get_sgg_targets(job.ws());
                 auto target_dist = graph.distance(sources, targets, m_max_distance);
@@ -47,15 +48,18 @@ public:
                 std::vector<real_t> job_dist(job.ws().size(), m_max_distance);
                 std::map<int_t, real_t> dist;
                 for (std::size_t i = 0; i < targets.size(); ++i) dist[targets[i]] = target_dist[i];
+
+                // Now fix distances for (v, w) that were in paths.
                 process_job_distances(job_dist, graph.left_node(v), job.ws(), dist);
                 process_job_distances(job_dist, graph.right_node(v), job.ws(), dist);
+
                 add_job_distances_to_sgg_distances(job, job_dist);
             }
         };
         std::vector<std::thread> threads(m_n_threads);
-        for (std::size_t start = 0; start < search_jobs.size(); start += m_block_size) {
-            std::size_t end = std::min(start + m_block_size, search_jobs.size());
-            for (std::size_t thr = 0; thr < (std::size_t) m_n_threads; ++thr) threads[thr] = std::thread(calculate_distance_block, thr, start, end);
+        for (std::size_t block_start = 0; block_start < search_jobs.size(); block_start += m_block_size) {
+            std::size_t block_end = std::min(block_start + m_block_size, search_jobs.size());
+            for (std::size_t thr = 0; thr < (std::size_t) m_n_threads; ++thr) threads[thr] = std::thread(calculate_distance_block, thr, block_start, block_end);
             for (auto& thr : threads) thr.join();
         }
     }
@@ -69,6 +73,7 @@ private:
     int_t m_block_size;
     real_t m_max_distance;
 
+    // Update source distance if source exists, otherwise add new source.
     void update_source(std::vector<std::pair<int_t, real_t>>& sources, int_t mapped_idx, real_t distance) {
         auto it = sources.begin();
         while (it != sources.end() && it->first != (int_t) mapped_idx) ++it;
@@ -76,82 +81,73 @@ private:
         else it->second = std::min(it->second, distance);
     }
 
-    void add_sgg_source(std::vector<std::pair<int_t, real_t>>& sources, int_t v_original_idx) {
-        auto v_path_idx = m_graph.path_idx(v_original_idx);
-        auto v_mapped_idx = m_graph.mapped_idx(v_original_idx);
-        if (v_path_idx == INT_T_MAX) {
-            update_source(sources, v_mapped_idx, 0.0);
-        } else {
-            int_t path_endpoint;
-            real_t distance;
-            // Add path start node.
-            std::tie(path_endpoint, distance) = m_graph.distance_to_start(v_path_idx, v_mapped_idx);
-            update_source(sources, path_endpoint, distance);
-            // Add path end node.
-            std::tie(path_endpoint, distance) = m_graph.distance_to_end(v_path_idx, v_mapped_idx);
-            update_source(sources, path_endpoint, distance);
-        }
-    }
-
+    // Add both sides of v as sources.
     std::vector<std::pair<int_t, real_t>> get_sgg_sources(int_t v) {
         std::vector<std::pair<int_t, real_t>> sources;
-        add_sgg_source(sources, m_graph.left_node(v));
-        add_sgg_source(sources, m_graph.right_node(v));
+        for (int_t v_original_idx = m_graph.left_node(v); v_original_idx <= m_graph.right_node(v); ++v_original_idx) {
+            auto v_mapped_idx = m_graph.mapped_idx(v_original_idx);
+            // Add v normally if it's not on a path, otherwise add both path end points.
+            if (m_graph.is_on_path(v_original_idx)) {
+                auto v_path_idx = m_graph.path_idx(v_original_idx);
+                int_t path_endpoint;
+                real_t distance;
+                // Add path start node.
+                std::tie(path_endpoint, distance) = m_graph.distance_to_start(v_path_idx, v_mapped_idx);
+                update_source(sources, path_endpoint, distance);
+                // Add path end node.
+                std::tie(path_endpoint, distance) = m_graph.distance_to_end(v_path_idx, v_mapped_idx);
+                update_source(sources, path_endpoint, distance);
+            } else {
+                update_source(sources, v_mapped_idx, 0.0);
+            }
+        }
         return sources;
     }
 
-    void add_sgg_target(std::set<int_t>& target_set, int_t original_idx) {
-        auto path_idx = m_graph.path_idx(original_idx);
-        auto mapped_idx = m_graph.mapped_idx(original_idx);
-        if (path_idx == INT_T_MAX) {
-            target_set.insert(mapped_idx);
-        } else {
-            target_set.insert(m_graph.start_node(path_idx));
-            target_set.insert(m_graph.end_node(path_idx));
-        }
-    }
-
+    // Add both sides of each w as targets.
     std::vector<int_t> get_sgg_targets(const std::vector<int_t>& ws) {
         std::set<int_t> target_set;
         for (auto w : ws) {
-            if (!m_graph.contains(m_graph.left_node(w))) continue;
-            add_sgg_target(target_set, m_graph.left_node(w));
-            add_sgg_target(target_set, m_graph.right_node(w));
+            if (!m_graph.contains_original(w)) continue;
+            for (int_t w_original_idx = m_graph.left_node(w); w_original_idx <= m_graph.right_node(w); ++w_original_idx) {
+                if (m_graph.is_on_path(w_original_idx)) {
+                    auto w_path_idx = m_graph.path_idx(w_original_idx);
+                    target_set.insert(m_graph.start_node(w_path_idx));
+                    target_set.insert(m_graph.end_node(w_path_idx));
+                } else {
+                    target_set.insert(m_graph.mapped_idx(w_original_idx));
+                }
+            }
         }
         std::vector<int_t> targets;
         for (auto t : target_set) targets.push_back(t);
         return targets;
     }
 
-    real_t get_correct_distance(
-        int_t v_path_idx,
-        int_t v_mapped_idx,
-        int_t w_original_idx,
-        std::map<int_t, real_t>& dist)
-    {
+    // Correct (v, w) distance if w were on a path.
+    real_t get_correct_distance(int_t v_path_idx, int_t v_mapped_idx, int_t w_original_idx, std::map<int_t, real_t>& dist) {
         auto w_path_idx = m_graph.path_idx(w_original_idx);
         auto w_mapped_idx = m_graph.mapped_idx(w_original_idx);
-        if (w_path_idx == INT_T_MAX) return dist[w_mapped_idx]; // w not on path.
-        if (v_path_idx == w_path_idx) return m_graph.distance_in_path(v_path_idx, v_mapped_idx, w_mapped_idx); // v and w on same path.
-        // w on path.
-        int_t w_path_start, w_path_end;
-        real_t w_path_start_distance, w_path_end_distance;
-        std::tie(w_path_start, w_path_start_distance) = m_graph.distance_to_start(w_path_idx, w_mapped_idx);
-        std::tie(w_path_end, w_path_end_distance) = m_graph.distance_to_end(w_path_idx, w_mapped_idx);
-        return std::min(dist[w_path_start] + w_path_start_distance, dist[w_path_end] + w_path_end_distance);
+        if (w_path_idx == INT_T_MAX) return dist[w_mapped_idx]; // w not on path, distance from sources is correct already.
+        // Get distance if v and w are on the same path, this distance could be shorter.
+        real_t distance = v_path_idx == w_path_idx ? m_graph.distance_in_path(v_path_idx, v_mapped_idx, w_mapped_idx) : REAL_T_MAX;
+        // w on path, add distances of (w, path_endpoint).
+        int_t w_path_endpoint;
+        real_t w_path_distance;
+        std::tie(w_path_endpoint, w_path_distance) = m_graph.distance_to_start(w_path_idx, w_mapped_idx);
+        distance = std::min(distance, dist[w_path_endpoint] + w_path_distance);
+        std::tie(w_path_endpoint, w_path_distance) = m_graph.distance_to_end(w_path_idx, w_mapped_idx);
+        distance = std::min(distance, dist[w_path_endpoint] + w_path_distance);
+        return distance;
     }
 
-    void process_job_distances(
-        std::vector<real_t>& job_dist,
-        int_t v_original_idx,
-        const std::vector<int_t>& ws,
-        std::map<int_t, real_t>& dist)
-    {
+    // Fix distances for (v, w) that were in paths.
+    void process_job_distances(std::vector<real_t>& job_dist, int_t v_original_idx, const std::vector<int_t>& ws, std::map<int_t, real_t>& dist) {
         auto v_path_idx = m_graph.path_idx(v_original_idx);
         auto v_mapped_idx = m_graph.mapped_idx(v_original_idx);
         for (std::size_t w_idx = 0; w_idx < ws.size(); ++w_idx) { 
             auto w = ws[w_idx];
-            if (!m_graph.contains(m_graph.left_node(w))) continue;
+            if (!m_graph.contains_original(w)) continue;
             auto distance = get_correct_distance(v_path_idx, v_mapped_idx, m_graph.left_node(w), dist);
             distance = std::min(distance, get_correct_distance(v_path_idx, v_mapped_idx, m_graph.right_node(w), dist));
             job_dist[w_idx] = std::min(job_dist[w_idx], distance);
@@ -173,6 +169,5 @@ private:
             m_sgg_distances[original_index] = std::make_tuple(min, max, mean, count);
         }
     }
-
 
 };

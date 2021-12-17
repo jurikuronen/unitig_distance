@@ -55,6 +55,8 @@ public:
 
     bool contains(int_t original_idx) const { return original_idx < (int_t) m_node_map.size() && is_mapped(original_idx); }
 
+    bool contains_original(int_t v) const { return contains(left_node(v)); }
+
     int_t path_idx(int_t original_idx) const { return m_node_map[original_idx].first; }
 
     int_t mapped_idx(int_t original_idx) const { return m_node_map[original_idx].second; }
