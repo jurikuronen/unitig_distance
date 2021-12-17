@@ -140,6 +140,8 @@ public:
         }
     }
 
+    bool contains(int_t v) const { return v < (int_t) m_adj.size(); }
+
     void add_node() { m_adj.emplace_back(); }
 
     void add_edge(int_t v, int_t w, real_t weight) {

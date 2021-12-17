@@ -27,16 +27,21 @@ public:
         std::vector<real_t> res(search_jobs.n_queries());
 
         auto calculate_distance_block = [this, &search_jobs, &res](std::size_t thr, std::size_t block_start, std::size_t block_end) {
+            const auto& graph = m_graph;
+            bool two_sided = graph.two_sided();
             for (std::size_t i = thr + block_start; i < block_end; i += m_n_threads) {
                 const auto& job = search_jobs[i];
 
-                auto sources = get_sources(job.v());
+                auto v = job.v();
+                if ((two_sided && !graph.contains(graph.left_node(v))) || !graph.contains(v)) continue;
+
+                auto sources = get_sources(v);
                 auto targets = get_targets(job.ws());
-                auto target_dist = m_graph.distance(sources, targets, m_max_distance);
+                auto target_dist = graph.distance(sources, targets, m_max_distance);
 
                 for (std::size_t w_idx = 0; w_idx < job.size(); ++w_idx) {
                     auto original_idx = job.original_index(w_idx);
-                    if (m_graph.two_sided()) {
+                    if (two_sided) {
                         res[original_idx] = std::min(target_dist[unitig_distance::left_node(w_idx)], target_dist[unitig_distance::right_node(w_idx)]);
                     } else {
                         res[original_idx] = target_dist[w_idx];
