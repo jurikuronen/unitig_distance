@@ -43,7 +43,7 @@ public:
                     std::tie(w, weight) = process_path(subgraph, visited, parent, w, weight);
                     if (w == parent) continue; // Path looped back to parent.
                 }
-                if (mapped_idx(w) == INT_T_MAX) add_and_map_node(w); // Map w if it wasn't mapped yet.
+                if (!is_mapped(w)) add_and_map_node(w);
                 add_edge(mapped_idx(parent), mapped_idx(w), weight);
                 dfs_add_neighbors_to_stack(subgraph, visited, stack, w);
                 visited[w] = true;
@@ -53,11 +53,13 @@ public:
 
     bool is_on_path(int_t original_idx) const { return path_idx(original_idx) != INT_T_MAX; }
 
-    bool contains(int_t original_idx) const { return original_idx < (int_t) m_node_map.size() && mapped_idx(original_idx) != INT_T_MAX; }
+    bool contains(int_t original_idx) const { return original_idx < (int_t) m_node_map.size() && is_mapped(original_idx); }
 
     int_t path_idx(int_t original_idx) const { return m_node_map[original_idx].first; }
 
     int_t mapped_idx(int_t original_idx) const { return m_node_map[original_idx].second; }
+
+    bool is_mapped(int_t original_idx) const { return mapped_idx(original_idx) != INT_T_MAX; }
 
     // Path accessors.
     int_t start_node(int_t path_idx) const { return m_paths[path_idx].start_node; }
@@ -97,7 +99,7 @@ private:
     // Functions used by the constructor's DFS search.
     void map_node(int_t original_idx, int_t path_idx, int_t mapped_idx) { m_node_map[original_idx] = std::make_pair(path_idx, mapped_idx); }
 
-    void add_and_map_node(int_t original_idx) { map_node(original_idx, INT_T_MAX, size()); add_node(); }
+    void add_and_map_node(int_t original_idx) { map_node(original_idx, INT_T_MAX, size()); add_node(); } // Add non-path node.
 
     void dfs_add_neighbors_to_stack(
         const Graph& subgraph,
@@ -127,7 +129,7 @@ private:
             nodes_in_path.push_back(w);
             weight += D.back(); // Accumulate weight.
             D.push_back(weight);
-            if (mapped_idx(w) != INT_T_MAX) break; // Reached end of path (or a loop was found).
+            if (is_mapped(w)) break; // Reached end of path (or a loop was found).
         }
 
         // Map nodes in path as path nodes. Path start and end nodes treated separately.
@@ -138,7 +140,7 @@ private:
         }
 
         // Add new path.
-        auto mapped_path_end_node = mapped_idx(w) != INT_T_MAX ? mapped_idx(w) : size(); // Can use size() here because w will be added and mapped next.
+        auto mapped_path_end_node = is_mapped(w) ? mapped_idx(w) : size(); // Can use size() here because w will be added and mapped next.
         add_new_path(mapped_idx(path_start_node), mapped_path_end_node, std::move(D));
         return std::make_pair(w, weight); // Return updated w and weight.
     }
