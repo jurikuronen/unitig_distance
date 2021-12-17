@@ -219,18 +219,17 @@ int main(int argc, char** argv) {
             Timer t_sgg, t_sgg_distances;
             int_t batch_size = po.n_threads(), n_nodes = 0, n_edges = 0;
 
-            std::vector<SingleGenomeGraph> sg_graphs(batch_size);
-            auto construct_sgg = [&graph, &sg_graphs](int_t thr, const std::string& path_edges) {
-                sg_graphs[thr] = SingleGenomeGraph(graph, path_edges);
-            };
-
             std::vector<std::tuple<real_t, real_t, real_t, int_t>> sgg_distances(po.n_queries(), std::make_tuple(REAL_T_MAX, 0.0, 0.0, 0));
 
             for (std::size_t i = 0; i < path_edge_files.size(); i += batch_size) {
                 // Construct a batch of single genome graphs.
+                if (po.verbose()) t_sgg.set_mark();
                 auto batch = std::min(i + batch_size, path_edge_files.size()) - i;
 
-                if (po.verbose()) t_sgg.set_mark();
+                std::vector<SingleGenomeGraph> sg_graphs(batch);
+                auto construct_sgg = [&graph, &sg_graphs](int_t thr, const std::string& path_edges) {
+                    sg_graphs[thr] = SingleGenomeGraph(graph, path_edges);
+                };
 
                 std::vector<std::thread> threads;
                 for (std::size_t thr = 0; thr < batch; ++thr) threads.emplace_back(construct_sgg, thr, path_edge_files[i + thr]);
