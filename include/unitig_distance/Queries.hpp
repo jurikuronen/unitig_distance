@@ -12,7 +12,9 @@
 class Queries {
 public:
     // Read queries file.
-    Queries(const std::string& queries_filename, int_t n, bool one_based = false, real_t max_distance = REAL_T_MAX) : m_max_distance(max_distance) {
+    Queries(const std::string& queries_filename, int_t n_queries, bool queries_one_based = false, bool output_one_based = false, real_t max_distance = REAL_T_MAX)
+    : m_output_one_based(output_one_based), m_max_distance(max_distance)
+    {
         std::ifstream ifs(queries_filename);
         int_t cnt = 0;
         for (std::string line; std::getline(ifs, line); ) {
@@ -22,8 +24,8 @@ public:
                 m_queries.clear();
                 return;
             }
-            int_t v = std::stoll(fields[0]) - one_based;
-            int_t w = std::stoll(fields[1]) - one_based;
+            int_t v = std::stoll(fields[0]) - queries_one_based;
+            int_t w = std::stoll(fields[1]) - queries_one_based;
             m_queries.emplace_back(v, w);
             if (fields.size() > 2) {
                 // Queries file is the output of another program.
@@ -31,7 +33,7 @@ public:
                 m_scores.push_back(score);
             }
             m_fields.push_back(std::move(fields));
-            if (++cnt == n) break;
+            if (++cnt == n_queries) break;
         }
     }
 
@@ -40,7 +42,7 @@ public:
         std::ofstream ofs(out_filename);
         for (std::size_t i = 0; i < size(); ++i) {
             int_t distance = unitig_distance::fixed_distance(distances[i], m_max_distance);
-            ofs << m_fields[i][0] << ' ' << m_fields[i][1] << ' ' << distance;
+            ofs << v(i) + m_output_one_based << ' ' << w(i) + m_output_one_based << ' ' << distance;
             for (std::size_t field_idx = 3; field_idx < m_fields[i].size(); ++field_idx) {
                 ofs << ' ' << m_fields[i][field_idx];
             }
@@ -52,7 +54,7 @@ public:
     void output_counts(const std::string& out_filename, const std::vector<int_t>& counts) const {
         std::ofstream ofs(out_filename);
         for (std::size_t i = 0; i < size(); ++i) {
-            ofs << m_fields[i][0] << ' ' << m_fields[i][1] << ' ' << counts[i];
+            ofs << v(i) + m_output_one_based << ' ' << w(i) + m_output_one_based << ' ' << counts[i];
             for (std::size_t field_idx = 3; field_idx < m_fields[i].size(); ++field_idx) {
                 ofs << ' ' << m_fields[i][field_idx];
             }
@@ -75,6 +77,8 @@ private:
     std::vector<std::pair<int_t, int_t>> m_queries;
     std::vector<real_t> m_scores;
     std::vector<std::vector<std::string>> m_fields;
+
+    bool m_output_one_based;
 
     real_t m_max_distance;
 

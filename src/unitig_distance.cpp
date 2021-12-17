@@ -148,7 +148,7 @@ int main(int argc, char** argv) {
 
     // Read queries and calculate distances if the queries file was provided.
     if (!po.queries_filename().empty() && po.n_queries() > 0) {
-        const Queries queries(po.queries_filename(), po.n_queries(), po.queries_one_based(), po.max_distance());
+        const Queries queries(po.queries_filename(), po.n_queries(), po.queries_one_based(), po.output_one_based(), po.max_distance());
 
         if (queries.size() == 0) return 1; // Failed to read queries.
 
