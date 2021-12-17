@@ -92,7 +92,7 @@ private:
     };
     std::vector<Path> m_paths;
 
-    std::vector<std::pair<int_t, int_t>> m_node_map; // Map original graph indices to this graph.
+    std::vector<std::pair<int_t, int_t>> m_node_map; // Map original graph indices to this graph as (path_idx, mapped_idx) pairs.
 
     // Functions used by the constructor's DFS search.
     void map_node(int_t original_idx, int_t path_idx, int_t mapped_idx) { m_node_map[original_idx] = std::make_pair(path_idx, mapped_idx); }
