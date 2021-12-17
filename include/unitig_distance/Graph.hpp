@@ -36,7 +36,7 @@ public:
             }
             int_t v = std::stoll(fields[0]) - one_based();
             int_t w = std::stoll(fields[1]) - one_based();
-            real_t weight = fields.size() >= 3 ? std::stod(fields[2]) : 1.0;
+            real_t weight = fields.size() >= 3 && unitig_distance::is_numeric(fields[2]) ? std::stod(fields[2]) : 1.0;
             edges.emplace_back(v, w, weight);
             max_v = std::max(max_v, std::max(v, w));
         }

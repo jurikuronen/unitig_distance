@@ -1,5 +1,6 @@
 #include <fstream>
 #include <iostream>
+#include <sstream>
 #include <string>
 #include <thread>
 #include <utility>
@@ -44,6 +45,11 @@ namespace unitig_distance {
 
     int_t left_node(int_t v) { return v * 2; }
     int_t right_node(int_t v) { return v * 2 + 1; }
+
+    bool is_numeric(const std::string& str) {
+        double x;
+        return (std::stringstream(str) >> x).eof();
+    }
 
     template <typename T, int IDX>
     std::vector<T> transform_distance_tuple_vector(const std::vector<std::tuple<real_t, real_t, real_t, int_t>>& tuple_vector) {
