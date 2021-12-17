@@ -33,7 +33,7 @@ public:
         set_value(m_filter_criterion, "-c", "--filter-criterion");
         m_graphs_one_based = has_arg("-1g", "--graphs-one-based");
         m_queries_one_based = has_arg("-1q", "--queries-one-based");
-        m_queries_one_based = has_arg("-1o", "--output-one-based");
+        m_output_one_based = has_arg("-1o", "--output-one-based");
         m_run_sggs_only = has_arg("-r", "--run-sggs-only");
         m_verbose = has_arg("-v", "--verbose");
 
