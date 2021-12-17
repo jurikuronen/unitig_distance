@@ -24,7 +24,7 @@ public:
 
     // Calculate distances for general graphs and compacted de Bruijn graphs.
     std::vector<real_t> solve(const SearchJobs& search_jobs) {
-        std::vector<real_t> res(search_jobs.n_queries());
+        std::vector<real_t> res(search_jobs.n_queries(), REAL_T_MAX);
 
         auto calculate_distance_block = [this, &search_jobs, &res](std::size_t thr, std::size_t block_start, std::size_t block_end) {
             const auto& graph = m_graph;
