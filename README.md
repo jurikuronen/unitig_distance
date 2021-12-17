@@ -83,7 +83,7 @@ This section contains examples of how to use unitig_distance.
 A list of available options is also available with the command line argument `-h [ --help ]`.
 
 ### Calculating distances in general graphs
-The following constructs a general graph from an edges file (`-E <path_to_edges_file>`) and calculates distances between 100 (`-n 100`) vertex pairs read from the queries file (`-Q <path_to_queries_file>`) in parallel using 4 threads (`-t 4`). The output will be written to `<output_stem>.ud_result`. Verbose-mode (`-v`) is set and a log will be written both to the terminal and to the file `<output_stem>.ud_log`.
+The following constructs a general graph from an edges file (`-E <path_to_edges_file>`) and calculates distances between 100 (`-n 100`) vertex pairs read from the queries file (`-Q <path_to_queries_file>`) in parallel using 4 threads (`-t 4`). The output will be written to `<output_stem>.ud_0_based`. Verbose-mode (`-v`) is set and a log will be written both to the terminal and to the file `<output_stem>.ud_log`.
 ```
 /bin/unitig_distance -E <path_to_edges_file> \
                      -Q <path_to_queries_file> -n 100 \
@@ -91,7 +91,7 @@ The following constructs a general graph from an edges file (`-E <path_to_edges_
 ```
 
 ### Calculating distances in compacted de Bruijn graphs
-The following constructs a compacted de Bruijn graph from an edges file (`-E <path_to_edges_file>`) and a unitigs file (`-U <path_to_unitigs_file>`) with k-mer length 61 (`-k 61`) and calculates distances between all vertex pairs read from the queries file (`-Q <path_to_queries_file>`) in parallel using 16 threads (`-t 16`). The queries use one-based numbering (`-1q`). The output will be written to `<output_stem>.ud_result`. Verbose-mode (`-v`) is set and a log will be written both to the terminal and to the file `<output_stem>.ud_log`.
+The following constructs a compacted de Bruijn graph from an edges file (`-E <path_to_edges_file>`) and a unitigs file (`-U <path_to_unitigs_file>`) with k-mer length 61 (`-k 61`) and calculates distances between all vertex pairs read from the queries file (`-Q <path_to_queries_file>`) in parallel using 16 threads (`-t 16`). The queries use one-based numbering (`-1q`). The output will be written to `<output_stem>.ud_0_based`. Verbose-mode (`-v`) is set and a log will be written both to the terminal and to the file `<output_stem>.ud_log`.
 ```
 /bin/unitig_distance -E <path_to_edges_file> \
                      -U <path_to_unitigs_file> -k 61 \
@@ -109,9 +109,9 @@ Following from the above section ([Calculating distances in compacted de Bruijn 
                      -o <output_stem> -t 16 -v | tee <output_stem>.ud_log
 ```
 The output will be written to
-- `<output_stem>.ud_sgg_min_result`
-- `<output_stem>.ud_sgg_max_result`
-- `<output_stem>.ud_sgg_mean_result`
-- `<output_stem>.ud_sgg_connected_counts`
+- `<output_stem>.ud_sgg_min_0_based`
+- `<output_stem>.ud_sgg_max_0_based`
+- `<output_stem>.ud_sgg_mean_0_based`
+- `<output_stem>.ud_sgg_counts_0_based`
 
-where the \*min\*/\*max\*/\*mean\* files contain minimum, maximum and mean distances across the single genome graphs and the \*connected_counts file contains for each query the count of connected vertex pairs across the single genome graphs.
+where the \*min\*/\*max\*/\*mean\* files contain minimum, maximum and mean distances across the single genome graphs and the \*counts\* file contains for each query the count of connected vertex pairs across the single genome graphs.

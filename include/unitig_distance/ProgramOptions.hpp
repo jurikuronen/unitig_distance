@@ -33,6 +33,7 @@ public:
         set_value(m_filter_criterion, "-c", "--filter-criterion");
         m_graphs_one_based = has_arg("-1g", "--graphs-one-based");
         m_queries_one_based = has_arg("-1q", "--queries-one-based");
+        m_queries_one_based = has_arg("-1o", "--output-one-based");
         m_run_sggs_only = has_arg("-r", "--run-sggs-only");
         m_verbose = has_arg("-v", "--verbose");
 
@@ -55,6 +56,7 @@ public:
     real_t filter_criterion() const { return m_filter_criterion; }
     bool graphs_one_based() const { return m_graphs_one_based; }
     bool queries_one_based() const { return m_queries_one_based; }
+    bool output_one_based() const { return m_output_one_based; }
     bool run_sggs_only() const { return m_run_sggs_only; }
     bool verbose() const { return m_verbose; }
 
@@ -63,12 +65,12 @@ public:
     const OperatingMode& operating_mode() const { return m_om; }
     bool operating_mode(const OperatingMode& om) const { return operating_mode_to_bool(m_om & om); }
 
-    const std::string out_filename() const { return out_stem() + ".ud_result" + one_based_str(); }
-    const std::string out_filtered_filename() const { return out_stem() + ".ud_filtered_result" + one_based_str(); }
-    const std::string out_sgg_min_filename() const { return out_stem() + ".ud_sgg_min_result" + one_based_str(); }
-    const std::string out_sgg_max_filename() const { return out_stem() + ".ud_sgg_max_result" + one_based_str(); }
-    const std::string out_sgg_mean_filename() const { return out_stem() + ".ud_sgg_mean_result" + one_based_str(); }
-    const std::string out_sgg_counts_filename() const { return out_stem() + ".ud_sgg_connected_counts" + one_based_str(); }
+    const std::string out_filename() const { return out_stem() + ".ud" + based_str(); }
+    const std::string out_filtered_filename() const { return out_stem() + ".ud_filtered" + based_str(); }
+    const std::string out_sgg_min_filename() const { return out_stem() + ".ud_sgg_min" + based_str(); }
+    const std::string out_sgg_max_filename() const { return out_stem() + ".ud_sgg_max" + based_str(); }
+    const std::string out_sgg_mean_filename() const { return out_stem() + ".ud_sgg_mean" + based_str(); }
+    const std::string out_sgg_counts_filename() const { return out_stem() + ".ud_sgg_counts" + based_str(); }
 
     // For updating the value after queries were read.
     void set_n_queries(int_t n_queries) { m_n_queries = n_queries; }
@@ -99,6 +101,7 @@ public:
             double_push_back(arguments, "  --max-distance", max_distance() == REAL_T_MAX ? "INF" : std::to_string(max_distance()));
         }
         double_push_back(arguments, "  --output-stem", out_stem());
+        double_push_back(arguments, "  --output-one-based", output_one_based() ? "TRUE" : "FALSE");
         double_push_back(arguments, "  --threads", std::to_string(n_threads()));
 
         std::cout << "Using following arguments:" << std::endl;
@@ -126,6 +129,7 @@ private:
     real_t m_filter_criterion = 2.0;
     bool m_graphs_one_based = false;
     bool m_queries_one_based = false;
+    bool m_output_one_based = false;
     bool m_run_sggs_only = false;
     bool m_verbose = false;
 
@@ -143,7 +147,7 @@ private:
         }
     }
 
-    const std::string one_based_str() const { return queries_one_based() ? "_1_based" : ""; }
+    const std::string based_str() const { return output_one_based() ? "_1_based" : "_0_based"; }
 
     char** begin() const { return m_argv; }
     char** end() const { return m_argv + m_argc; }
@@ -198,6 +202,7 @@ private:
             "", "",
             "Optional arguments.", "",
             "  -o [ --output-stem ] arg (=out)", "Path for output files (without extension).",
+            "  -1o [ --output-one-based ]", "Output files use one-based numbering.",
             "  -t [ --threads ] arg (=1)", "Number of threads.",
             "  -v [ --verbose ]", "Be verbose.",
             "  -h [ --help ]", "Print this list.",
