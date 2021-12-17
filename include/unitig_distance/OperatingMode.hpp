@@ -25,23 +25,23 @@ enum class OperatingMode {
 
 using underlying_type = std::underlying_type<OperatingMode>::type;
 
-static OperatingMode operator|(const OperatingMode lhs, const OperatingMode rhs) {
+inline OperatingMode operator|(const OperatingMode lhs, const OperatingMode rhs) {
     return static_cast<OperatingMode>(static_cast<underlying_type>(lhs) | static_cast<underlying_type>(rhs));
 }
 
-static OperatingMode operator|=(OperatingMode& lhs, const OperatingMode rhs) {
+inline OperatingMode operator|=(OperatingMode& lhs, const OperatingMode rhs) {
     return lhs = lhs | rhs;
 }
 
-static OperatingMode operator&(const OperatingMode lhs, const OperatingMode rhs) {
+inline OperatingMode operator&(const OperatingMode lhs, const OperatingMode rhs) {
     return static_cast<OperatingMode>(static_cast<underlying_type>(lhs) & static_cast<underlying_type>(rhs));
 }
 
-static bool operating_mode_to_bool(const OperatingMode om) {
+inline bool operating_mode_to_bool(const OperatingMode om) {
     return static_cast<bool>(underlying_type(om));
 }
 
-static std::ostream& operator<<(std::ostream& os, const OperatingMode om) {
+inline std::ostream& operator<<(std::ostream& os, const OperatingMode om) {
     switch (om) {
         case OperatingMode::CDBG:                            os << "CDBG"; break;
         case OperatingMode::CDBG_AND_SGGS:                   os << "CDBG_AND_SGGS"; break;
