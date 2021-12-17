@@ -107,7 +107,7 @@ static bool sanity_check_input_files(const ProgramOptions& po) {
 int main(int argc, char** argv) {
     Timer timer;
 
-    std::cout << "unitig_distance | MIT License | Copyright (c) 2020-2022 Juri Kuronen\n\n";
+    if (po.verbose()) std::cout << "unitig_distance | MIT License | Copyright (c) 2020-2022 Juri Kuronen\n\n";
 
     // Read command line arguments.
     ProgramOptions po(argc, argv);
