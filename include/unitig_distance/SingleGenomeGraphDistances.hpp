@@ -33,21 +33,22 @@ public:
     // Calculate distances for single genome graphs.
     void solve(const SearchJobs& search_jobs) {
         auto calculate_distance_block = [this, &search_jobs](std::size_t thr, std::size_t block_start, std::size_t block_end) {
+            const auto& graph = m_graph;
             for (std::size_t i = thr + block_start; i < block_end; i += m_n_threads) {
                 const auto& job = search_jobs[i];
 
                 auto v = job.v();
-                if (!m_graph.contains(m_graph.left_node(v))) continue;
+                if (!graph.contains(graph.left_node(v))) continue;
 
                 auto sources = get_sgg_sources(v);
                 auto targets = get_sgg_targets(job.ws());
-                auto target_dist = m_graph.distance(sources, targets, m_max_distance);
+                auto target_dist = graph.distance(sources, targets, m_max_distance);
 
                 std::vector<real_t> job_dist(job.ws().size(), m_max_distance);
                 std::map<int_t, real_t> dist;
                 for (std::size_t i = 0; i < targets.size(); ++i) dist[targets[i]] = target_dist[i];
-                process_job_distances(job_dist, m_graph.left_node(v), job.ws(), dist);
-                process_job_distances(job_dist, m_graph.right_node(v), job.ws(), dist);
+                process_job_distances(job_dist, graph.left_node(v), job.ws(), dist);
+                process_job_distances(job_dist, graph.right_node(v), job.ws(), dist);
                 add_job_distances_to_sgg_distances(job, job_dist);
             }
         };
