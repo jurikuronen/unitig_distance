@@ -24,3 +24,5 @@ namespace unitig_distance {
     std::vector<T> transform_distance_tuple_vector(const std::vector<std::tuple<real_t, real_t, real_t, int_t>>& tuple_vector);
 
 }
+
+std::tuple<real_t, real_t, real_t, int_t> operator+=(std::tuple<real_t, real_t, real_t, int_t>& lhs, const std::tuple<real_t, real_t, real_t, int_t> rhs);

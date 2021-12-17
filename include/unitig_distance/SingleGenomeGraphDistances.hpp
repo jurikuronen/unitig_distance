@@ -18,23 +18,21 @@ class SingleGenomeGraphDistances {
 public:
     SingleGenomeGraphDistances(
         const SingleGenomeGraph& graph,
-        std::vector<distance_tuple_t>& sgg_distances,
         int_t n_threads,
         int_t block_size,
-        real_t max_distance = REAL_T_MAX,
-        bool verbose = false)
+        real_t max_distance = REAL_T_MAX)
     : m_graph(graph),
-      m_sgg_distances(sgg_distances),
       m_n_threads(n_threads),
       m_block_size(block_size),
       m_max_distance(max_distance)
     { }
 
     // Calculate distances for single genome graphs.
-    void solve(const SearchJobs& search_jobs) {
-        auto calculate_distance_block = [this, &search_jobs](std::size_t thr, std::size_t block_start, std::size_t block_end) {
+    std::vector<std::unordered_map<int_t, distance_tuple_t>> solve(const SearchJobs& search_jobs) {
+        std::vector<std::unordered_map<int_t, distance_tuple_t>> sgg_batch_distances(m_n_threads);
+        auto calculate_distance_block = [this, &search_jobs, &sgg_batch_distances](std::size_t thr, std::size_t block_start, std::size_t block_end) {
             const auto& graph = m_graph;
-            for (std::size_t i = thr + block_start; i < block_end; i += m_n_threads) {
+            for (std::size_t i = block_start + thr; i < block_end; i += m_n_threads) {
                 const auto& job = search_jobs[i];
 
                 auto v = job.v();
@@ -53,7 +51,7 @@ public:
                 process_job_distances(job_dist, graph.left_node(v), job.ws(), dist);
                 process_job_distances(job_dist, graph.right_node(v), job.ws(), dist);
 
-                add_job_distances_to_sgg_distances(job, job_dist);
+                add_job_distances_to_sgg_distances(sgg_batch_distances[thr], job, job_dist);
             }
         };
         std::vector<std::thread> threads(m_n_threads);
@@ -62,12 +60,11 @@ public:
             for (std::size_t thr = 0; thr < (std::size_t) m_n_threads; ++thr) threads[thr] = std::thread(calculate_distance_block, thr, block_start, block_end);
             for (auto& thr : threads) thr.join();
         }
+        return sgg_batch_distances;
     }
 
 private:
     const SingleGenomeGraph& m_graph;
-
-    std::vector<distance_tuple_t>& m_sgg_distances;
 
     int_t m_n_threads;
     int_t m_block_size;
@@ -154,19 +151,14 @@ private:
         }
     }
 
-    void add_job_distances_to_sgg_distances(const SearchJob& job, const std::vector<real_t>& job_dist) {
+    void add_job_distances_to_sgg_distances(std::unordered_map<int_t, distance_tuple_t>& sgg_distances, const SearchJob& job, const std::vector<real_t>& job_dist) {
         for (std::size_t w_idx = 0; w_idx < job_dist.size(); ++w_idx) {
             auto distance = job_dist[w_idx];
             if (distance >= m_max_distance) continue;
-            auto original_index = job.original_index(w_idx);
-            real_t min, max, mean;
-            int_t count;
-            std::tie(min, max, mean, count) = m_sgg_distances[original_index];
-            min = std::min(min, distance);
-            max = std::max(max, distance);
-            mean = (mean * count + distance) / (count + 1);
-            ++count;
-            m_sgg_distances[original_index] = std::make_tuple(min, max, mean, count);
+            auto original_idx = job.original_index(w_idx);
+            if (sgg_distances.find(original_idx) == sgg_distances.end()) sgg_distances.emplace(original_idx, std::make_tuple(REAL_T_MAX, 0.0, 0.0, 0));
+            auto& distances = sgg_distances[original_idx];
+            distances += std::make_tuple(distance, distance, distance, 1);
         }
     }
 

@@ -58,6 +58,19 @@ namespace unitig_distance {
         std::transform(tuple_vector.begin(), tuple_vector.end(), vector.begin(), get_element);
         return vector;
     }
+
+}
+
+std::tuple<real_t, real_t, real_t, int_t> operator+=(std::tuple<real_t, real_t, real_t, int_t>& lhs, const std::tuple<real_t, real_t, real_t, int_t> rhs) {
+    real_t min, max, mean, min_2, max_2, mean_2;
+    int_t count, count_2;
+    std::tie(min, max, mean, count) = lhs;
+    std::tie(min_2, max_2, mean_2, count_2) = rhs;
+    min = std::min(min, min_2);
+    max = std::max(max, max_2);
+    mean = (mean * count + mean_2 * count_2) / (count + count_2);
+    count += count_2;
+    return lhs = std::make_tuple(min, max, mean, count);
 }
 
 static bool sanity_check_input_files(const ProgramOptions& po) {
@@ -239,9 +252,19 @@ int main(int argc, char** argv) {
 
                 // Calculate distances in the single genome graphs.
                 for (const auto& sg_graph : sg_graphs) {
-                    SingleGenomeGraphDistances sggd(sg_graph, sgg_distances, po.n_threads(), po.block_size(), po.max_distance(), po.verbose());
-                    sggd.solve(search_jobs); // Updates sgg_distances.
+                    SingleGenomeGraphDistances sggd(sg_graph, batch, po.block_size(), po.max_distance());
+                    auto sgg_batch_distances = sggd.solve(search_jobs);
+                    // Combine results across threads.
+                    for (const auto& distances : sgg_batch_distances) {
+                        for (const auto& result : distances) {
+                            int_t original_idx;
+                            std::tuple<real_t, real_t, real_t, int_t> distance_tuple;
+                            std::tie(original_idx, distance_tuple) = result;
+                            sgg_distances[original_idx] += distance_tuple;
+                        }
+                    }
                 }
+
                 if (po.verbose()) {
                     t_sgg_distances.add_time_since_mark();
                     std::cout << timer.get_time_block_since_start() << " Calculated distances in the single genome graphs " << i + 1 << "-" << i + batch
