@@ -85,7 +85,7 @@ A list of available options is also available with the command line argument `-h
 ### Calculating distances in general graphs
 The following constructs a general graph from an edges file (`-E <path_to_edges_file>`) and calculates distances between 100 (`-n 100`) vertex pairs read from the queries file (`-Q <path_to_queries_file>`) in parallel using 4 threads (`-t 4`). The output will be written to `<output_stem>.ud_0_based`. Verbose-mode (`-v`) is set and a log will be written both to the terminal and to the file `<output_stem>.ud_log`.
 ```
-/bin/unitig_distance -E <path_to_edges_file> \
+./bin/unitig_distance -E <path_to_edges_file> \
                      -Q <path_to_queries_file> -n 100 \
                      -o <output_stem> -t 4 -v | tee <output_stem>.ud_log
 ```
@@ -93,7 +93,7 @@ The following constructs a general graph from an edges file (`-E <path_to_edges_
 ### Calculating distances in compacted de Bruijn graphs
 The following constructs a compacted de Bruijn graph from an edges file (`-E <path_to_edges_file>`) and a unitigs file (`-U <path_to_unitigs_file>`) with k-mer length 61 (`-k 61`) and calculates distances between all vertex pairs read from the queries file (`-Q <path_to_queries_file>`) in parallel using 16 threads (`-t 16`). The queries use one-based numbering (`-1q`). The output will be written to `<output_stem>.ud_0_based`. Verbose-mode (`-v`) is set and a log will be written both to the terminal and to the file `<output_stem>.ud_log`.
 ```
-/bin/unitig_distance -E <path_to_edges_file> \
+./bin/unitig_distance -E <path_to_edges_file> \
                      -U <path_to_unitigs_file> -k 61 \
                      -Q <path_to_queries_file> -1q \
                      -o <output_stem> -t 16 -v | tee <output_stem>.ud_log
@@ -102,7 +102,7 @@ The following constructs a compacted de Bruijn graph from an edges file (`-E <pa
 ### Calculating distances in single genome graphs
 Following from the above section ([Calculating distances in compacted de Bruijn graphs](#calculating-distances-in-compacted-de-bruijn-graphs)), the following constructs all the single genome graphs in the single genome graph paths file (`-S [ --sgg-paths-file ] arg`) and calculates distances in these graphs only (`-r [ --run-sggs-only ]`).
 ```
-/bin/unitig_distance -E <path_to_edges_file> \
+./bin/unitig_distance -E <path_to_edges_file> \
                      -U <path_to_unitigs_file> -k 61 \
                      -Q <path_to_queries_file> -1q \
                      -S <path_to_sggs_file> -r \
