@@ -17,6 +17,7 @@ See also the project [gfa1_parser](https://github.com/jurikuronen/gfa1_parser) w
   - [Applying a filter on the graph](#applying-a-filter-on-the-graph)
   - [Distance queries file](#distance-queries-file)
 - [Usage](#usage)
+  - [List of available options](#list-of-available-options)
   - [Calculating distances in general graphs](#calculating-distances-in-general-graphs)
   - [Calculating distances in compacted de Bruijn graphs](#calculating-distances-in-compacted-de-bruijn-graphs)
   - [Calculating distances in single genome graphs](#calculating-distances-in-single-genome-graphs)
@@ -80,7 +81,39 @@ Restricting the number of queries to be read from the queries file can be done w
 ## Usage
 This section contains examples of how to use unitig_distance. 
 
-A list of available options is also available with the command line argument `-h [ --help ]`.
+### List of available options
+This list is available with the command line argument `-h [ --help ]`.
+```
+Graph edges (required always):                
+  -E [ --edges-file ] arg                     Path to file containing graph edges.
+  -1g [ --graphs-one-based ]                  Graph files use one-based numbering.
+                                              
+Filter the graph:                             
+  -F [ --filter-file ] arg                    Path to file containing vertices/unitigs that will be filtered.
+  -c [ --filter-criterion ] arg (=2.0)        Criterion for the filter.
+                                              
+CDBG operating mode:                          
+  -U [ --unitigs-file ] arg                   Path to file containing unitigs.
+  -k [ --k-mer-length ] arg                   k-mer length.
+                                              
+CDBG and/or SGGS operating mode:              
+  -S [ --sgg-paths-file ] arg                 Path to file containing paths to single genome graph edge files.
+  -r [ --run-sggs-only ]                      Calculate distances only in the single genome graphs.
+                                              
+Distance queries:                             
+  -Q [ --queries-file ] arg                   Path to queries file.
+  -n [ --n-queries ] arg (=inf)               Number of queries to read from the queries file.
+  -1q [ --queries-one-based ]                 Queries file uses one-based numbering.
+  -b [ --block-size ] arg (=50000)            Process this many queries/tasks at a time.
+  -d [ --max-distance ] arg (=inf)            Maximum allowed graph distance (for constraining the searches).
+                                              
+Optional arguments.                           
+  -o [ --output-stem ] arg (=out)             Path for output files (without extension).
+  -1o [ --output-one-based ]                  Output files use one-based numbering.
+  -t [ --threads ] arg (=1)                   Number of threads.
+  -v [ --verbose ]                            Be verbose.
+  -h [ --help ]                               Print this list.
+```
 
 ### Calculating distances in general graphs
 The following constructs a general graph from an edges file (`-E <path_to_edges_file>`) and calculates distances between 100 (`-n 100`) vertex pairs read from the queries file (`-Q <path_to_queries_file>`) in parallel using 4 threads (`-t 4`). The output will be written to `<output_stem>.ud_0_based`. Verbose-mode (`-v`) is set and a log will be written both to the terminal and to the file `<output_stem>.ud_log`.
