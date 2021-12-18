@@ -75,7 +75,7 @@ v w distance <unused> score <unused> ... <unused>
 ```
 where the third column `distance` will be replaced by unitig_distance, fourth column is unused, fifth `score` column will be used to calculate some statistics and the remaining columns are unused. The unused fields will still be written back to unitig_distance's output files &ndash; only the `distance` field will be replaced.
 
-Restricting the number of queries to be read from the queries file can be done with `-n [ --n-queries ] arg(=inf)`.
+Restricting the number of queries to be read from the queries file can be done with `-n [ --n-queries ] arg (=inf)`.
 
 ## Usage
 This section contains examples of how to use unitig_distance. 
