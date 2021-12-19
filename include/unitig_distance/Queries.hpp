@@ -37,6 +37,15 @@ public:
         }
     }
 
+    // Create a copy with given indices.
+    Queries(const Queries& other, const std::vector<int_t>& indices) : m_output_one_based(other.m_output_one_based), m_max_distance(other.m_max_distance) {
+        for (auto i : indices) {
+            m_queries.emplace_back(other.v(i), other.w(i));
+            m_scores.push_back(other.score(i));
+            m_fields.push_back(other.m_fields[i]);
+        }
+    }
+
     // Output queries back with the calculated distances.
     void output_distances(const std::string& out_filename, const std::vector<real_t>& distances) const {
         std::ofstream ofs(out_filename);
@@ -67,6 +76,14 @@ public:
     int_t v(std::size_t idx) const { return m_queries[idx].first; }
     int_t w(std::size_t idx) const { return m_queries[idx].second; }
     real_t score(std::size_t idx) const { return m_scores[idx]; }
+
+    std::vector<real_t> get_distance_vector() const {
+        std::vector<real_t> distances;
+        for (const auto& fields : m_fields) distances.push_back(std::stod(fields[2]));
+        return distances;
+    }
+
+    bool using_extended_queries() const { return m_scores.size() > 0; }
 
     typename std::vector<std::pair<int_t, int_t>>::iterator begin() { return m_queries.begin(); }
     typename std::vector<std::pair<int_t, int_t>>::iterator end() { return m_queries.end(); }

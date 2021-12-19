@@ -9,8 +9,9 @@
 #include "Graph.hpp"
 #include "GraphDistances.hpp"
 #include "OperatingMode.hpp"
-#include "Queries.hpp"
+#include "OutlierTools.hpp"
 #include "ProgramOptions.hpp"
+#include "Queries.hpp"
 #include "SearchJobs.hpp"
 #include "SingleGenomeGraph.hpp"
 #include "SingleGenomeGraphDistances.hpp"
@@ -73,35 +74,75 @@ std::tuple<real_t, real_t, real_t, int_t> operator+=(std::tuple<real_t, real_t, 
     return lhs = std::make_tuple(min, max, mean, count);
 }
 
+static void determine_outliers(const Queries& queries,
+                               const std::vector<real_t>& distances,
+                               const ProgramOptions& po,
+                               const std::string& graph_name,
+                               const std::string& out_outliers_filename,
+                               const std::string& out_outlier_stats_filename,
+                               Timer& timer)
+{
+    timer.set_mark();
+    OutlierTools ot(queries, distances, po.output_one_based());
+    ot.determine_outliers(po.ld_distance(), po.ld_distance_min(), po.ld_distance_score(), po.ld_distance_nth_score());
+    if (po.verbose()) {
+        std::cout << timer.get_time_block_since_start() << " Determined outliers for " << graph_name << " distances "
+                  << timer.get_time_since_mark_and_set_mark() << "." << std::endl;
+        ot.print_details();
+    }
+    ot.output_outliers(out_outliers_filename, out_outlier_stats_filename);
+    if (po.verbose()) std::cout << timer.get_time_block_since_start_and_set_mark() << " Output outliers to files "
+                                << out_outliers_filename << " and " << out_outlier_stats_filename << " in "
+                                << timer.get_time_since_mark_and_set_mark() << "." << std::endl;
+}
+
+static std::vector<int_t> read_counts(const std::string& counts_filename, int_t n_queries) {
+    std::vector<int_t> counts;
+    std::ifstream ifs(counts_filename);
+    int_t cnt = 0;
+    for (std::string line; std::getline(ifs, line); ) {
+        auto fields = unitig_distance::get_fields(line);
+        if (fields.size() < 3) {
+            std::cout << "Wrong number of fields in counts file: " << counts_filename << std::endl;
+            return std::vector<int_t>();
+        }
+        counts.push_back(std::stoll(fields[3]));
+        if (++cnt == n_queries) break;
+    }
+    return counts;
+}
+
 static bool sanity_check_input_files(const ProgramOptions& po) {
-    if (!unitig_distance::file_is_good(po.edges_filename())) {
-        std::cerr << "Can't open " << po.edges_filename() << std::endl;
-        return false;
-    }
-
-    if (po.operating_mode(OperatingMode::FILTER)) {
-        if (!unitig_distance::file_is_good(po.filter_filename())) {
-            std::cerr << "Can't open " << po.filter_filename() << std::endl;
-            return false;
-        }
-    }
-
-    if (po.operating_mode(OperatingMode::CDBG)) {
-        if (!unitig_distance::file_is_good(po.unitigs_filename())) {
-            std::cerr << "Can't open " << po.unitigs_filename() << std::endl;
+    if (po.operating_mode() != OperatingMode::OUTLIER_TOOLS) {
+        if (!unitig_distance::file_is_good(po.edges_filename())) {
+            std::cerr << "Can't open " << po.edges_filename() << std::endl;
             return false;
         }
 
-        if (po.operating_mode(OperatingMode::SGGS)) {
-            if (!unitig_distance::file_is_good(po.sggs_filename())) {
-                std::cerr << "Can't open " << po.sggs_filename() << std::endl;
+        if (po.operating_mode(OperatingMode::FILTER)) {
+            if (!unitig_distance::file_is_good(po.filter_filename())) {
+                std::cerr << "Can't open " << po.filter_filename() << std::endl;
                 return false;
             }
-            std::ifstream ifs(po.sggs_filename());
-            for (std::string path_edges; std::getline(ifs, path_edges); ) {
-                if (!unitig_distance::file_is_good(path_edges)) {
-                    std::cerr << "Can't open " << path_edges << std::endl;
+        }
+
+        if (po.operating_mode(OperatingMode::CDBG)) {
+            if (!unitig_distance::file_is_good(po.unitigs_filename())) {
+                std::cerr << "Can't open " << po.unitigs_filename() << std::endl;
+                return false;
+            }
+
+            if (po.operating_mode(OperatingMode::SGGS)) {
+                if (!unitig_distance::file_is_good(po.sggs_filename())) {
+                    std::cerr << "Can't open " << po.sggs_filename() << std::endl;
                     return false;
+                }
+                std::ifstream ifs(po.sggs_filename());
+                for (std::string path_edges; std::getline(ifs, path_edges); ) {
+                    if (!unitig_distance::file_is_good(path_edges)) {
+                        std::cerr << "Can't open " << path_edges << std::endl;
+                        return false;
+                    }
                 }
             }
         }
@@ -110,6 +151,13 @@ static bool sanity_check_input_files(const ProgramOptions& po) {
     if (!po.queries_filename().empty() && po.n_queries() > 0) {
         if (!unitig_distance::file_is_good(po.queries_filename())) {
             std::cerr << "Can't open " << po.queries_filename() << std::endl;
+            return false;
+        }
+    }
+
+    if (po.operating_mode() == OperatingMode::OUTLIER_TOOLS && !po.sgg_counts_filename().empty()) {
+        if (!unitig_distance::file_is_good(po.sgg_counts_filename())) {
+            std::cerr << "Can't open " << po.sgg_counts_filename() << std::endl;
             return false;
         }
     }
@@ -127,16 +175,57 @@ int main(int argc, char** argv) {
 
     if (po.verbose()) po.print_run_details();
 
+    // Operating in outliers tool mode only.
+    if (po.operating_mode() == OperatingMode::OUTLIER_TOOLS) {
+        if (po.n_queries() == 0) po.set_n_queries(INT_T_MAX);
+
+        const Queries queries(po.queries_filename(), po.n_queries(), po.queries_one_based());
+        if (!queries.using_extended_queries()) {
+            std::cout << "Queries missing required fields." << std::endl;
+            return 1;
+        }
+        if (po.verbose()) {
+            std::cout << timer.get_time_block_since_start() << " Read " << unitig_distance::neat_number_str(queries.size())
+                      << " lines from queries file in " << timer.get_time_since_mark_and_set_mark() << "." << std::endl;
+        }
+
+        const auto distances = queries.get_distance_vector();
+        if (po.verbose()) {
+            std::cout << timer.get_time_block_since_start() << " Got distance vector in "
+                      << timer.get_time_since_mark_and_set_mark() << "." << std::endl;
+        }
+
+        std::vector<int_t> counts;
+        if (!po.sgg_counts_filename().empty()) {
+            counts = read_counts(po.sgg_counts_filename(), po.n_queries());
+            if (counts.empty()) return 1;
+            if (po.verbose()) {
+                std::cout << timer.get_time_block_since_start() << " Read counts vector in "
+                          << timer.get_time_since_mark_and_set_mark() << "." << std::endl;
+            }
+        }
+
+        determine_outliers(queries, distances, po, "provided",
+                           po.out_outliers_filename(), po.out_outlier_stats_filename(), timer);
+        return 0;
+    }
+
     // Construct the graph according to operating mode.
     Graph graph;
     if (po.operating_mode(OperatingMode::GENERAL)) {
         graph = Graph(po.edges_filename(), po.graphs_one_based());
-    } else { // OperatingMode::CDBG.
+    } else if (po.operating_mode(OperatingMode::CDBG)) {
         graph = Graph(po.unitigs_filename(), po.edges_filename(), po.k(), po.graphs_one_based());
+    } else if (po.operating_mode() == OperatingMode::OUTLIER_TOOLS) {
+        // Operating in outlier tools mode only, no graph will be constructed.
+    } else {
+        // Catch unknown operating mode -- this shouldn't happen.
+        std::cout << "Program logic error." << std::endl;
+        return 1;
     }
-    const std::string graph_name = po.operating_mode(OperatingMode::CDBG) ? "compacted de Bruijn graph" : "graph";
 
     if (graph.size() == 0) return 1; // Failed to construct the graph.
+    const std::string graph_name = po.operating_mode(OperatingMode::CDBG) ? "compacted de Bruijn graph" : "graph";
 
     if (po.verbose()) {
         std::cout << timer.get_time_block_since_start() << " Constructed " << graph_name << " in "
@@ -192,10 +281,16 @@ int main(int argc, char** argv) {
             queries.output_distances(po.out_filename(), graph_distances);
             if (po.verbose()) std::cout << timer.get_time_block_since_start() << " Output " << graph_name << " distances to file "
                                         << po.out_filename() << " in " << timer.get_time_since_mark_and_set_mark() << "." << std::endl;
+
+            // Determine outliers.
+            if (po.operating_mode(OperatingMode::OUTLIER_TOOLS)) {
+                determine_outliers(queries, graph_distances, po, graph_name, po.out_outliers_filename(), po.out_outlier_stats_filename(), timer);
+            }
             
             if (filtered_graph.size() > 0) {
+                const std::string filtered_graph_name = "filtered" + graph_name;
                 if (po.verbose()) std::cout << timer.get_time_block_since_start_and_set_mark()
-                                            << " Calculating distances in the filtered " << graph_name << "." << std::endl;
+                                            << " Calculating distances in the " << filtered_graph_name << "." << std::endl;
 
                 // Calculate distances in the filtered graph.
                 GraphDistances fgd(filtered_graph, timer, po.n_threads(), po.block_size(), po.max_distance(), po.verbose());
@@ -203,8 +298,14 @@ int main(int argc, char** argv) {
 
                 // Output filtered graph distances.
                 queries.output_distances(po.out_filtered_filename(), filtered_graph_distances);
-                if (po.verbose()) std::cout << timer.get_time_block_since_start() << " Output filtered " << graph_name << " distances to file "
+                if (po.verbose()) std::cout << timer.get_time_block_since_start() << " Output " << filtered_graph_name << " distances to file "
                                             << po.out_filtered_filename() << " in " << timer.get_time_since_mark_and_set_mark() << "." << std::endl;
+
+                // Determine outliers.
+                if (po.operating_mode(OperatingMode::OUTLIER_TOOLS)) {
+                    determine_outliers(queries, filtered_graph_distances, po, filtered_graph_name,
+                                       po.out_filtered_outliers_filename(), po.out_filtered_outlier_stats_filename(), timer);
+                }
             }
         }
 
@@ -287,21 +388,36 @@ int main(int argc, char** argv) {
             }
 
             // Output single genome graphs graph distances.
-            queries.output_distances(po.out_sgg_min_filename(), unitig_distance::transform_distance_tuple_vector<real_t, 0>(sgg_distances));
+            auto min_distances = unitig_distance::transform_distance_tuple_vector<real_t, 0>(sgg_distances);
+            queries.output_distances(po.out_sgg_min_filename(), min_distances);
             if (po.verbose()) std::cout << timer.get_time_block_since_start() << " Output single genome graph min distances to file "
                                         << po.out_sgg_min_filename() << " in " << timer.get_time_since_mark_and_set_mark() << "." << std::endl;
 
-            queries.output_distances(po.out_sgg_max_filename(), unitig_distance::transform_distance_tuple_vector<real_t, 1>(sgg_distances));
+            auto max_distances = unitig_distance::transform_distance_tuple_vector<real_t, 1>(sgg_distances);
+            queries.output_distances(po.out_sgg_max_filename(), max_distances);
             if (po.verbose()) std::cout << timer.get_time_block_since_start() << " Output single genome graph max distances to file "
                                         << po.out_sgg_max_filename() << " in " << timer.get_time_since_mark_and_set_mark() << "." << std::endl;
 
-            queries.output_distances(po.out_sgg_mean_filename(), unitig_distance::transform_distance_tuple_vector<real_t, 2>(sgg_distances));
+            auto mean_distances = unitig_distance::transform_distance_tuple_vector<real_t, 2>(sgg_distances);
+            queries.output_distances(po.out_sgg_mean_filename(), mean_distances);
             if (po.verbose()) std::cout << timer.get_time_block_since_start() << " Output single genome graph mean distances to file "
                                         << po.out_sgg_mean_filename() << " in " << timer.get_time_since_mark_and_set_mark() << "." << std::endl;
 
-            queries.output_counts(po.out_sgg_counts_filename(), unitig_distance::transform_distance_tuple_vector<int_t, 3>(sgg_distances));
+            auto sgg_counts = unitig_distance::transform_distance_tuple_vector<int_t, 3>(sgg_distances);
+            queries.output_counts(po.out_sgg_counts_filename(), sgg_counts);
             if (po.verbose()) std::cout << timer.get_time_block_since_start() << " Output single genome graph connected vertex pair counts to file "
                                         << po.out_sgg_counts_filename() << " in " << timer.get_time_since_mark_and_set_mark() << "." << std::endl;
+
+            // Determine outliers.
+            if (po.operating_mode(OperatingMode::OUTLIER_TOOLS)) {
+                determine_outliers(queries, min_distances, po, "single genome graph min distances",
+                                   po.out_sgg_min_outliers_filename(), po.out_sgg_min_outlier_stats_filename(), timer);
+                determine_outliers(queries, min_distances, po, "single genome graph max distances",
+                                   po.out_sgg_max_outliers_filename(), po.out_sgg_max_outlier_stats_filename(), timer);
+                determine_outliers(queries, min_distances, po, "single genome graph mean distances",
+                                   po.out_sgg_mean_outliers_filename(), po.out_sgg_mean_outlier_stats_filename(), timer);
+
+            }
         }
 
         if (po.verbose()) std::cout << timer.get_time_block_since_start() << " Finished." << std::endl;

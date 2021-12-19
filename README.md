@@ -3,7 +3,7 @@ unitig_distance is a command line program that calculates graph-theoretic shorte
 
 As the name suggests, the impetus for designing unitig_distance comes from bioinformatics. The primary motivation is to be able to calculate, in reasonable time, millions of distance queries in compacted de Bruijn graphs constructed from genome references, where graph vertices correspond to unitigs. These kind of graphs tend to be very large (millions of vertices and edges) and highly connected with vertex-connectivity in the bulk of the graph being at least 4, which means that typical graph decompositions into 2-connected or 3-connected components in order to obtain fast distance calculation algorithms are not suitable.
 
-unitig_distance can be used to supplement programs such as [SpydrPick](https://github.com/santeripuranen/SpydrPick) that calculate pairwise scores for the unitigs, but cannot calculate their distances in the underlying compacted de Bruijn graph. For such use cases, see [Input files - Distance queries file](#distance-queries-file) and [Usage - Calculating distances in compacted de Bruijn graphs](#calculating-distances-in-compacted-de-bruijn-graphs).
+unitig_distance can be used to supplement programs such as [SpydrPick](https://github.com/santeripuranen/SpydrPick) that calculate pairwise scores for the unitigs, but cannot calculate their distances in the underlying compacted de Bruijn graph. For such use cases, see [Input files - Distance queries file](#distance-queries-file), [Usage - Calculating distances in compacted de Bruijn graphs](#calculating-distances-in-compacted-de-bruijn-graphs) and [Usage - Determining outliers from supplied scores](#determining-outliers-from-supplied-scores).
 
 See also the project [gfa1_parser](https://github.com/jurikuronen/gfa1_parser) which can be used to create suitable input files for unitig_distance from genome references.
 
@@ -21,6 +21,7 @@ See also the project [gfa1_parser](https://github.com/jurikuronen/gfa1_parser) w
   - [Calculating distances in general graphs](#calculating-distances-in-general-graphs)
   - [Calculating distances in compacted de Bruijn graphs](#calculating-distances-in-compacted-de-bruijn-graphs)
   - [Calculating distances in single genome graphs](#calculating-distances-in-single-genome-graphs)
+  - [Determining outliers from supplied scores](#determining-outliers-from-supplied-scores)
 
 ## Installation from source with a C++11 compliant compiler
 ```
@@ -84,12 +85,13 @@ This section contains examples of how to use unitig_distance.
 ### List of available options
 This list is available with the command line argument `-h [ --help ]`.
 ```
-Graph edges (required always):                
+Graph edges:                                  
   -E  [ --edges-file ] arg                    Path to file containing graph edges.
   -1g [ --graphs-one-based ]                  Graph files use one-based numbering.
                                               
 Filter the graph:                             
   -F  [ --filter-file ] arg                   Path to file containing vertices/unitigs that will be filtered.
+  -1f [ --filter-one-based ]                  Filter file uses one-based numbering.
   -c  [ --filter-criterion ] arg (=2.0)       Criterion for the filter.
                                               
 CDBG operating mode:                          
@@ -102,14 +104,25 @@ CDBG and/or SGGS operating mode:
                                               
 Distance queries:                             
   -Q  [ --queries-file ] arg                  Path to queries file.
-  -n  [ --n-queries ] arg (=inf)              Number of queries to read from the queries file.
   -1q [ --queries-one-based ]                 Queries file uses one-based numbering.
+  -n  [ --n-queries ] arg (=inf)              Number of queries to read from the queries file.
   -b  [ --block-size ] arg (=50000)           Process this many queries/tasks at a time.
   -d  [ --max-distance ] arg (=inf)           Maximum allowed graph distance (for constraining the searches).
                                               
-Optional arguments.                           
+Tools for determining outliers:               
+  -x  [ --output-outliers ]                   Output a list of outliers and outlier statistics.
+  -C  [ --sgg-counts-file ] arg               Path to single genome graph counts file.
+  -1c [ --sgg-counts-one-based ]              Single genome graph counts file uses one-based numbering.
+  -Cc [ --sgg-count-threshold ] arg (=10)     Filter low count single genome graph distances.
+  -l  [ --ld-distance ] arg (=-1)             Linkage disequilibrium distance (automatically determined if negative).
+  -lm [ --ld-distance-min ] arg (=1000)       Minimum ld distance for automatic ld distance determination.
+  -ls [ --ld-distance-score ] arg (=0.8)      Score difference threshold for automatic ld distance determination.
+  -ln [ --ld-distance-nth-score ] arg (=10)   Use nth max score for automatic ld distance determination.
+                                              
+Other arguments.                              
   -o  [ --output-stem ] arg (=out)            Path for output files (without extension).
   -1o [ --output-one-based ]                  Output files use one-based numbering.
+  -1  [ --all-one-based ]                     Use one-based numbering for everything.
   -t  [ --threads ] arg (=1)                  Number of threads.
   -v  [ --verbose ]                           Be verbose.
   -h  [ --help ]                              Print this list.
@@ -119,27 +132,28 @@ Optional arguments.
 The following constructs a general graph from an edges file (`-E <path_to_edges_file>`) and calculates distances between 100 (`-n 100`) vertex pairs read from the queries file (`-Q <path_to_queries_file>`) in parallel using 4 threads (`-t 4`). The output will be written to `<output_stem>.ud_0_based`. Verbose-mode (`-v`) is set and a log will be written both to the terminal and to the file `<output_stem>.ud_log`.
 ```
 ./bin/unitig_distance -E <path_to_edges_file> \
-                     -Q <path_to_queries_file> -n 100 \
-                     -o <output_stem> -t 4 -v | tee <output_stem>.ud_log
+                      -Q <path_to_queries_file> -n 100 \
+                      -o <output_stem> -t 4 -v | tee <output_stem>.ud_log
 ```
 
 ### Calculating distances in compacted de Bruijn graphs
-The following constructs a compacted de Bruijn graph from an edges file (`-E <path_to_edges_file>`) and a unitigs file (`-U <path_to_unitigs_file>`) with k-mer length 61 (`-k 61`) and calculates distances between all vertex pairs read from the queries file (`-Q <path_to_queries_file>`) in parallel using 16 threads (`-t 16`). The queries use one-based numbering (`-1q`). The output will be written to `<output_stem>.ud_0_based`. Verbose-mode (`-v`) is set and a log will be written both to the terminal and to the file `<output_stem>.ud_log`.
+The following constructs a compacted de Bruijn graph from an edges file (`-E <path_to_edges_file>`) and a unitigs file (`-U <path_to_unitigs_file>`) with k-mer length 61 (`-k 61`) and calculates distances between all vertex pairs read from the queries file (`-Q <path_to_queries_file>`) in parallel using 16 threads (`-t 16`). The queries use one-based numbering (`-1q`). Verbose-mode (`-v`) is set and a log will be written both to the terminal and to the file `<output_stem>.ud_log`.
 ```
 ./bin/unitig_distance -E <path_to_edges_file> \
-                     -U <path_to_unitigs_file> -k 61 \
-                     -Q <path_to_queries_file> -1q \
-                     -o <output_stem> -t 16 -v | tee <output_stem>.ud_log
+                      -U <path_to_unitigs_file> -k 61 \
+                      -Q <path_to_queries_file> -1q \
+                      -o <output_stem> -t 16 -v | tee <output_stem>.ud_log
 ```
+The output will be written to `<output_stem>.ud_0_based`.
 
 ### Calculating distances in single genome graphs
 Following from the above section ([Calculating distances in compacted de Bruijn graphs](#calculating-distances-in-compacted-de-bruijn-graphs)), the following constructs all the single genome graphs in the single genome graph paths file (`-S [ --sgg-paths-file ] arg`) and calculates distances in these graphs only (`-r [ --run-sggs-only ]`).
 ```
 ./bin/unitig_distance -E <path_to_edges_file> \
-                     -U <path_to_unitigs_file> -k 61 \
-                     -Q <path_to_queries_file> -1q \
-                     -S <path_to_sggs_file> -r \
-                     -o <output_stem> -t 16 -v | tee <output_stem>.ud_log
+                      -U <path_to_unitigs_file> -k 61 \
+                      -Q <path_to_queries_file> -1q \
+                      -S <path_to_sggs_file> -r \
+                      -o <output_stem> -t 16 -v | tee <output_stem>.ud_log
 ```
 The output will be written to
 - `<output_stem>.ud_sgg_min_0_based`
@@ -147,4 +161,19 @@ The output will be written to
 - `<output_stem>.ud_sgg_mean_0_based`
 - `<output_stem>.ud_sgg_counts_0_based`
 
-where the \*min\*/\*max\*/\*mean\* files contain minimum, maximum and mean distances across the single genome graphs and the \*counts\* file contains for each query the count of connected vertex pairs across the single genome graphs.
+where the \*min\*/\*max\*/\*mean\* files contain minimum, maximum and mean distances across the single genome graphs and the \*counts\* file contains, for each query, the count of single genome graphs where the query's vertex pair is connected.
+
+### Determining outliers from supplied scores
+When the queries contain pairwise scores for the unitigs, for example when the output of a program such as [SpydrPick](https://github.com/santeripuranen/SpydrPick) is provided as the distance queries file (see [Input files - Distance queries file](#distance-queries-file)), unitig_distance can automatically determine outliers and outlier stats for all graphs being worked on with the command line argument `-x [ --output-outliers ]`. Single genome graph outliers will have an additional filter for queries where the count of single genome graphs where the query's vertex pair is connected is less than `sgg_count_threshold` which is set to 10 by default. Modifying this filter is possible with the command line argument `-Cc [ --sgg-count-threshold ] arg (=10)` with a value of 0 completely disabling it.
+
+The outlier threshold estimation is currently experimental, intended to aid with post-processing the results and should not be depended on fully. The estimation only works well with sufficiently large inputs (ideally, the queries should cover all nodes of interest). It is based on Tukey's outlier test, which assesses how extreme a score is compared to a global background distribution. As background distribution, an extreme value distribution is fitted from maximum unitig scores beyond a distance-based cutoff in order to deal with linkage disequilibrium. The linkage disequilibrium distance cutoff can be specified with the command line argument `-l [ --ld-distance ] arg (=-1)`, but unitig_distance can also attempt to determine it automatically if left at its default negative value (recommended).
+
+It is also possible to run unitig_distance in outlier tools mode for already calculated distances by supplying them with the command line argument `-Q [ --queries-file ] arg`. In this mode, no graph files should be supplied, otherwise unitig_distance will simply recalculate the distances using the queries file as normal queries input. An example is provided below for how to use this mode.
+
+**Example.** Assume the distances have been calculated from a queries file that contained pairwise scores according to the example at [Calculating distances in single genome graphs](#calculating-distances-in-single-genome-graphs). The following runs unitig_distance in outlier tools mode (`-x`) using the mean distances as the queries file (`-Q <output_stem>.ud_sgg_mean_0_based`). The counts file (`-C <output_stem>.ud_sgg_counts_0_based`) is provided as well and the count threshold is set to 50 (`-Cc 50`). Unitig_distance will determine the linkage disequilibrium distance cutoff automatically and calculates the outlier threshold and extreme outlier threshold values, which will be written to the outlier stats file. Verbose-mode (`-v`) is set and a log will be written to the terminal.
+```
+./bin/unitig_distance -x --Q <output_stem>.ud_sgg_mean_0_based \
+                      -C <output_stem>.ud_sgg_counts_0_based -Cc 50 \
+                      -o <output_stem_sgg> -v
+```
+The linkage disequilibrium distance cutoff, outlier threshold and extreme outlier threshold values will be written to `<output_stem_sgg>.ud_outlier_stats`. Then, these values will be used to collect the queries which will be written to `<output_stem_sgg>.ud_outliers_0_based`.
