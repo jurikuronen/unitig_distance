@@ -8,48 +8,38 @@
 #include "Queries.hpp"
 #include "Timer.hpp"
 #include "types.hpp"
+#include "unitig_distance.hpp"
 
 class OutlierTools {
 public:
-    // Distance vector calculated by unitig_distance in this run.
-    OutlierTools(const Queries& queries,
-                 const std::vector<real_t>& distance_vector,
-                 bool output_one_based = false,
-                 bool verbose = false)
-    : m_queries(queries),
-      m_distances(distance_vector),
-      m_counts(m_empty_counts),
-      m_output_one_based(output_one_based),
-      m_verbose(verbose)
-    { precalculate_largest_values(); }
-
     OutlierTools(const Queries& queries,
                  const std::vector<real_t>& distance_vector,
                  const std::vector<int_t>& counts_vector, 
+                 real_t max_distance,
                  bool output_one_based = false,
                  bool verbose = false)
     : m_queries(queries),
       m_distances(distance_vector),
       m_counts(counts_vector),
+      m_max_distance(max_distance),
       m_output_one_based(output_one_based),
       m_verbose(verbose)
     { precalculate_largest_values(); }
 
-    void determine_outliers(int_t ld_distance, int_t ld_distance_min, real_t ld_distance_score, int_t ld_distance_nth_score) {
-        determine_outliers(ld_distance, ld_distance_min, ld_distance_score, ld_distance_nth_score, 0);
-    }
-
     void determine_outliers(int_t ld_distance, int_t ld_distance_min, real_t ld_distance_score, int_t ld_distance_nth_score, int_t sgg_count_threshold) {
         // Linkage disequilibrium will be determined automatically if ld_distance >= 0.
-        int_t a = ld_distance < 0 ? ld_distance_min : ld_distance;
-        int_t b = ld_distance < 0 ? m_largest_distance : ld_distance;
+        real_t a = (real_t) ld_distance < 0.0 ? ld_distance_min : ld_distance;
+        real_t b = (real_t) ld_distance < 0.0 ? m_largest_distance : ld_distance;
         real_t required_score = ld_distance_score * m_largest_score;
-        int iter = 1;
+
+        if (m_counts.size() == 0) sgg_count_threshold = 0;
 
         Timer t;
 
+        int_t iter = 1;
+
         do {
-            m_ld_distance = (a + b) / 2;
+            m_ld_distance = (a + b) / 2.0;
             real_t max_score = calculate_outlier_thresholds(ld_distance_nth_score, sgg_count_threshold);
             if (max_score < required_score) {
                 b = m_ld_distance;
@@ -58,7 +48,7 @@ public:
             }
             std::cout << "OutlierTools: " << t.get_time_since_mark_and_set_mark() << ", Iteration " << iter++
                       << ", outlier threshold=" << m_outlier_threshold << ", extreme outlier threshold=" << m_extreme_outlier_threshold
-                      << ", ld distance=" << m_ld_distance << std::endl;
+                      << ", ld distance=" << (int_t) m_ld_distance << std::endl;
         } while (b - a > 50);
 
         collect_outliers(sgg_count_threshold);
@@ -77,7 +67,7 @@ public:
     }
 
     void print_details() const {
-        std::cout << "OutlierTools: LD distance=" << m_ld_distance << std::endl;
+        std::cout << "OutlierTools: LD distance=" << (int_t) m_ld_distance << std::endl;
         std::cout << "OutlierTools: outlier threshold=" << m_outlier_threshold 
                   << " (" << m_outlier_indices.size() << " outliers)" << std::endl;
         std::cout << "OutlierTools: extreme outlier threshold=" << m_extreme_outlier_threshold
@@ -85,11 +75,11 @@ public:
     }
 
 private:
-    const std::vector<int_t> m_empty_counts;
-
     const Queries& m_queries;
     const std::vector<real_t>& m_distances;
     const std::vector<int_t>& m_counts;
+
+    real_t m_max_distance;
 
     bool m_output_one_based;
     bool m_verbose;
@@ -101,7 +91,7 @@ private:
     real_t m_largest_distance = 0.0;
     real_t m_largest_score = 0.0;
 
-    int_t m_ld_distance = -1;
+    real_t m_ld_distance = -1.0;
     real_t m_outlier_threshold = -1.0;
     real_t m_extreme_outlier_threshold = -1.0;
 
@@ -111,7 +101,7 @@ private:
         real_t largest_score = 0.0;
         for (std::size_t i = 0; i < m_queries.size(); ++i) {
             largest_v = std::max(largest_v, std::max(m_queries.v(i), m_queries.w(i)));
-            largest_distance = std::max(largest_distance, m_distances[i]);
+            largest_distance = std::max(largest_distance, unitig_distance::fixed_distance(m_distances[i], m_max_distance));
             largest_score = std::max(largest_score, m_queries.score(i));
         }
         m_largest_v = largest_v;

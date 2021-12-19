@@ -50,7 +50,7 @@ public:
     void output_distances(const std::string& out_filename, const std::vector<real_t>& distances) const {
         std::ofstream ofs(out_filename);
         for (std::size_t i = 0; i < size(); ++i) {
-            int_t distance = unitig_distance::fixed_distance(distances[i], m_max_distance);
+            int_t distance = (int_t) unitig_distance::fixed_distance(distances[i], m_max_distance);
             ofs << v(i) + m_output_one_based << ' ' << w(i) + m_output_one_based << ' ' << distance;
             for (std::size_t field_idx = 3; field_idx < m_fields[i].size(); ++field_idx) {
                 ofs << ' ' << m_fields[i][field_idx];

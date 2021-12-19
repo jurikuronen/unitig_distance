@@ -35,6 +35,14 @@ inline OperatingMode operator|=(OperatingMode& lhs, const OperatingMode rhs) {
     return lhs = lhs | rhs;
 }
 
+inline OperatingMode operator^(const OperatingMode lhs, const OperatingMode rhs) {
+    return static_cast<OperatingMode>(static_cast<underlying_type>(lhs) ^ static_cast<underlying_type>(rhs));
+}
+
+inline OperatingMode operator^=(OperatingMode& lhs, const OperatingMode rhs) {
+    return lhs = lhs ^ rhs;
+}
+
 inline OperatingMode operator&(const OperatingMode lhs, const OperatingMode rhs) {
     return static_cast<OperatingMode>(static_cast<underlying_type>(lhs) & static_cast<underlying_type>(rhs));
 }
@@ -43,7 +51,9 @@ inline bool operating_mode_to_bool(const OperatingMode om) {
     return static_cast<bool>(underlying_type(om));
 }
 
-inline std::ostream& operator<<(std::ostream& os, const OperatingMode om) {
+inline std::ostream& operator<<(std::ostream& os, OperatingMode om) {
+    if (om == OperatingMode::OUTLIER_TOOLS) return os << "OUTLIER_TOOLS";
+    om ^= OperatingMode::OUTLIER_TOOLS;
     switch (om) {
         case OperatingMode::CDBG:                            os << "CDBG"; break;
         case OperatingMode::CDBG_AND_SGGS:                   os << "CDBG_AND_SGGS"; break;
@@ -52,7 +62,6 @@ inline std::ostream& operator<<(std::ostream& os, const OperatingMode om) {
         case OperatingMode::CDBG_FILTERED_AND_SGGS:          os << "CDBG_FILTERED_AND_SGGS"; break;
         case OperatingMode::CDBG_FILTERED_AND_SGGS_FILTERED: os << "CDBG_FILTERED_AND_SGGS_FILTERED"; break;
         case OperatingMode::GENERAL_FILTERED:                os << "GENERAL_FILTERED"; break;
-        case OperatingMode::OUTLIER_TOOLS:                   os << "OUTLIER_TOOLS"; break;
         default:                                             os << "DEFAULT";
     }
     return os;

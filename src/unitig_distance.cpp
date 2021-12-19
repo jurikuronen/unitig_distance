@@ -42,7 +42,7 @@ namespace unitig_distance {
         return number_str;
     }
 
-    int_t fixed_distance(real_t distance, real_t max_distance) { return distance >= max_distance ? -1 : (int_t) distance; }
+    real_t fixed_distance(real_t distance, real_t max_distance) { return distance >= max_distance ? -1.0 : (int_t) distance; }
 
     int_t left_node(int_t v) { return v * 2; }
     int_t right_node(int_t v) { return v * 2 + 1; }
@@ -76,6 +76,7 @@ std::tuple<real_t, real_t, real_t, int_t> operator+=(std::tuple<real_t, real_t, 
 
 static void determine_outliers(const Queries& queries,
                                const std::vector<real_t>& distances,
+                               const std::vector<int_t>& counts,
                                const ProgramOptions& po,
                                const std::string& graph_name,
                                const std::string& out_outliers_filename,
@@ -83,8 +84,8 @@ static void determine_outliers(const Queries& queries,
                                Timer& timer)
 {
     timer.set_mark();
-    OutlierTools ot(queries, distances, po.output_one_based());
-    ot.determine_outliers(po.ld_distance(), po.ld_distance_min(), po.ld_distance_score(), po.ld_distance_nth_score());
+    OutlierTools ot(queries, distances, counts, po.max_distance(), po.output_one_based(), po.verbose());
+    ot.determine_outliers(po.ld_distance(), po.ld_distance_min(), po.ld_distance_score(), po.ld_distance_nth_score(), po.sgg_count_threshold());
     if (po.verbose()) {
         std::cout << timer.get_time_block_since_start() << " Determined outliers for " << graph_name << " distances "
                   << timer.get_time_since_mark_and_set_mark() << "." << std::endl;
@@ -205,7 +206,7 @@ int main(int argc, char** argv) {
             }
         }
 
-        determine_outliers(queries, distances, po, "provided",
+        determine_outliers(queries, distances, counts, po, "provided",
                            po.out_outliers_filename(), po.out_outlier_stats_filename(), timer);
         return 0;
     }
@@ -284,7 +285,7 @@ int main(int argc, char** argv) {
 
             // Determine outliers.
             if (po.operating_mode(OperatingMode::OUTLIER_TOOLS)) {
-                determine_outliers(queries, graph_distances, po, graph_name, po.out_outliers_filename(), po.out_outlier_stats_filename(), timer);
+                determine_outliers(queries, graph_distances, std::vector<int_t>(), po, graph_name, po.out_outliers_filename(), po.out_outlier_stats_filename(), timer);
             }
             
             if (filtered_graph.size() > 0) {
@@ -303,7 +304,7 @@ int main(int argc, char** argv) {
 
                 // Determine outliers.
                 if (po.operating_mode(OperatingMode::OUTLIER_TOOLS)) {
-                    determine_outliers(queries, filtered_graph_distances, po, filtered_graph_name,
+                    determine_outliers(queries, filtered_graph_distances, std::vector<int_t>(), po, filtered_graph_name,
                                        po.out_filtered_outliers_filename(), po.out_filtered_outlier_stats_filename(), timer);
                 }
             }
@@ -410,11 +411,11 @@ int main(int argc, char** argv) {
 
             // Determine outliers.
             if (po.operating_mode(OperatingMode::OUTLIER_TOOLS)) {
-                determine_outliers(queries, min_distances, po, "single genome graph min distances",
+                determine_outliers(queries, min_distances, sgg_counts, po, "single genome graph min distances",
                                    po.out_sgg_min_outliers_filename(), po.out_sgg_min_outlier_stats_filename(), timer);
-                determine_outliers(queries, min_distances, po, "single genome graph max distances",
+                determine_outliers(queries, min_distances, sgg_counts, po, "single genome graph max distances",
                                    po.out_sgg_max_outliers_filename(), po.out_sgg_max_outlier_stats_filename(), timer);
-                determine_outliers(queries, min_distances, po, "single genome graph mean distances",
+                determine_outliers(queries, min_distances, sgg_counts, po, "single genome graph mean distances",
                                    po.out_sgg_mean_outliers_filename(), po.out_sgg_mean_outlier_stats_filename(), timer);
 
             }

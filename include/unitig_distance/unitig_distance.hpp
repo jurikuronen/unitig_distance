@@ -13,7 +13,7 @@ namespace unitig_distance {
 
     std::string neat_number_str(int_t number);
 
-    int_t fixed_distance(real_t distance, real_t max_distance);
+    real_t fixed_distance(real_t distance, real_t max_distance);
 
     int_t left_node(int_t v);
     int_t right_node(int_t v);
