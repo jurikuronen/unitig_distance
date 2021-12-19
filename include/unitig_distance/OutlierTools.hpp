@@ -49,7 +49,7 @@ public:
             std::cout << "OutlierTools: " << t.get_time_since_mark_and_set_mark() << ", Iteration " << iter++
                       << ", outlier threshold=" << m_outlier_threshold << ", extreme outlier threshold=" << m_extreme_outlier_threshold
                       << ", ld distance=" << (int_t) m_ld_distance << std::endl;
-        } while (b - a > 50);
+        } while (b - a > 10);
 
         collect_outliers(sgg_count_threshold);
     }
