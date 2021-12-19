@@ -42,7 +42,7 @@ namespace unitig_distance {
         return number_str;
     }
 
-    real_t fixed_distance(real_t distance, real_t max_distance) { return distance >= max_distance ? -1.0 : (int_t) distance; }
+    real_t fixed_distance(real_t distance, real_t max_distance) { return distance >= max_distance ? -1.0 : distance; }
 
     int_t left_node(int_t v) { return v * 2; }
     int_t right_node(int_t v) { return v * 2 + 1; }
@@ -417,7 +417,6 @@ int main(int argc, char** argv) {
                                    po.out_sgg_max_outliers_filename(), po.out_sgg_max_outlier_stats_filename(), timer);
                 determine_outliers(queries, min_distances, sgg_counts, po, "single genome graph mean distances",
                                    po.out_sgg_mean_outliers_filename(), po.out_sgg_mean_outlier_stats_filename(), timer);
-
             }
         }
 
