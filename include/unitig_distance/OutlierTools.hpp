@@ -66,7 +66,7 @@ public:
         q.output_distances(outliers_filename, q.get_distance_vector());
 
         std::ofstream ofs(outlier_stats_filename);
-        ofs << m_ld_distance << ' ' << m_outlier_threshold << ' ' << m_extreme_outlier_threshold << '\n';
+        ofs << (int_t) m_ld_distance << ' ' << m_outlier_threshold << ' ' << m_extreme_outlier_threshold << '\n';
     }
 
     void print_details() const {
