@@ -24,13 +24,16 @@ public:
       m_max_distance(max_distance),
       m_output_one_based(output_one_based),
       m_verbose(verbose)
-    { precalculate_largest_values(); }
+    { }
 
     void determine_outliers(int_t ld_distance, int_t ld_distance_min, real_t ld_distance_score, int_t ld_distance_nth_score, int_t sgg_count_threshold) {
+        real_t largest_distance = get_largest_distance();
+        if (largest_distance < ld_distance_min) return; // Distances in queries not large enough.
+
         // Linkage disequilibrium will be determined automatically if ld_distance >= 0.
         real_t a = (real_t) ld_distance < 0.0 ? ld_distance_min : ld_distance;
-        real_t b = (real_t) ld_distance < 0.0 ? m_largest_distance : ld_distance;
-        real_t required_score = ld_distance_score * m_largest_score;
+        real_t b = (real_t) ld_distance < 0.0 ? largest_distance : ld_distance;
+        real_t required_score = ld_distance_score * m_queries.largest_score();;
 
         if (m_counts.size() == 0) sgg_count_threshold = 0;
 
@@ -87,30 +90,21 @@ private:
     std::vector<int_t> m_outlier_indices;
     std::vector<int_t> m_extreme_outlier_indices;
 
-    int_t m_largest_v = 0;
-    real_t m_largest_distance = 0.0;
-    real_t m_largest_score = 0.0;
-
     real_t m_ld_distance = -1.0;
     real_t m_outlier_threshold = -1.0;
     real_t m_extreme_outlier_threshold = -1.0;
 
-    void precalculate_largest_values() {
-        int_t largest_v = 0;
+    real_t get_largest_distance() const {
         real_t largest_distance = 0.0;
-        real_t largest_score = 0.0;
         for (std::size_t i = 0; i < m_queries.size(); ++i) {
-            largest_v = std::max(largest_v, std::max(m_queries.v(i), m_queries.w(i)));
             largest_distance = std::max(largest_distance, unitig_distance::fixed_distance(m_distances[i], m_max_distance));
-            largest_score = std::max(largest_score, m_queries.score(i));
         }
-        m_largest_v = largest_v;
-        m_largest_distance = largest_distance;
-        m_largest_score = largest_score;
+        return largest_distance;
     }
 
     real_t calculate_outlier_thresholds(int_t ld_distance_nth_score, int_t sgg_count_threshold) {
-        std::vector<real_t> v_scores(m_largest_v);
+        int_t sz = m_queries.largest_v();
+        std::vector<real_t> v_scores(sz);
 
         for (std::size_t i = 0; i < m_queries.size(); ++i) {
             if (sgg_count_threshold && m_counts[i] < sgg_count_threshold) continue;
@@ -123,7 +117,9 @@ private:
         }
 
         std::vector<real_t> distribution;
-        for (int_t i = 0; i < m_largest_v; ++i) if (v_scores[i] > 0.0) distribution.push_back(v_scores[i]);
+        for (int_t i = 0; i < sz; ++i) if (v_scores[i] > 0.0) distribution.push_back(v_scores[i]);
+
+        if (distribution.size() == 0) return 0.0;
 
         real_t q1 = get_q(distribution, 1);
         real_t q3 = get_q(distribution, 3);
@@ -135,7 +131,7 @@ private:
     }
 
     real_t get_q(std::vector<real_t>& distribution, int_t q) const {
-        int_t q_idx = q * distribution.size() / 4;
+        int_t q_idx = std::min(distribution.size() - 1, q * distribution.size() / 4);
         std::nth_element(distribution.begin(), distribution.begin() + q_idx, distribution.end());
         return distribution[q_idx];
     }
@@ -143,7 +139,8 @@ private:
     void set_outlier_threshold(real_t q1, real_t q3) { m_outlier_threshold = q3 + 1.5 * (q3 - q1); }
     void set_extreme_outlier_threshold(real_t q1, real_t q3) { m_extreme_outlier_threshold = q3 + 3.0 * (q3 - q1); }
 
-    real_t max_score_from_end(std::vector<real_t>& distribution, int_t ld_distance_nth_score) {
+    real_t max_score_from_end(std::vector<real_t>& distribution, int_t ld_distance_nth_score) const {
+        ld_distance_nth_score = std::min((int_t) distribution.size() - 1, ld_distance_nth_score);
         std::nth_element(distribution.begin(), distribution.begin() + ld_distance_nth_score, distribution.end(), std::greater<real_t>());
         return distribution[ld_distance_nth_score];
     }
