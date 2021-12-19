@@ -21,7 +21,7 @@ public:
       m_counts(m_empty_counts),
       m_output_one_based(output_one_based),
       m_verbose(verbose)
-    { calculate_max_distance_and_pos(); }
+    { precalculate_largest_values(); }
 
     OutlierTools(const Queries& queries,
                  const std::vector<real_t>& distance_vector,
@@ -33,7 +33,7 @@ public:
       m_counts(counts_vector),
       m_output_one_based(output_one_based),
       m_verbose(verbose)
-    { calculate_max_distance_and_pos(); }
+    { precalculate_largest_values(); }
 
     void determine_outliers(int_t ld_distance, int_t ld_distance_min, real_t ld_distance_score, int_t ld_distance_nth_score) {
         determine_outliers(ld_distance, ld_distance_min, ld_distance_score, ld_distance_nth_score, 0);
@@ -105,7 +105,7 @@ private:
     real_t m_outlier_threshold = -1.0;
     real_t m_extreme_outlier_threshold = -1.0;
 
-    void calculate_max_distance_and_pos() {
+    void precalculate_largest_values() {
         int_t largest_v = 0;
         real_t largest_distance = 0.0;
         real_t largest_score = 0.0;
