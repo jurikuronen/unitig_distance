@@ -225,7 +225,10 @@ int main(int argc, char** argv) {
         return 1;
     }
 
-    if (graph.size() == 0) return 1; // Failed to construct the graph.
+    if (graph.size() == 0) {
+        std::cout << "Failed to construct graph." << std::endl;
+        return 1; // Failed to construct the graph.
+    }
     const std::string graph_name = po.operating_mode(OperatingMode::CDBG) ? "compacted de Bruijn graph" : "graph";
 
     if (po.verbose()) {
@@ -337,7 +340,12 @@ int main(int argc, char** argv) {
                 for (std::size_t thr = 0; thr < batch; ++thr) threads.emplace_back(construct_sgg, thr, path_edge_files[i + thr]);
                 for (auto& thr : threads) thr.join();
 
-                for (const auto& sg_graph : sg_graphs) if (sg_graph.size() == 0) return 1;
+                for (const auto& sg_graph : sg_graphs) {
+                    if (sg_graph.size() == 0) {
+                        std::cout << "Failed to construct single genome graph." << std::endl;
+                        return 1;
+                    }
+                }
 
                 if (po.verbose()) {
                     t_sgg.add_time_since_mark();
