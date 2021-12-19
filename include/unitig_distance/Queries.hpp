@@ -1,5 +1,6 @@
 #pragma once
 
+#include <algorithm>
 #include <fstream>
 #include <iostream>
 #include <string>
@@ -13,7 +14,7 @@ class Queries {
 public:
     // Read queries file.
     Queries(const std::string& queries_filename, int_t n_queries, bool queries_one_based = false, bool output_one_based = false, real_t max_distance = REAL_T_MAX)
-    : m_output_one_based(output_one_based), m_max_distance(max_distance)
+    : m_output_one_based(output_one_based), m_max_distance(max_distance), m_largest_v(0), m_largest_score(0.0)
     {
         std::ifstream ifs(queries_filename);
         int_t cnt = 0;
@@ -26,10 +27,12 @@ public:
             }
             int_t v = std::stoll(fields[0]) - queries_one_based;
             int_t w = std::stoll(fields[1]) - queries_one_based;
+            m_largest_v = std::max(m_largest_v, std::max(v, w));
             m_queries.emplace_back(v, w);
             if (fields.size() > 2) {
                 // Queries file is the output of another program.
                 real_t score = std::stod(fields[4]); // Score must be in column 5.
+                m_largest_score = std::max(m_largest_score, score);
                 m_scores.push_back(score);
             }
             m_fields.push_back(std::move(fields));
@@ -77,6 +80,9 @@ public:
     int_t w(std::size_t idx) const { return m_queries[idx].second; }
     real_t score(std::size_t idx) const { return m_scores[idx]; }
 
+    int_t largest_v() const { return m_largest_v; }
+    real_t largest_score() const { return m_largest_score; }
+
     std::vector<real_t> get_distance_vector() const {
         std::vector<real_t> distances;
         for (const auto& fields : m_fields) distances.push_back(std::stod(fields[2]));
@@ -98,6 +104,9 @@ private:
     bool m_output_one_based;
 
     real_t m_max_distance;
+
+    int_t m_largest_v;
+    real_t m_largest_score;
 
 };
 
