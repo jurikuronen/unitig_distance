@@ -23,7 +23,9 @@ The arguments should be given in the exact order as:
 - `<outlier_threshold_alt>`: alternative outlier threshold, set as 0 if unused.
 - `<extreme_outlier_threshold_alt>`: alternative extreme outlier threshold, set as 0 if unused.
 
-The last 3 arguments can be used if you want to plot two outlier estimation statistics in the same plot. As an example, the following reads unitig_distance's output called `<output_stem>.ud_sgg_mean_0_based` and creates a plot called `<output_stem>_sgg_mean.png` after reading all queries from the input file. The score used is called `"Mutual information"`. No sgg counts were used in filtering or outlier threshold estimation, therefore the counts file and criterion are set to unused values. The plot's title will be `<output_Stem_sgg_mean (no sgg counts filtering)`. Linkage disequilibrium distance and the outlier thresholds are obtained from unitig_distance's outlier stats file, but they can also be input manually.
+The last 3 arguments can be used if you want to plot two outlier estimation statistics in the same plot.
+
+As an example, the following reads unitig_distance's output called `<output_stem>.ud_sgg_mean_0_based` and creates a plot called `<output_stem>_sgg_mean.png` after reading all queries from the input file. The score used is called `"Mutual information"`. No sgg counts were used in filtering or outlier threshold estimation, therefore the counts file and criterion are set to unused values. The plot's title will be `<output_Stem_sgg_mean (no sgg counts filtering)`. Linkage disequilibrium distance and the outlier thresholds are obtained from unitig_distance's outlier stats file, but they can also be input manually.
 ```
 Rscript gwes_plot.r <output_stem>.ud_sgg_mean_0_based <output_stem>_sgg_mean.png 0 "Mutual information" \
                     "" 0 "<output_stem>_sgg_mean (no sgg counts filtering)" \
