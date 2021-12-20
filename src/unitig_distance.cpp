@@ -110,9 +110,16 @@ static std::vector<int_t> read_counts(const std::string& counts_filename, int_t 
             std::cout << "Wrong number of fields in counts file: " << counts_filename << std::endl;
             return std::vector<int_t>();
         }
-        counts.push_back(std::stoll(fields[3]));
+        counts.push_back(std::stoll(fields[2]));
         if (++cnt == n_queries) break;
     }
+
+    // Did not manage to read enough counts.
+    if (cnt != n_queries) {
+        std::cout << "Could not read enough counts (" << cnt << "!=" << n_queries << "), counts will be omitted." << std::endl;
+        return std::vector<int_t>();
+    }
+
     return counts;
 }
 
@@ -193,6 +200,8 @@ int main(int argc, char** argv) {
                       << " lines from queries file in " << timer.get_time_since_mark_and_set_mark() << "." << std::endl;
         }
 
+        po.set_n_queries(queries.size());
+
         const auto distances = queries.get_distance_vector();
         if (po.verbose()) {
             std::cout << timer.get_time_block_since_start() << " Got distance vector in "
@@ -204,8 +213,8 @@ int main(int argc, char** argv) {
             counts = read_counts(po.sgg_counts_filename(), po.n_queries());
             if (counts.empty()) return 1;
             if (po.verbose()) {
-                std::cout << timer.get_time_block_since_start() << " Read counts in "
-                          << timer.get_time_since_mark_and_set_mark() << "." << std::endl;
+                std::cout << timer.get_time_block_since_start() << " Read " << unitig_distance::neat_number_str(counts.size())
+                          << " counts in " << timer.get_time_since_mark_and_set_mark() << "." << std::endl;
             }
         }
 
