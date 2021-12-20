@@ -93,6 +93,7 @@ static void determine_outliers(const Queries& queries,
                   << timer.get_time_since_mark_and_set_mark() << "." << std::endl;
         ot.print_details();
     }
+    if (!ot.ok()) return;
     ot.output_outliers(out_outliers_filename, out_outlier_stats_filename);
     if (po.verbose()) std::cout << timer.get_time_block_since_start_and_set_mark() << " Output outliers to files "
                                 << out_outliers_filename << " and " << out_outlier_stats_filename << " in "
@@ -203,7 +204,7 @@ int main(int argc, char** argv) {
             counts = read_counts(po.sgg_counts_filename(), po.n_queries());
             if (counts.empty()) return 1;
             if (po.verbose()) {
-                std::cout << timer.get_time_block_since_start() << " Read counts vector in "
+                std::cout << timer.get_time_block_since_start() << " Read counts in "
                           << timer.get_time_since_mark_and_set_mark() << "." << std::endl;
             }
         }
