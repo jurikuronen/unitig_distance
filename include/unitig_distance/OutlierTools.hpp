@@ -108,7 +108,7 @@ private:
     }
 
     real_t calculate_outlier_thresholds(int_t ld_distance_nth_score, int_t sgg_count_threshold) {
-        int_t sz = m_queries.largest_v();
+        int_t sz = m_queries.largest_v() + 1;
         std::vector<real_t> v_scores(sz);
 
         for (std::size_t i = 0; i < m_queries.size(); ++i) {
