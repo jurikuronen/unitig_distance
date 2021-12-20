@@ -182,7 +182,7 @@ int main(int argc, char** argv) {
     if (po.operating_mode() == OperatingMode::OUTLIER_TOOLS) {
         if (po.n_queries() == 0) po.set_n_queries(INT_T_MAX);
 
-        const Queries queries(po.queries_filename(), po.n_queries(), po.queries_one_based());
+        const Queries queries(po.queries_filename(), po.n_queries(), true, po.queries_one_based());
         if (!queries.using_extended_queries()) {
             std::cout << "Queries missing required fields." << std::endl;
             return 1;
@@ -219,8 +219,6 @@ int main(int argc, char** argv) {
         graph = Graph(po.edges_filename(), po.graphs_one_based());
     } else if (po.operating_mode(OperatingMode::CDBG)) {
         graph = Graph(po.unitigs_filename(), po.edges_filename(), po.k(), po.graphs_one_based());
-    } else if (po.operating_mode() == OperatingMode::OUTLIER_TOOLS) {
-        // Operating in outlier tools mode only, no graph will be constructed.
     } else {
         // Catch unknown operating mode -- this shouldn't happen.
         std::cout << "Program logic error." << std::endl;
@@ -255,7 +253,8 @@ int main(int argc, char** argv) {
 
     // Read queries and calculate distances if the queries file was provided.
     if (!po.queries_filename().empty() && po.n_queries() > 0) {
-        const Queries queries(po.queries_filename(), po.n_queries(), po.queries_one_based(), po.output_one_based(), po.max_distance());
+        const Queries queries(po.queries_filename(), po.n_queries(), po.operating_mode(OperatingMode::OUTLIER_TOOLS),
+                              po.queries_one_based(), po.output_one_based(), po.max_distance());
 
         if (queries.size() == 0) return 1; // Failed to read queries.
 

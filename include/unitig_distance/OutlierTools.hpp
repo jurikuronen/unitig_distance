@@ -27,15 +27,15 @@ public:
     { }
 
     void determine_outliers(int_t ld_distance, int_t ld_distance_min, real_t ld_distance_score, int_t ld_distance_nth_score, int_t sgg_count_threshold) {
-        real_t largest_distance = get_largest_distance();
+        if (m_counts.size() == 0) sgg_count_threshold = 0;
+
+        real_t largest_distance = get_largest_distance(sgg_count_threshold);
         if (largest_distance < ld_distance_min) return; // Distances in queries not large enough.
 
         // Linkage disequilibrium will be determined automatically if ld_distance >= 0.
         real_t a = (real_t) ld_distance < 0.0 ? ld_distance_min : ld_distance;
         real_t b = (real_t) ld_distance < 0.0 ? largest_distance : ld_distance;
         real_t required_score = ld_distance_score * m_queries.largest_score();;
-
-        if (m_counts.size() == 0) sgg_count_threshold = 0;
 
         Timer t;
 
@@ -51,7 +51,8 @@ public:
             }
             std::cout << "OutlierTools: " << t.get_time_since_mark_and_set_mark() << ", Iteration " << iter++
                       << ", outlier threshold=" << m_outlier_threshold << ", extreme outlier threshold=" << m_extreme_outlier_threshold
-                      << ", ld distance=" << (int_t) m_ld_distance << std::endl;
+                      << ", ld distance=" << (int_t) m_ld_distance
+                      << ", coverage=" << m_v_coverage << " (" << unitig_distance::neat_decimal_str(m_v_coverage, m_queries.n_vs()) << ")" << std::endl;
         } while (b - a > 10);
 
         collect_outliers(sgg_count_threshold);
@@ -66,7 +67,7 @@ public:
         q.output_distances(outliers_filename, q.get_distance_vector());
 
         std::ofstream ofs(outlier_stats_filename);
-        ofs << (int_t) m_ld_distance << ' ' << m_outlier_threshold << ' ' << m_extreme_outlier_threshold << '\n';
+        ofs << (int_t) m_ld_distance << ' ' << m_outlier_threshold << ' ' << m_extreme_outlier_threshold << ' ' << m_v_coverage << '\n';
     }
 
     void print_details() const {
@@ -75,6 +76,8 @@ public:
                   << " (" << m_outlier_indices.size() << " outliers)" << std::endl;
         std::cout << "OutlierTools: extreme outlier threshold=" << m_extreme_outlier_threshold
                   << " (" << m_extreme_outlier_indices.size() << " extreme outliers)" << std::endl;
+        std::cout << "OutlierTools: vertex coverage=" << m_v_coverage
+                  << "(" << unitig_distance::neat_decimal_str(m_v_coverage, m_queries.n_vs()) << " queries covered)" << std::endl;
     }
 
 private:
@@ -93,10 +96,12 @@ private:
     real_t m_ld_distance = -1.0;
     real_t m_outlier_threshold = -1.0;
     real_t m_extreme_outlier_threshold = -1.0;
+    int_t m_v_coverage = -1;
 
-    real_t get_largest_distance() const {
+    real_t get_largest_distance(int_t sgg_count_threshold) const {
         real_t largest_distance = 0.0;
         for (std::size_t i = 0; i < m_queries.size(); ++i) {
+            if (sgg_count_threshold && m_counts[i] < sgg_count_threshold) continue;
             largest_distance = std::max(largest_distance, unitig_distance::fixed_distance(m_distances[i], m_max_distance));
         }
         return largest_distance;
@@ -127,6 +132,8 @@ private:
         set_outlier_threshold(q1, q3);
         set_extreme_outlier_threshold(q1, q3);
 
+        set_vertex_coverage(v_scores);
+
         return max_score_from_end(distribution, ld_distance_nth_score);
     }
 
@@ -138,6 +145,8 @@ private:
 
     void set_outlier_threshold(real_t q1, real_t q3) { m_outlier_threshold = q3 + 1.5 * (q3 - q1); }
     void set_extreme_outlier_threshold(real_t q1, real_t q3) { m_extreme_outlier_threshold = q3 + 3.0 * (q3 - q1); }
+
+    void set_vertex_coverage(const std::vector<real_t>& v_scores) { m_v_coverage = 0; for (real_t score : v_scores) if (score > 0.0) ++m_v_coverage; }
 
     real_t max_score_from_end(std::vector<real_t>& distribution, int_t ld_distance_nth_score) const {
         ld_distance_nth_score = std::min((int_t) distribution.size() - 1, ld_distance_nth_score);
