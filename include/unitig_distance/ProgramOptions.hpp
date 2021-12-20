@@ -111,8 +111,10 @@ public:
     void print_run_details() const {
         std::vector<std::string> arguments;
 
-        double_push_back(arguments, "  --edges-file", edges_filename());
-        double_push_back(arguments, "  --graphs-one-based", graphs_one_based() ? "TRUE" : "FALSE");
+        if (!edges_filename().empty()) {
+            double_push_back(arguments, "  --edges-file", edges_filename());
+            double_push_back(arguments, "  --graphs-one-based", graphs_one_based() ? "TRUE" : "FALSE");
+        }
         if (operating_mode(OperatingMode::CDBG)) {
             double_push_back(arguments, "  --unitigs-file", unitigs_filename());
             double_push_back(arguments, "  --k-mer-length", std::to_string(k()));
@@ -130,8 +132,10 @@ public:
             double_push_back(arguments, "  --queries-file", queries_filename());
             double_push_back(arguments, "  --queries-one-based", queries_one_based() ? "TRUE" : "FALSE");
             double_push_back(arguments, "  --n-queries", n_queries() == INT_T_MAX ? "ALL" : std::to_string(n_queries()));
-            double_push_back(arguments, "  --block-size", std::to_string(block_size()));
-            double_push_back(arguments, "  --max-distance", max_distance() == REAL_T_MAX ? "INF" : std::to_string(max_distance()));
+            if (operating_mode() != OperatingMode::OUTLIER_TOOLS) {
+                double_push_back(arguments, "  --block-size", std::to_string(block_size()));
+                double_push_back(arguments, "  --max-distance", max_distance() == REAL_T_MAX ? "INF" : std::to_string(max_distance()));
+            }
         }
         if (operating_mode(OperatingMode::OUTLIER_TOOLS)) {
             double_push_back(arguments, "  --output-outliers", output_outliers() ? "TRUE" : "FALSE");
