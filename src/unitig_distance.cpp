@@ -42,6 +42,8 @@ namespace unitig_distance {
         return number_str;
     }
 
+    std::string neat_decimal_str(int_t nom, int_t denom) { return std::to_string(nom / denom) + "." + std::to_string(nom * 100 / denom % 100); }
+
     real_t fixed_distance(real_t distance, real_t max_distance) { return distance >= max_distance ? -1.0 : distance; }
 
     int_t left_node(int_t v) { return v * 2; }

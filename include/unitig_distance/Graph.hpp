@@ -212,12 +212,9 @@ public:
             n_edges += sz;
             max_degree = std::max(max_degree, sz);
         }
-        int_t avg_degree_decimal = n_edges * 100 / n_nodes % 100;
-        int_t avg_degree = n_edges / n_nodes;
-        n_edges /= 2;
         std::string out_str = "Graph has " +  unitig_distance::neat_number_str(n_nodes) + " connected" + (two_sided() ? " (half) " : " ") + "nodes and "
-                            + unitig_distance::neat_number_str(n_edges) + " edges. Avg and max degree are " + std::to_string(avg_degree) + "."
-                            + std::to_string(avg_degree_decimal) + " and " + std::to_string(max_degree) + ".";
+                            + unitig_distance::neat_number_str(n_edges / 2) + " edges. Avg and max degree are " 
+                            + unitig_distance::neat_decimal_str(n_edges, n_nodes) + " and " + std::to_string(max_degree) + ".";
         std::cout << out_str << std::endl;
     }
 
