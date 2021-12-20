@@ -23,14 +23,20 @@ public:
       m_counts(counts_vector),
       m_max_distance(max_distance),
       m_output_one_based(output_one_based),
-      m_verbose(verbose)
+      m_verbose(verbose),
+      m_ok(true)
     { }
 
     void determine_outliers(int_t ld_distance, int_t ld_distance_min, real_t ld_distance_score, int_t ld_distance_nth_score, int_t sgg_count_threshold) {
         if (m_counts.size() == 0) sgg_count_threshold = 0;
 
         real_t largest_distance = get_largest_distance(sgg_count_threshold);
-        if (largest_distance < ld_distance_min) return; // Distances in queries not large enough.
+        if (largest_distance < ld_distance_min) {
+            // Distances in queries not large enough.
+            m_ok = false;
+            std::cout << "OutlierTools: distances in queries not large enough (largest distance=" << largest_distance << "), maybe change parameters?" << std::endl;
+            return;
+        }
 
         // Linkage disequilibrium will be determined automatically if ld_distance >= 0.
         real_t a = (real_t) ld_distance < 0.0 ? ld_distance_min : ld_distance;
@@ -59,6 +65,7 @@ public:
     }
 
     void output_outliers(const std::string& outliers_filename, const std::string& outlier_stats_filename) {
+        if (!m_ok) return;
         std::vector<int_t> indices;
         indices.reserve(m_outlier_indices.size() + m_extreme_outlier_indices.size());
         for (auto i : m_extreme_outlier_indices) indices.push_back(i);
@@ -71,14 +78,20 @@ public:
     }
 
     void print_details() const {
-        std::cout << "OutlierTools: LD distance=" << (int_t) m_ld_distance << std::endl;
-        std::cout << "OutlierTools: outlier threshold=" << m_outlier_threshold 
-                  << " (" << m_outlier_indices.size() << " outliers)" << std::endl;
-        std::cout << "OutlierTools: extreme outlier threshold=" << m_extreme_outlier_threshold
-                  << " (" << m_extreme_outlier_indices.size() << " extreme outliers)" << std::endl;
-        std::cout << "OutlierTools: vertex coverage=" << m_v_coverage
-                  << "(" << unitig_distance::neat_decimal_str(m_v_coverage, m_queries.n_vs()) << " queries covered)" << std::endl;
+        if (!m_ok) {
+            std::cout << "OutlierTools: unable to determine outliers." << std::endl; 
+        } else {
+            std::cout << "OutlierTools: LD distance=" << (int_t) m_ld_distance << std::endl;
+            std::cout << "OutlierTools: outlier threshold=" << m_outlier_threshold 
+                      << " (" << m_outlier_indices.size() << " outliers)" << std::endl;
+            std::cout << "OutlierTools: extreme outlier threshold=" << m_extreme_outlier_threshold
+                      << " (" << m_extreme_outlier_indices.size() << " extreme outliers)" << std::endl;
+            std::cout << "OutlierTools: vertex coverage=" << m_v_coverage
+                      << "(" << unitig_distance::neat_decimal_str(m_v_coverage, m_queries.n_vs()) << " queries covered)" << std::endl;
+        }
     }
+
+    bool ok() const { return m_ok; }
 
 private:
     const Queries& m_queries;
@@ -89,6 +102,7 @@ private:
 
     bool m_output_one_based;
     bool m_verbose;
+    bool m_ok;
 
     std::vector<int_t> m_outlier_indices;
     std::vector<int_t> m_extreme_outlier_indices;
