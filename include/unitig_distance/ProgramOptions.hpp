@@ -161,7 +161,7 @@ public:
         for (std::size_t i = 0; i < arguments.size(); i += 2) std::printf("%-30s %s\n", arguments[i].data(), arguments[i + 1].data());
         std::cout << std::endl;
 
-        std::cout << "Operating mode: " << operating_mode() << std::endl;
+        std::cout << "Operating mode: " << operating_mode() << std::endl << std::endl;
     }
 
 private:
