@@ -37,6 +37,7 @@ public:
         set_value(m_ld_distance_min, "-lm", "--ld-distance-min");
         set_value(m_ld_distance_score, "-ls", "--ld-distance-score");
         set_value(m_ld_distance_nth_score, "-ln", "--ld-distance-nth-score");
+        set_value(m_outlier_threshold, "-ot", "--outlier-threshold");
         if (has_1_arg()) {
             m_graphs_one_based = m_filter_one_based = m_queries_one_based = m_sgg_counts_one_based = m_output_one_based = true;
         } else {
@@ -73,6 +74,7 @@ public:
     int_t ld_distance_min() const { return m_ld_distance_min; }
     real_t ld_distance_score() const { return m_ld_distance_score; }
     int_t ld_distance_nth_score() const { return m_ld_distance_nth_score; }
+    real_t outlier_threshold() const { return m_outlier_threshold; }
     bool graphs_one_based() const { return m_graphs_one_based; }
     bool filter_one_based() const { return m_filter_one_based; }
     bool queries_one_based() const { return m_queries_one_based; }
@@ -152,6 +154,7 @@ public:
                 double_push_back(arguments, "  --ld-distance-score", std::to_string(ld_distance_score()));
                 double_push_back(arguments, "  --ld-distance-nth-score", std::to_string(ld_distance_nth_score()));
             }
+            if (outlier_threshold() >= 0.0) double_push_back(arguments, "  --outlier-threshold", std::to_string(outlier_threshold()));
         }
         double_push_back(arguments, "  --output-stem", out_stem());
         double_push_back(arguments, "  --output-one-based", output_one_based() ? "TRUE" : "FALSE");
@@ -177,7 +180,7 @@ private:
     std::string m_sgg_counts_filename = "";
     int_t m_k = 0;
     int_t m_n_queries = INT_T_MAX;
-    int_t m_block_size = 50000;
+    int_t m_block_size = 10000;
     real_t m_max_distance = REAL_T_MAX;
     int_t m_n_threads = 1;
     real_t m_filter_criterion = 2.0;
@@ -186,6 +189,7 @@ private:
     int_t m_ld_distance_min = 1000;
     real_t m_ld_distance_score = 0.8;
     int_t m_ld_distance_nth_score = 10;
+    real_t m_outlier_threshold = -1.0;
     bool m_graphs_one_based = false;
     bool m_filter_one_based = false;
     bool m_queries_one_based = false;
@@ -277,7 +281,7 @@ private:
             "  -Q  [ --queries-file ] arg", "Path to queries file.",
             "  -1q [ --queries-one-based ]", "Queries file uses one-based numbering.",
             "  -n  [ --n-queries ] arg (=inf)", "Number of queries to read from the queries file.",
-            "  -b  [ --block-size ] arg (=50000)", "Process this many queries/tasks at a time.",
+            "  -b  [ --block-size ] arg (=10000)", "Process this many queries/tasks at a time.",
             "  -d  [ --max-distance ] arg (=inf)", "Maximum allowed graph distance (for constraining the searches).",
             "", "",
             "Tools for determining outliers:", "",
@@ -289,6 +293,7 @@ private:
             "  -lm [ --ld-distance-min ] arg (=1000)", "Minimum ld distance for automatic ld distance determination.",
             "  -ls [ --ld-distance-score ] arg (=0.8)", "Score difference threshold for automatic ld distance determination.",
             "  -ln [ --ld-distance-nth-score ] arg (=10)", "Use nth max score for automatic ld distance determination.",
+            "  -ot [ --outlier-threshold ] arg", "Use your own outlier threshold.",
             "", "",
             "Other arguments.", "",
             "  -o  [ --output-stem ] arg (=out)", "Path for output files (without extension).",

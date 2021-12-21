@@ -42,7 +42,11 @@ namespace unitig_distance {
         return number_str;
     }
 
-    std::string neat_decimal_str(int_t nom, int_t denom) { return std::to_string(nom / denom) + "." + std::to_string(nom * 100 / denom % 100); }
+    std::string neat_decimal_str(int_t nom, int_t denom) {
+        std::string int_str = std::to_string(nom / denom);
+        std::string dec_str = std::to_string(nom * 100 / denom % 100);
+        return int_str + "." + std::string(2 - dec_str.size(), '0') + dec_str;
+    }
 
     real_t fixed_distance(real_t distance, real_t max_distance) { return distance >= max_distance ? -1.0 : distance; }
 
@@ -86,8 +90,12 @@ static void determine_outliers(const Queries& queries,
                                Timer& timer)
 {
     timer.set_mark();
-    OutlierTools ot(queries, distances, counts, po.max_distance(), po.output_one_based(), po.verbose());
-    ot.determine_outliers(po.ld_distance(), po.ld_distance_min(), po.ld_distance_score(), po.ld_distance_nth_score(), po.sgg_count_threshold());
+    OutlierTools ot(queries, distances, counts, po.sgg_count_threshold(), po.max_distance(), po.output_one_based(), po.verbose());
+    if (po.outlier_threshold() >= 0.0) {
+        ot.determine_outliers(po.ld_distance(), po.outlier_threshold());
+    } else {
+        ot.determine_outliers(po.ld_distance(), po.ld_distance_nth_score(), po.ld_distance_min(), po.ld_distance_score());
+    }
     if (po.verbose()) {
         std::cout << timer.get_time_block_since_start() << " Determined outliers for " << graph_name << " distances "
                   << timer.get_time_since_mark_and_set_mark() << "." << std::endl;
