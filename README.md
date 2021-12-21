@@ -106,7 +106,7 @@ Distance queries:
   -Q  [ --queries-file ] arg                  Path to queries file.
   -1q [ --queries-one-based ]                 Queries file uses one-based numbering.
   -n  [ --n-queries ] arg (=inf)              Number of queries to read from the queries file.
-  -b  [ --block-size ] arg (=50000)           Process this many queries/tasks at a time.
+  -b  [ --block-size ] arg (=10000)           Process this many queries/tasks at a time.
   -d  [ --max-distance ] arg (=inf)           Maximum allowed graph distance (for constraining the searches).
                                               
 Tools for determining outliers:               
@@ -118,6 +118,7 @@ Tools for determining outliers:
   -lm [ --ld-distance-min ] arg (=1000)       Minimum ld distance for automatic ld distance determination.
   -ls [ --ld-distance-score ] arg (=0.8)      Score difference threshold for automatic ld distance determination.
   -ln [ --ld-distance-nth-score ] arg (=10)   Use nth max score for automatic ld distance determination.
+  -ot [ --outlier-threshold ] arg             Use your own outlier threshold.
                                               
 Other arguments.                              
   -o  [ --output-stem ] arg (=out)            Path for output files (without extension).
