@@ -440,9 +440,9 @@ int main(int argc, char** argv) {
             if (po.operating_mode(OperatingMode::OUTLIER_TOOLS)) {
                 determine_outliers(queries, min_distances, sgg_counts, po, "single genome graph min distances",
                                    po.out_sgg_min_outliers_filename(), po.out_sgg_min_outlier_stats_filename(), timer);
-                determine_outliers(queries, min_distances, sgg_counts, po, "single genome graph max distances",
+                determine_outliers(queries, max_distances, sgg_counts, po, "single genome graph max distances",
                                    po.out_sgg_max_outliers_filename(), po.out_sgg_max_outlier_stats_filename(), timer);
-                determine_outliers(queries, min_distances, sgg_counts, po, "single genome graph mean distances",
+                determine_outliers(queries, mean_distances, sgg_counts, po, "single genome graph mean distances",
                                    po.out_sgg_mean_outliers_filename(), po.out_sgg_mean_outlier_stats_filename(), timer);
             }
         }
