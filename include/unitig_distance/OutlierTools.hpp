@@ -73,7 +73,8 @@ public:
         q.output_distances(outliers_filename, get_distances_from_indices(indices));
 
         std::ofstream ofs(outlier_stats_filename);
-        ofs << (int_t) m_ld_distance << ' ' << m_outlier_threshold << ' ' << m_extreme_outlier_threshold << ' ' << m_v_coverage << '\n';
+        ofs << (int_t) m_ld_distance << ' ' << m_outlier_threshold << ' ' << m_extreme_outlier_threshold << ' ' << m_sgg_count_threshold
+            << m_v_coverage << ' ' << unitig_distance::neat_decimal_str(100 * m_v_coverage, m_queries.n_vs()) << "% " << '\n';
     }
 
     void print_details() const {
