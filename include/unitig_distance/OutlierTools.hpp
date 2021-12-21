@@ -71,7 +71,7 @@ public:
         for (auto i : m_extreme_outlier_indices) indices.push_back(i);
         for (auto i : m_outlier_indices) indices.push_back(i);
         Queries q(m_queries, indices);
-        q.output_distances(outliers_filename, q.get_distance_vector());
+        q.output_distances(outliers_filename, get_distances_from_indices(indices));
 
         std::ofstream ofs(outlier_stats_filename);
         ofs << (int_t) m_ld_distance << ' ' << m_outlier_threshold << ' ' << m_extreme_outlier_threshold << ' ' << m_v_coverage << '\n';
@@ -180,6 +180,13 @@ private:
             if (score < m_extreme_outlier_threshold) m_outlier_indices.push_back(i);
             else m_extreme_outlier_indices.push_back(i);
         }
+    }
+
+    std::vector<real_t> get_distances_from_indices(const std::vector<int_t>& indices) {
+        std::vector<real_t> distances;
+        distances.reserve(indices.size());
+        for (auto i : indices) distances.push_back(m_distances[i]);
+        return distances;
     }
 
 };
