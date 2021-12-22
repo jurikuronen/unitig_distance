@@ -179,5 +179,5 @@ unitig_distance can run in outlier tools mode for already calculated distances b
 ```
 The linkage disequilibrium distance cutoff, outlier threshold, extreme outlier threshold and `sgg_count_threshold` values will be written to `<output_stem_sgg>.ud_outlier_stats`. Then, these values will be used to collect the queries which will be written to `<output_stem_sgg>.ud_outliers_0_based`. Notice the updated output name so that the file `<output_stem>.ud_outliers_0_based` won't be overwritten.
 
-**Plotting the results.** It is recommended to check how the results look like graphically by using the provided R script at [scripts/gwes_plot.r](scripts/gwes_plot.r) to visualize the results. Afterwards, it is easy to rerun unitig_distance in outlier tools mode with updated parameter values if necessary.
+**Plotting the results.** It is recommended to check how the results look like graphically by visualizing the results with the provided R script at [unitig_distance/scripts/](scripts). Afterwards, it is easy to rerun unitig_distance in outlier tools mode with updated parameter values if necessary.
 
