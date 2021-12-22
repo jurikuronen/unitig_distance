@@ -154,7 +154,7 @@ public:
                 double_push_back(arguments, "  --ld-distance-score", std::to_string(ld_distance_score()));
                 double_push_back(arguments, "  --ld-distance-nth-score", std::to_string(ld_distance_nth_score()));
             }
-            if (outlier_threshold() >= 0.0) double_push_back(arguments, "  --outlier-threshold", std::to_string(outlier_threshold()));
+            if (ld_distance() >= 0 && outlier_threshold() >= 0.0) double_push_back(arguments, "  --outlier-threshold", std::to_string(outlier_threshold()));
         }
         double_push_back(arguments, "  --output-stem", out_stem());
         double_push_back(arguments, "  --output-one-based", output_one_based() ? "TRUE" : "FALSE");
@@ -293,7 +293,7 @@ private:
             "  -lm [ --ld-distance-min ] arg (=1000)", "Minimum ld distance for automatic ld distance determination.",
             "  -ls [ --ld-distance-score ] arg (=0.8)", "Score difference threshold for automatic ld distance determination.",
             "  -ln [ --ld-distance-nth-score ] arg (=10)", "Use nth max score for automatic ld distance determination.",
-            "  -ot [ --outlier-threshold ] arg", "Use your own outlier threshold.",
+            "  -ot [ --outlier-threshold ] arg", "Set outlier threshold to a custom value.",
             "", "",
             "Other arguments.", "",
             "  -o  [ --output-stem ] arg (=out)", "Path for output files (without extension).",
