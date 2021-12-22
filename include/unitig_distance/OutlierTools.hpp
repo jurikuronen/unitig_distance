@@ -89,7 +89,7 @@ public:
             std::cout << "OutlierTools: extreme outlier threshold=" << m_extreme_outlier_threshold
                       << " (" << m_extreme_outlier_indices.size() << " extreme outliers)" << std::endl;
             std::cout << "OutlierTools: vertex coverage=" << m_v_coverage
-                      << "(" << unitig_distance::neat_decimal_str(100 * m_v_coverage, m_queries.n_vs()) << "% queries covered)" << std::endl;
+                      << " (" << unitig_distance::neat_decimal_str(100 * m_v_coverage, m_queries.n_vs()) << "% queries covered)" << std::endl;
         }
     }
 
