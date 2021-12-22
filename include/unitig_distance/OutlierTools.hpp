@@ -29,22 +29,25 @@ public:
 
     int_t set_count_threshold(int_t sgg_count_threshold) { return m_sgg_count_threshold = m_counts.size() == 0 ? 0 : sgg_count_threshold; }
 
-    // Estimate outlier thresholds. Also estimate linkage disequilibrium distance if ld_distance < 0.0.
+    // Estimate outlier thresholds. Also estimate linkage disequilibrium distance if ld_distance < 0.
     void determine_outliers(int_t ld_distance,
                             int_t ld_distance_nth_score,
                             int_t ld_distance_min,
                             real_t ld_distance_score)
         {
-        real_t largest_distance = get_largest_distance();
-        if (largest_distance < ld_distance_min) {
-            // Distances in queries not large enough.
-            m_ok = false;
-            std::cout << "OutlierTools: distances in queries not large enough (largest distance="
-                      << largest_distance << "), maybe change parameters?" << std::endl;
-            return;
-        }
+        m_ld_distance = (real_t) ld_distance;
 
-        if ((real_t) ld_distance < 0.0) {
+        if (m_ld_distance < 0.0) {
+            real_t largest_distance = get_largest_distance();
+
+            if (largest_distance < ld_distance_min) {
+                // Distances in queries not large enough.
+                m_ok = false;
+                std::cout << "OutlierTools: distances in queries not large enough (largest distance="
+                          << largest_distance << "<" << ld_distance_min << "), maybe change parameters?" << std::endl;
+                return;
+            }
+
             determine_ld_automatically(ld_distance_min, largest_distance, ld_distance_score * m_queries.largest_score(), ld_distance_nth_score);
         }
 
@@ -53,7 +56,7 @@ public:
         collect_outliers();
     }
 
-    // User supplies everything.
+    // Use custom values.
     void determine_outliers(int_t ld_distance, real_t outlier_threshold) {
         m_ld_distance = ld_distance;
         m_outlier_threshold = m_extreme_outlier_threshold = outlier_threshold;
