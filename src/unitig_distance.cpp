@@ -95,8 +95,10 @@ static void determine_outliers(const Queries& queries,
     timer.set_mark();
     OutlierTools ot(queries, distances, counts, po.sgg_count_threshold(), po.max_distance(), po.output_one_based(), po.verbose());
     if (ld_distance() >= 0 && outlier_threshold() >= 0.0) {
+        // Use custom values.
         ot.determine_outliers(po.ld_distance(), po.outlier_threshold());
     } else {
+        // Estimate outlier thresholds. Also estimate linkage disequilibrium distance if ld_distance < 0.
         ot.determine_outliers(po.ld_distance(), po.ld_distance_nth_score(), po.ld_distance_min(), po.ld_distance_score());
     }
     if (po.verbose()) {
