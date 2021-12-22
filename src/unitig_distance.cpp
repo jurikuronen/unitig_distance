@@ -430,14 +430,6 @@ int main(int argc, char** argv) {
                           << t_sgg_distances.get_stopwatch_time() << "." << std::endl;
             }
 
-            // Determine outliers for the full graphs here if using sgg count filtering.
-            if (po.sgg_count_threshold() > 0) {
-                determine_outliers(queries, graph_distances, std::vector<int_t>(), po, graph_name,
-                                           po.out_outliers_filename(), po.out_outlier_stats_filename(), timer);
-                determine_outliers(queries, filtered_graph_distances, std::vector<int_t>(), po, filtered_graph_name,
-                                           po.out_filtered_outliers_filename(), po.out_filtered_outlier_stats_filename(), timer);
-            }
-
             // Set distance correctly for disconnected queries.
             for (auto& distance : sgg_distances) {
                 if (std::get<3>(distance) == 0) distance = std::make_tuple(REAL_T_MAX, REAL_T_MAX, REAL_T_MAX, 0);
@@ -463,6 +455,14 @@ int main(int argc, char** argv) {
             queries.output_counts(po.out_sgg_counts_filename(), sgg_counts);
             if (po.verbose()) std::cout << timer.get_time_block_since_start() << " Output single genome graph connected vertex pair counts to file "
                                         << po.out_sgg_counts_filename() << " in " << timer.get_time_since_mark_and_set_mark() << "." << std::endl;
+
+            // Determine outliers for the full graphs here if using sgg count filtering.
+            if (po.sgg_count_threshold() > 0) {
+                determine_outliers(queries, graph_distances, sgg_counts, po, graph_name,
+                                           po.out_outliers_filename(), po.out_outlier_stats_filename(), timer);
+                determine_outliers(queries, filtered_graph_distances, sgg_counts, po, filtered_graph_name,
+                                           po.out_filtered_outliers_filename(), po.out_filtered_outlier_stats_filename(), timer);
+            }
 
             // Determine outliers.
             if (po.operating_mode(OperatingMode::OUTLIER_TOOLS)) {
