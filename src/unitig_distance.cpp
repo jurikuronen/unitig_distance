@@ -58,6 +58,9 @@ namespace unitig_distance {
         return (std::stringstream(str) >> x).eof();
     }
 
+    template <typename T>
+    void clear(T& container) { T().swap(container); }
+
     template <typename T, int IDX>
     std::vector<T> transform_distance_tuple_vector(const std::vector<std::tuple<real_t, real_t, real_t, int_t>>& tuple_vector) {
         std::vector<T> vector(tuple_vector.size());
@@ -91,11 +94,9 @@ static void determine_outliers(const Queries& queries,
 {
     timer.set_mark();
     OutlierTools ot(queries, distances, counts, po.sgg_count_threshold(), po.max_distance(), po.output_one_based(), po.verbose());
-    if (po.ld_distance() >= 0 && po.outlier_threshold() >= 0.0) {
-        // Use custom values.
+    if (po.outlier_threshold() >= 0.0) {
         ot.determine_outliers(po.ld_distance(), po.outlier_threshold());
     } else {
-        // Estimate outlier thresholds. Also estimate linkage disequilibrium distance if ld_distance < 0.
         ot.determine_outliers(po.ld_distance(), po.ld_distance_nth_score(), po.ld_distance_min(), po.ld_distance_score());
     }
     if (po.verbose()) {
@@ -249,9 +250,7 @@ int main(int argc, char** argv) {
         std::cout << "Failed to construct graph." << std::endl;
         return 1; // Failed to construct the graph.
     }
-
     const std::string graph_name = po.operating_mode(OperatingMode::CDBG) ? "compacted de Bruijn graph" : "graph";
-    const std::string filtered_graph_name = "filtered" + graph_name;
 
     if (po.verbose()) {
         std::cout << timer.get_time_block_since_start() << " Constructed " << graph_name << " in "
@@ -295,8 +294,6 @@ int main(int argc, char** argv) {
                       << " search jobs in " << timer.get_time_since_mark_and_set_mark() << "." << std::endl;
         }
 
-        std::vector<real_t> graph_distances, filtered_graph_distances;
-
         // Skip this part if user requested distances for the single genome graphs only.
         if (!(po.operating_mode(OperatingMode::SGGS) && po.run_sggs_only())) {
             if (po.verbose()) std::cout << timer.get_time_block_since_start_and_set_mark()
@@ -304,7 +301,7 @@ int main(int argc, char** argv) {
 
             // Calculate distances.
             GraphDistances gd(graph, timer, po.n_threads(), po.block_size(), po.max_distance(), po.verbose());
-            graph_distances = gd.solve(search_jobs);
+            auto graph_distances = gd.solve(search_jobs);
 
             // Output distances.
             queries.output_distances(po.out_filename(), graph_distances);
@@ -313,24 +310,20 @@ int main(int argc, char** argv) {
 
             // Determine outliers.
             if (po.operating_mode(OperatingMode::OUTLIER_TOOLS)) {
-                if (po.operating_mode(OperatingMode::SGGS) && po.sgg_count_threshold() > 0) {
-                    if (po.verbose()) {
-                        std::cout << timer.get_time_block_since_start_and_set_mark() << " Running in SGGS mode with sgg_count_threshold > 0. Will "
-                                  << "determine outliers for " << graph_name << " distances after the single genome graph routines." << std::endl;
-                    }
-                } else {
-                    determine_outliers(queries, graph_distances, std::vector<int_t>(), po, graph_name,
-                                       po.out_outliers_filename(), po.out_outlier_stats_filename(), timer);
-                }
+                determine_outliers(queries, graph_distances, std::vector<int_t>(), po, graph_name, po.out_outliers_filename(), po.out_outlier_stats_filename(), timer);
             }
             
             if (filtered_graph.size() > 0) {
+                const std::string filtered_graph_name = "filtered" + graph_name;
                 if (po.verbose()) std::cout << timer.get_time_block_since_start_and_set_mark()
                                             << " Calculating distances in the " << filtered_graph_name << "." << std::endl;
 
                 // Calculate distances in the filtered graph.
                 GraphDistances fgd(filtered_graph, timer, po.n_threads(), po.block_size(), po.max_distance(), po.verbose());
-                filtered_graph_distances = fgd.solve(search_jobs);
+                auto filtered_graph_distances = fgd.solve(search_jobs);
+
+                // Memory management.
+                unitig_distance::clear(filtered_graph);
 
                 // Output filtered graph distances.
                 queries.output_distances(po.out_filtered_filename(), filtered_graph_distances);
@@ -339,15 +332,8 @@ int main(int argc, char** argv) {
 
                 // Determine outliers.
                 if (po.operating_mode(OperatingMode::OUTLIER_TOOLS)) {
-                    if (po.operating_mode(OperatingMode::SGGS) && po.sgg_count_threshold() > 0) {
-                        if (po.verbose()) {
-                            std::cout << timer.get_time_block_since_start_and_set_mark() << " Running in SGGS mode with sgg_count_threshold > 0. Will "
-                                      << "determine outliers for " << filtered_graph_name << " distances after the single genome graph routines." << std::endl;
-                        }
-                    } else {
-                        determine_outliers(queries, filtered_graph_distances, std::vector<int_t>(), po, filtered_graph_name,
+                    determine_outliers(queries, filtered_graph_distances, std::vector<int_t>(), po, filtered_graph_name,
                                        po.out_filtered_outliers_filename(), po.out_filtered_outlier_stats_filename(), timer);
-                    }
                 }
             }
         }
@@ -361,7 +347,7 @@ int main(int argc, char** argv) {
             auto n_sggs = path_edge_files.size();
             
             Timer t_sgg, t_sgg_distances;
-            int_t batch_size = po.n_threads(), n_nodes = 0, n_edges = 0;
+            int_t batch_size = po.n_sggs(), n_nodes = 0, n_edges = 0;
 
             std::vector<std::tuple<real_t, real_t, real_t, int_t>> sgg_distances(po.n_queries(), std::make_tuple(REAL_T_MAX, 0.0, 0.0, 0));
 
@@ -400,7 +386,7 @@ int main(int argc, char** argv) {
 
                 // Calculate distances in the single genome graphs.
                 for (const auto& sg_graph : sg_graphs) {
-                    SingleGenomeGraphDistances sggd(sg_graph, batch, po.block_size(), po.max_distance());
+                    SingleGenomeGraphDistances sggd(sg_graph, po.n_threads(), po.block_size(), po.max_distance());
                     auto sgg_batch_distances = sggd.solve(search_jobs);
                     // Combine results across threads.
                     for (const auto& distances : sgg_batch_distances) {
@@ -420,6 +406,11 @@ int main(int argc, char** argv) {
                 }
             }
 
+            // Set distance correctly for disconnected queries.
+            for (auto& distance : sgg_distances) {
+                if (std::get<3>(distance) == 0) distance = std::make_tuple(REAL_T_MAX, REAL_T_MAX, REAL_T_MAX, 0);
+            }
+
             if (po.verbose()) {
                 n_nodes /= n_sggs;
                 n_edges /= 2 * n_sggs;
@@ -428,11 +419,6 @@ int main(int argc, char** argv) {
                           << unitig_distance::neat_number_str(n_edges) << " edges." << std::endl;
                 std::cout << timer.get_time_block_since_start_and_set_mark() << " Calculating distances in the " << n_sggs << " single genome graphs took "
                           << t_sgg_distances.get_stopwatch_time() << "." << std::endl;
-            }
-
-            // Set distance correctly for disconnected queries.
-            for (auto& distance : sgg_distances) {
-                if (std::get<3>(distance) == 0) distance = std::make_tuple(REAL_T_MAX, REAL_T_MAX, REAL_T_MAX, 0);
             }
 
             // Output single genome graphs graph distances.
@@ -455,14 +441,6 @@ int main(int argc, char** argv) {
             queries.output_counts(po.out_sgg_counts_filename(), sgg_counts);
             if (po.verbose()) std::cout << timer.get_time_block_since_start() << " Output single genome graph connected vertex pair counts to file "
                                         << po.out_sgg_counts_filename() << " in " << timer.get_time_since_mark_and_set_mark() << "." << std::endl;
-
-            // Determine outliers for the full graphs here if using sgg count filtering.
-            if (po.sgg_count_threshold() > 0) {
-                determine_outliers(queries, graph_distances, sgg_counts, po, graph_name,
-                                           po.out_outliers_filename(), po.out_outlier_stats_filename(), timer);
-                determine_outliers(queries, filtered_graph_distances, sgg_counts, po, filtered_graph_name,
-                                           po.out_filtered_outliers_filename(), po.out_filtered_outlier_stats_filename(), timer);
-            }
 
             // Determine outliers.
             if (po.operating_mode(OperatingMode::OUTLIER_TOOLS)) {

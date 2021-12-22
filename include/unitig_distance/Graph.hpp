@@ -20,8 +20,10 @@ using adj_const_itr_t = typename std::vector<edges_t>::const_iterator;
 
 class Graph {
 public:
-    Graph() : m_adj(), m_one_based(false), m_two_sided(false) { }
-    Graph(const Graph& graph) = default;
+    Graph() = default;
+    ~Graph() { unitig_distance::clear(m_adj); }
+    Graph(const Graph& other) = default;
+    Graph(Graph&& other) : m_adj(std::move(other.m_adj)), m_one_based(other.m_one_based), m_two_sided(other.m_two_sided) { }
 
     // Construct ordinary graph.
     Graph(const std::string& edges_filename, bool ob = false) : m_one_based(ob), m_two_sided(false) {
@@ -229,6 +231,20 @@ public:
     edges_itr_t end(int_t v) { return m_adj[v].end(); }
     edges_const_itr_t begin(int_t v) const { return m_adj[v].begin(); }
     edges_const_itr_t end(int_t v) const { return m_adj[v].end(); }
+
+    void swap(Graph& other) {
+        Graph tmp = std::move(*this);
+        *this = std::move(other);
+        other = std::move(tmp);
+    }
+
+    Graph& operator=(const Graph& other) = delete;
+    Graph& operator=(Graph&& other) {
+        m_adj = std::move(other.m_adj);
+        m_one_based = other.m_one_based;
+        m_two_sided = other.m_two_sided;
+        return *this;
+    }
 
     // Compute shortest distance between source(s) and targets.
     std::vector<real_t> distance(

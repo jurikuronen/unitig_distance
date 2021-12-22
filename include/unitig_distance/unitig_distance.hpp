@@ -22,6 +22,9 @@ namespace unitig_distance {
 
     bool is_numeric(const std::string& str);
 
+    template <typename T>
+    void clear(T& container);
+
     template <typename T, int IDX>
     std::vector<T> transform_distance_tuple_vector(const std::vector<std::tuple<real_t, real_t, real_t, int_t>>& tuple_vector);
 

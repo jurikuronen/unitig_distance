@@ -11,6 +11,12 @@
 class SingleGenomeGraph : public Graph {
 public:
     SingleGenomeGraph() = default;
+    ~SingleGenomeGraph() {
+        unitig_distance::clear(m_paths);
+        unitig_distance::clear(m_node_map);
+    }
+    SingleGenomeGraph(const SingleGenomeGraph& other) = delete;
+    SingleGenomeGraph(SingleGenomeGraph&& other) : Graph(std::move(other)), m_paths(std::move(other.m_paths)), m_node_map(std::move(other.m_node_map)) { }
 
     // Construct a compressed single genome graph, which is an edge-induced subgraph from the compacted de Bruijn graph.
     SingleGenomeGraph(const Graph& cdbg, const std::string& edges_filename) {
@@ -80,6 +86,19 @@ public:
 
     real_t distance_in_path(int_t path_idx, int_t idx_1, int_t idx_2) const { return m_paths[path_idx].distance_in_path(idx_1, idx_2); }
 
+    void swap(SingleGenomeGraph& other) {
+        SingleGenomeGraph tmp = std::move(*this);
+        *this = std::move(other);
+        other = std::move(tmp);
+    }
+
+    SingleGenomeGraph& operator=(const SingleGenomeGraph& other) = delete;
+    SingleGenomeGraph& operator=(SingleGenomeGraph&& other) {
+        Graph::operator=(std::move(other));
+        m_paths = std::move(other.m_paths);
+        m_node_map = std::move(other.m_node_map);
+        return *this;
+    }
 
 private:
     struct Path {
