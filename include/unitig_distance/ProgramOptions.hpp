@@ -48,6 +48,7 @@ public:
             m_output_one_based = has_arg("-1o", "--output-one-based");
         }
         m_run_sggs_only = has_arg("-r", "--run-sggs-only");
+        m_run_filter_only = has_arg("-f", "--run-filter-only");
         m_output_outliers = has_arg("-x", "--output-outliers");
         m_verbose = has_arg("-v", "--verbose");
         if (has_arg("-s", "--n-sggs")) {
@@ -87,6 +88,7 @@ public:
     bool sgg_counts_one_based() const { return m_sgg_counts_one_based; }
     bool output_one_based() const { return m_output_one_based; }
     bool run_sggs_only() const { return m_run_sggs_only; }
+    bool run_filter_only() const { return m_run_filter_only; }
     bool output_outliers() const { return m_output_outliers; }
     bool verbose() const { return m_verbose; }
 
@@ -131,6 +133,7 @@ public:
             double_push_back(arguments, "  --filter-file", filter_filename());
             double_push_back(arguments, "  --filter-one-based", filter_one_based() ? "TRUE" : "FALSE");
             double_push_back(arguments, "  --filter-criterion", std::to_string(filter_criterion()));
+            double_push_back(arguments, "  --run-filter-only", run_filter_only() ? "TRUE" : "FALSE");
         }
         if (operating_mode(OperatingMode::SGGS)) {
             double_push_back(arguments, "  --sgg-paths-file", sggs_filename());
@@ -204,6 +207,7 @@ private:
     bool m_sgg_counts_one_based = false;
     bool m_output_one_based = false;
     bool m_run_sggs_only = false;
+    bool m_run_filter_only = false;
     bool m_output_outliers = false;
     bool m_verbose = false;
 
@@ -276,6 +280,7 @@ private:
             "  -F  [ --filter-file ] arg", "Path to file containing vertices/unitigs that will be filtered.",
             "  -1f [ --filter-one-based ]", "Filter file uses one-based numbering.",
             "  -c  [ --filter-criterion ] arg (=2.0)", "Criterion for the filter.",
+            "  -f  [ --run-filter-only ]", "Calculate distances only in the filtered graph.",
             "", "",
             "CDBG operating mode:", "",
             "  -U  [ --unitigs-file ] arg", "Path to file containing unitigs.",

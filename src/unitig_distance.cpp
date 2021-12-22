@@ -248,13 +248,13 @@ int main(int argc, char** argv) {
         return 1;
     }
 
-    if (graph.size() == 0) {
-        std::cout << "Failed to construct graph." << std::endl;
-        return 1; // Failed to construct the graph.
-    }
-
     const std::string graph_name = po.operating_mode(OperatingMode::CDBG) ? "compacted de Bruijn graph" : "graph";
     const std::string filtered_graph_name = "filtered" + graph_name;
+
+    if (graph.size() == 0) {
+        std::cout << "Failed to construct " << graph_name << "." << std::endl;
+        return 1;
+    }
 
     if (po.verbose()) {
         std::cout << timer.get_time_block_since_start() << " Constructed " << graph_name << " in "
@@ -267,7 +267,10 @@ int main(int argc, char** argv) {
     if (po.operating_mode(OperatingMode::FILTER)) {
         filtered_graph = Graph(graph, po.filter_filename(), po.filter_criterion());
 
-        if (filtered_graph.size() == 0) return 1; // Failed to construct the filtered graph.
+        if (filtered_graph.size() == 0) {
+            std::cout << "Failed to construct " << filtered_graph_name << "." << std::endl;
+            return 1;
+        }
 
         if (po.verbose()) {
             std::cout << timer.get_time_block_since_start() << " Constructed filtered " << graph_name << " in "
@@ -281,7 +284,10 @@ int main(int argc, char** argv) {
         const Queries queries(po.queries_filename(), po.n_queries(), po.operating_mode(OperatingMode::OUTLIER_TOOLS),
                               po.queries_one_based(), po.output_one_based(), po.max_distance());
 
-        if (queries.size() == 0) return 1; // Failed to read queries.
+        if (queries.size() == 0) {
+            std::cout << "Failed to read queries." << std::endl;
+            return 1;
+        }
 
         po.set_n_queries(queries.size());
 
@@ -302,32 +308,34 @@ int main(int argc, char** argv) {
 
         // Skip this part if user requested distances for the single genome graphs only.
         if (!(po.operating_mode(OperatingMode::SGGS) && po.run_sggs_only())) {
-            if (po.verbose()) std::cout << timer.get_time_block_since_start_and_set_mark()
-                                        << " Calculating distances in the " << graph_name << "." << std::endl;
+            if (!(po.operating_mode(OperatingMode::FILTER) && po.run_filter_only())) {
+                if (po.verbose()) std::cout << timer.get_time_block_since_start_and_set_mark()
+                                            << " Calculating distances in the " << graph_name << "." << std::endl;
 
-            // Calculate distances.
-            GraphDistances gd(graph, timer, po.n_threads(), po.block_size(), po.max_distance(), po.verbose());
-            graph_distances = gd.solve(search_jobs);
+                // Calculate distances.
+                GraphDistances gd(graph, timer, po.n_threads(), po.block_size(), po.max_distance(), po.verbose());
+                graph_distances = gd.solve(search_jobs);
 
-            // Output distances.
-            queries.output_distances(po.out_filename(), graph_distances);
-            if (po.verbose()) std::cout << timer.get_time_block_since_start() << " Output " << graph_name << " distances to file "
-                                        << po.out_filename() << " in " << timer.get_time_since_mark_and_set_mark() << "." << std::endl;
+                // Output distances.
+                queries.output_distances(po.out_filename(), graph_distances);
+                if (po.verbose()) std::cout << timer.get_time_block_since_start() << " Output " << graph_name << " distances to file "
+                                            << po.out_filename() << " in " << timer.get_time_since_mark_and_set_mark() << "." << std::endl;
 
-            // Determine outliers.
-            if (po.operating_mode(OperatingMode::OUTLIER_TOOLS)) {
-                if (po.operating_mode(OperatingMode::SGGS) && po.sgg_count_threshold() > 0) {
-                    if (po.verbose()) {
-                        std::cout << timer.get_time_block_since_start_and_set_mark() << " Running in SGGS mode with sgg_count_threshold > 0. Will "
-                                  << "determine outliers for " << graph_name << " distances after the single genome graph routines." << std::endl;
+                // Determine outliers.
+                if (po.operating_mode(OperatingMode::OUTLIER_TOOLS)) {
+                    if (po.operating_mode(OperatingMode::SGGS) && po.sgg_count_threshold() > 0) {
+                        if (po.verbose()) {
+                            std::cout << timer.get_time_block_since_start_and_set_mark() << " Running in SGGS mode with sgg_count_threshold > 0. Will "
+                                      << "determine outliers for " << graph_name << " distances after the single genome graph routines." << std::endl;
+                        }
+                    } else {
+                        determine_outliers(queries, graph_distances, std::vector<int_t>(), po, graph_name,
+                                           po.out_outliers_filename(), po.out_outlier_stats_filename(), timer);
                     }
-                } else {
-                    determine_outliers(queries, graph_distances, std::vector<int_t>(), po, graph_name,
-                                       po.out_outliers_filename(), po.out_outlier_stats_filename(), timer);
                 }
             }
             
-            if (filtered_graph.size() > 0) {
+            if (po.operating_mode(OperatingMode::FILTER)) {
                 if (po.verbose()) std::cout << timer.get_time_block_since_start_and_set_mark()
                                             << " Calculating distances in the " << filtered_graph_name << "." << std::endl;
 
@@ -464,8 +472,10 @@ int main(int argc, char** argv) {
 
             // Determine outliers for the full graphs here if using sgg count filtering.
             if (!po.run_sggs_only() && po.sgg_count_threshold() > 0) {
-                determine_outliers(queries, graph_distances, sgg_counts, po, graph_name,
-                                   po.out_outliers_filename(), po.out_outlier_stats_filename(), timer);
+                if (graph_distances.size() > 0) {
+                    determine_outliers(queries, graph_distances, sgg_counts, po, graph_name,
+                                       po.out_outliers_filename(), po.out_outlier_stats_filename(), timer);
+                }
                 if (filtered_graph_distances.size() > 0) {
                     determine_outliers(queries, filtered_graph_distances, sgg_counts, po, filtered_graph_name,
                                        po.out_filtered_outliers_filename(), po.out_filtered_outlier_stats_filename(), timer);
