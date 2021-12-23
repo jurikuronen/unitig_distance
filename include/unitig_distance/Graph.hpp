@@ -244,6 +244,11 @@ public:
         return *this;
     }
 
+    // Compute the shortest distance between a source and a target.
+    real_t distance(int_t source, int_t target, real_t max_distance = REAL_T_MAX) const {
+        return distance(std::vector<std::pair<int_t, real_t>>{{source, 0.0}}, std::vector<int_t>{target}, max_distance).front();
+    }
+
     // Compute shortest distance between source(s) and targets.
     std::vector<real_t> distance(
         const std::vector<std::pair<int_t, real_t>>& sources,
