@@ -1,7 +1,6 @@
 #pragma once
 
 #include <set>
-#include <unordered_map>
 #include <utility>
 #include <vector>
 
@@ -32,42 +31,43 @@ private:
 class SearchJobs {
 public:
     SearchJobs(const Queries& queries) : m_n_queries(queries.size()) {
+        auto sz = queries.largest_v() + 1;
         // Store queries by vertex, storing also the original indices.
-        std::unordered_map<int_t, std::unordered_map<int_t, int_t>> queries_map;
+        std::vector<std::vector<std::pair<int_t, int_t>>> queries_map(sz);
         for (std::size_t idx = 0; idx < queries.size(); ++idx) {
             auto v = queries.v(idx);
             auto w = queries.w(idx);
-            queries_map[v].emplace(w, idx);
-            queries_map[w].emplace(v, idx);
+            queries_map[v].emplace_back(w, idx);
+            queries_map[w].emplace_back(v, idx);
         }
         // Get query counts for the vertices.
-        std::set<std::pair<int_t, int_t>> n_queries_set; // (v_n_queries, v)
-        std::unordered_map<int_t, int_t> n_queries; // (v, v_n_queries).
-        for (const auto& q : queries_map) {
-            int_t v = q.first;
-            int_t v_n_queries = (int_t) q.second.size();
+        std::set<std::pair<int_t, int_t>> n_queries_set; // (v_n_queries, v) pairs.
+        std::vector<int_t> n_queries(sz);
+        for (int_t v = 0; v < sz; ++v) {
+            int_t v_n_queries = queries_map[v].size();
+            if (v_n_queries == 0) continue;
             n_queries_set.emplace(v_n_queries, v);
-            n_queries.emplace(v, v_n_queries);
+            n_queries[v] = v_n_queries;
         }
         // Calculate optimal search jobs.
+        std::vector<bool> processed(sz);
         while (n_queries_set.rbegin()->first != 0) { // Always points to largest value (v with most queries).
             auto it = std::prev(n_queries_set.end());
             int_t v = it->second;
-            // Can already remove query count trackers for v here.
             n_queries_set.erase(it);
             n_queries[v] = 0;
+            processed[v] = true;
             SearchJob job(v);
             // Add remaining (v, w) queries for v.
             for (auto q : queries_map[v]) {
                 int_t w, idx;
                 std::tie(w, idx) = q;
+                if (processed[w]) continue;
                 job.add(w, idx);
-                queries_map[w].erase(v); // Remove duplicate query (w, v).
-                int_t old_n_queries = n_queries[w]; // Get w's old query counts.
                 // Update query count trackers for w.
-                n_queries_set.erase(std::make_pair(old_n_queries, w));
-                n_queries_set.emplace(old_n_queries - 1, w);
+                n_queries_set.erase(std::make_pair(n_queries[w], w));
                 --n_queries[w];
+                n_queries_set.emplace(n_queries[w], w);
             }
             m_search_jobs.push_back(std::move(job));
         }
