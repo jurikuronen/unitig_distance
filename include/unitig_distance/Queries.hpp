@@ -46,9 +46,10 @@ public:
 
             m_fields.push_back(std::move(fields));
 
+            m_largest_v = std::max(m_largest_v, std::max(v, w));
+
             // For statistics.
             if (outlier_tools) {
-                m_largest_v = std::max(m_largest_v, std::max(v, w));
                 m_vs.insert(v);
                 m_vs.insert(w);
             }
