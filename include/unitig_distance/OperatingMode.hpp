@@ -35,12 +35,12 @@ inline OperatingMode operator|=(OperatingMode& lhs, const OperatingMode rhs) {
     return lhs = lhs | rhs;
 }
 
-inline OperatingMode operator^(const OperatingMode lhs, const OperatingMode rhs) {
-    return static_cast<OperatingMode>(static_cast<underlying_type>(lhs) ^ static_cast<underlying_type>(rhs));
-}
-
 inline OperatingMode operator&(const OperatingMode lhs, const OperatingMode rhs) {
     return static_cast<OperatingMode>(static_cast<underlying_type>(lhs) & static_cast<underlying_type>(rhs));
+}
+
+inline OperatingMode remove_mode(OperatingMode& lhs, OperatingMode rhs) {
+    return lhs = static_cast<OperatingMode>(static_cast<underlying_type>(lhs) & ~static_cast<underlying_type>(rhs));
 }
 
 inline bool operating_mode_to_bool(const OperatingMode om) {
@@ -49,7 +49,7 @@ inline bool operating_mode_to_bool(const OperatingMode om) {
 
 inline std::ostream& operator<<(std::ostream& os, OperatingMode om) {
     if (om == OperatingMode::OUTLIER_TOOLS) return os << "OUTLIER_TOOLS";
-    switch (om ^ OperatingMode::OUTLIER_TOOLS) {
+    switch (remove_mode(om, OperatingMode::OUTLIER_TOOLS)) {
         case OperatingMode::CDBG:                            os << "CDBG"; break;
         case OperatingMode::CDBG_AND_SGGS:                   os << "CDBG_AND_SGGS"; break;
         case OperatingMode::GENERAL:                         os << "GENERAL"; break;
