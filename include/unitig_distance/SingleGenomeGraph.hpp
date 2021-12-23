@@ -11,10 +11,7 @@
 class SingleGenomeGraph : public Graph {
 public:
     SingleGenomeGraph() = default;
-    ~SingleGenomeGraph() {
-        unitig_distance::clear(m_paths);
-        unitig_distance::clear(m_node_map);
-    }
+    ~SingleGenomeGraph() = default;
     SingleGenomeGraph(const SingleGenomeGraph& other) = delete;
     SingleGenomeGraph(SingleGenomeGraph&& other) : Graph(std::move(other)), m_paths(std::move(other.m_paths)), m_node_map(std::move(other.m_node_map)) { }
 

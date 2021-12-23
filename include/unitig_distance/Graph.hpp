@@ -21,7 +21,7 @@ using adj_const_itr_t = typename std::vector<edges_t>::const_iterator;
 class Graph {
 public:
     Graph() = default;
-    ~Graph() { unitig_distance::clear(m_adj); }
+    ~Graph() = default;
     Graph(const Graph& other) = default;
     Graph(Graph&& other) : m_adj(std::move(other.m_adj)), m_one_based(other.m_one_based), m_two_sided(other.m_two_sided) { }
 
@@ -79,7 +79,6 @@ public:
             auto fields = unitig_distance::get_fields(line);
             if (fields.size() < 3) {
                 std::cout << "Wrong number of fields in compacted de Bruijn graph edges file:" << edges_filename << std::endl;
-                m_adj.clear();
                 return;
             }
             bool good_overlap = fields.size() < 4 || std::stoll(fields[3]) != 0;
@@ -130,7 +129,6 @@ public:
             auto fields = unitig_distance::get_fields(line);
             if (fields.size() == 0) {
                 std::cout << "Wrong number of fields in filter file: " << filter_filename << std::endl;
-                m_adj.clear();
                 return;
             }
             int_t v = std::stoll(fields[0]) - one_based();

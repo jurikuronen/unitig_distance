@@ -28,7 +28,6 @@ public:
             auto fields = unitig_distance::get_fields(line);
             if (fields.size() < 2) {
                 std::cout << "Wrong number of fields in queries file: " << queries_filename << std::endl;
-                m_queries.clear();
                 return;
             }
 
