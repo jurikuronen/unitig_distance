@@ -137,10 +137,12 @@ private:
             } else {
                 a = m_ld_distance;
             }
-            std::cout << "OutlierTools: Iteration " << iter++
-                      << ", outlier threshold=" << m_outlier_threshold << ", extreme outlier threshold=" << m_extreme_outlier_threshold
-                      << ", ld distance=" << (int_t) m_ld_distance
-                      << ", coverage=" << m_v_coverage << " (" << unitig_distance::neat_decimal_str(100 * m_v_coverage, m_queries.n_vs()) << "%)" << std::endl;
+            if (m_verbose) {
+                std::cout << "OutlierTools: Iteration " << iter++
+                          << ", outlier threshold=" << m_outlier_threshold << ", extreme outlier threshold=" << m_extreme_outlier_threshold
+                          << ", ld distance=" << (int_t) m_ld_distance
+                          << ", coverage=" << m_v_coverage << " (" << unitig_distance::neat_decimal_str(100 * m_v_coverage, m_queries.n_vs()) << "%)" << std::endl;
+            }
         }
     }
 
