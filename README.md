@@ -93,6 +93,7 @@ Filter the graph:
   -F  [ --filter-file ] arg                   Path to file containing vertices/unitigs that will be filtered.
   -1f [ --filter-one-based ]                  Filter file uses one-based numbering.
   -c  [ --filter-criterion ] arg (=2.0)       Criterion for the filter.
+  -f  [ --run-filter-only ]                   Calculate distances only in the filtered graph.
                                               
 CDBG operating mode:                          
   -U  [ --unitigs-file ] arg                  Path to file containing unitigs.
@@ -101,6 +102,7 @@ CDBG operating mode:
 CDBG and/or SGGS operating mode:              
   -S  [ --sgg-paths-file ] arg                Path to file containing paths to single genome graph edge files.
   -r  [ --run-sggs-only ]                     Calculate distances only in the single genome graphs.
+  -s  [ --n-sggs ] arg (=max(10, --threads))  Number of single genome graphs to construct and hold in memory at a time.
                                               
 Distance queries:                             
   -Q  [ --queries-file ] arg                  Path to queries file.
