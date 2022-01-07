@@ -16,6 +16,7 @@ The arguments should be given in the exact order as:
 - `<score_name>`: name of the score used, e.g. "Mutual information"
 - `<counts_file>`: unitig_distance's sgg counts file if outputting a plot for sgg distances/scores, set it as "" otherwise.
 - `<count_criterion>`: unitig_distance's sgg counts filter criterion, set as 0 if unused.
+- `<plot_title>`: title for the plot.
 - `<ld_distance>`: linkage disequilibrium distance, set as 0 if unused.
 - `<outlier_threshold>`: outlier threshold, set as 0 if unused.
 - `<extreme_outlier_threshold>`: extreme outlier threshold, set as 0 if unused.
