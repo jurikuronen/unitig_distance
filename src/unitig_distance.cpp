@@ -102,8 +102,13 @@ static void determine_outliers(const Queries& queries,
         ot.determine_outliers(po.ld_distance(), po.ld_distance_nth_score(), po.ld_distance_min(), po.ld_distance_score());
     }
     if (po.verbose()) {
-        std::cout << timer.get_time_block_since_start() << " Determined outliers for " << graph_name << " distances "
+        if (ot.ok()) {
+            std::cout << timer.get_time_block_since_start() << " Determined outliers for " << graph_name << " distances in "
                   << timer.get_time_since_mark_and_set_mark() << "." << std::endl;
+        } else {
+            std::cout << timer.get_time_block_since_start() << " Unable to determine outliers for " << graph_name << " distances: "
+                      << ot.reason() << "." << std::endl;
+        }
         ot.print_details();
     }
     if (!ot.ok()) return;

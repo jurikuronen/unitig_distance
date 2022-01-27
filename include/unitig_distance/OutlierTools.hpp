@@ -43,8 +43,8 @@ public:
             if (largest_distance < ld_distance_min) {
                 // Distances in queries not large enough.
                 m_ok = false;
-                std::cout << "OutlierTools: distances in queries not large enough (largest distance="
-                          << largest_distance << "<" << ld_distance_min << "), maybe change parameters?" << std::endl;
+                m_reason = "distances in queries not large enough (largest distance=" + std::to_string((int_t) largest_distance)
+                           + "<" + std::to_string(ld_distance_min) + "), maybe change parameters?";
                 return;
             }
 
@@ -80,9 +80,7 @@ public:
     }
 
     void print_details() const {
-        if (!m_ok) {
-            std::cout << "OutlierTools: unable to determine outliers." << std::endl; 
-        } else {
+        if (m_ok) { 
             std::cout << "OutlierTools: LD distance=" << (int_t) m_ld_distance << std::endl;
             std::cout << "OutlierTools: outlier threshold=" << m_outlier_threshold 
                       << " (" << m_outlier_indices.size() << " outliers)" << std::endl;
@@ -94,6 +92,7 @@ public:
     }
 
     bool ok() const { return m_ok; }
+    const std::string& reason() const { return m_reason; }
 
 private:
     const Queries& m_queries;
@@ -107,6 +106,8 @@ private:
     bool m_output_one_based;
     bool m_verbose;
     bool m_ok;
+
+    std::string m_reason;
 
     std::vector<int_t> m_outlier_indices;
     std::vector<int_t> m_extreme_outlier_indices;
@@ -138,7 +139,7 @@ private:
                 a = m_ld_distance;
             }
             if (m_verbose) {
-                std::cout << "OutlierTools: Iteration " << iter++
+                std::cout << "    OutlierTools: Iteration " << iter++
                           << ", outlier threshold=" << m_outlier_threshold << ", extreme outlier threshold=" << m_extreme_outlier_threshold
                           << ", ld distance=" << (int_t) m_ld_distance
                           << ", coverage=" << m_v_coverage << " (" << unitig_distance::neat_decimal_str(100 * m_v_coverage, m_queries.n_vs()) << "%)" << std::endl;
