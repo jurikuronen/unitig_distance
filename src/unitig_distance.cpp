@@ -470,26 +470,29 @@ int main(int argc, char** argv) {
             if (po.verbose()) std::cout << timer.get_time_block_since_start() << " Output single genome graph connected vertex pair counts to file "
                                         << po.out_sgg_counts_filename() << " in " << timer.get_time_since_mark_and_set_mark() << "." << std::endl;
 
-            // Determine outliers for the full graphs here if using sgg count filtering.
-            if (!po.run_sggs_only() && po.sgg_count_threshold() > 0) {
-                if (graph_distances.size() > 0) {
-                    determine_outliers(queries, graph_distances, sgg_counts, po, graph_name,
-                                       po.out_outliers_filename(), po.out_outlier_stats_filename(), timer);
-                }
-                if (filtered_graph_distances.size() > 0) {
-                    determine_outliers(queries, filtered_graph_distances, sgg_counts, po, filtered_graph_name,
-                                       po.out_filtered_outliers_filename(), po.out_filtered_outlier_stats_filename(), timer);
-                }
-            }
-
             // Determine outliers.
             if (po.operating_mode(OperatingMode::OUTLIER_TOOLS)) {
-                determine_outliers(queries, min_distances, sgg_counts, po, "single genome graph min distances",
-                                   po.out_sgg_min_outliers_filename(), po.out_sgg_min_outlier_stats_filename(), timer);
-                determine_outliers(queries, max_distances, sgg_counts, po, "single genome graph max distances",
-                                   po.out_sgg_max_outliers_filename(), po.out_sgg_max_outlier_stats_filename(), timer);
-                determine_outliers(queries, mean_distances, sgg_counts, po, "single genome graph mean distances",
-                                   po.out_sgg_mean_outliers_filename(), po.out_sgg_mean_outlier_stats_filename(), timer);
+                // Determine outliers for the full graphs here if using sgg count filtering.
+                if (!po.run_sggs_only() && po.sgg_count_threshold() > 0) {
+                    if (graph_distances.size() > 0) {
+                        determine_outliers(queries, graph_distances, sgg_counts, po, graph_name,
+                                           po.out_outliers_filename(), po.out_outlier_stats_filename(), timer);
+                    }
+                    if (filtered_graph_distances.size() > 0) {
+                        determine_outliers(queries, filtered_graph_distances, sgg_counts, po, filtered_graph_name,
+                                           po.out_filtered_outliers_filename(), po.out_filtered_outlier_stats_filename(), timer);
+                    }
+                }
+
+                // Determine outliers.
+                if (po.operating_mode(OperatingMode::OUTLIER_TOOLS)) {
+                    determine_outliers(queries, min_distances, sgg_counts, po, "single genome graph min distances",
+                                       po.out_sgg_min_outliers_filename(), po.out_sgg_min_outlier_stats_filename(), timer);
+                    determine_outliers(queries, max_distances, sgg_counts, po, "single genome graph max distances",
+                                       po.out_sgg_max_outliers_filename(), po.out_sgg_max_outlier_stats_filename(), timer);
+                    determine_outliers(queries, mean_distances, sgg_counts, po, "single genome graph mean distances",
+                                       po.out_sgg_mean_outliers_filename(), po.out_sgg_mean_outlier_stats_filename(), timer);
+                }
             }
         }
 
