@@ -377,18 +377,35 @@ int main(int argc, char** argv) {
             std::vector<std::string> path_edge_files;
             std::ifstream ifs(po.sggs_filename());
             for (std::string path_edges; std::getline(ifs, path_edges); ) path_edge_files.emplace_back(path_edges);
-            auto n_sggs = path_edge_files.size();
-            
-            Timer t_sgg, t_sgg_distances;
-            int_t batch_size = po.n_sggs(), n_nodes = 0, n_edges = 0;
+            std::size_t n_sggs = path_edge_files.size(), batch_size = po.n_sggs_to_hold_in_memory();
+
+            // Printing variables for verbose mode.
+            Timer t_sgg, t_sgg_distances, t_deconstruct;
+            int_t print_interval = n_sggs / 5 + (n_sggs % 5 != 0), print_i = 1, n_nodes = 0, n_edges = 0;
+            if (print_interval % batch_size) print_interval += batch_size - (print_interval % batch_size); // Round up.
+            bool print_now = false;
 
             std::vector<std::tuple<real_t, real_t, real_t, int_t>> sgg_distances(po.n_queries(), std::make_tuple(REAL_T_MAX, 0.0, 0.0, 0));
 
-            for (std::size_t i = 0; i < path_edge_files.size(); i += batch_size) {
-                // Construct a batch of single genome graphs.
-                if (po.verbose()) t_sgg.set_mark();
-                auto batch = std::min(i + batch_size, path_edge_files.size()) - i;
+            if (po.verbose()) std::cout << timer.get_time_block_since_start_and_set_mark()
+                                        << " Calculating distances in the single genome graphs." << std::endl;
 
+            for (std::size_t i = 0; i < n_sggs; i += batch_size) {
+                if (po.verbose()) {
+                    t_deconstruct.add_time_since_mark();
+                    if (print_now) {
+                        std::cout << timer.get_time_block_since_start() << " Deconstructed single genome graphs " << print_i << "-" << i
+                                  << " / " << n_sggs << " in " << t_deconstruct.get_stopwatch_time_since_lap_and_set_lap() << "." << std::endl;
+                        print_i = i + 1;
+                    }
+                    t_sgg.set_mark();
+                }
+
+                if (po.verbose()) print_now = (i + batch_size) % print_interval == 0 || (i + batch_size) >= n_sggs;
+
+                auto batch = std::min(i + batch_size, n_sggs) - i;
+
+                // Construct a batch of single genome graphs.
                 std::vector<SingleGenomeGraph> sg_graphs(batch);
                 auto construct_sgg = [&graph, &sg_graphs](int_t thr, const std::string& path_edges) {
                     sg_graphs[thr] = SingleGenomeGraph(graph, path_edges);
@@ -407,8 +424,10 @@ int main(int argc, char** argv) {
 
                 if (po.verbose()) {
                     t_sgg.add_time_since_mark();
-                    std::cout << timer.get_time_block_since_start() << " Constructed single genome graphs " << i + 1 << "-" << i + batch << " / " << n_sggs
-                              << " in " << t_sgg.get_time_since_mark() << "." << std::endl;
+                    if (print_now) {
+                        std::cout << timer.get_time_block_since_start() << " Constructed single genome graphs " << print_i << "-" << i + batch << " / " << n_sggs
+                                  << " in " << t_sgg.get_stopwatch_time_since_lap_and_set_lap() << "." << std::endl;
+                    }
                     // Update n_nodes and n_edges.
                     for (const auto& sg_graph : sg_graphs) {
                         n_nodes += sg_graph.size();
@@ -434,9 +453,18 @@ int main(int argc, char** argv) {
 
                 if (po.verbose()) {
                     t_sgg_distances.add_time_since_mark();
-                    std::cout << timer.get_time_block_since_start() << " Calculated distances in the single genome graphs " << i + 1 << "-" << i + batch
-                              << " / " << n_sggs << " in " << t_sgg_distances.get_time_since_mark() << "." << std::endl;
+                    if (print_now) {
+                        std::cout << timer.get_time_block_since_start() << " Calculated distances in the single genome graphs " << print_i << "-" << i + batch
+                                  << " / " << n_sggs << " in " << t_sgg_distances.get_stopwatch_time_since_lap_and_set_lap() << "." << std::endl;
+                    }
+                    t_deconstruct.set_mark();
                 }
+            }
+
+            if (po.verbose()) {
+                t_deconstruct.add_time_since_mark();
+                std::cout << timer.get_time_block_since_start() << " Deconstructed single genome graphs and distances " << print_i << "-" << n_sggs
+                          << " / " << n_sggs << " in " << t_deconstruct.get_stopwatch_time_since_lap_and_set_lap() << "." << std::endl;
             }
 
             // Set distance correctly for disconnected queries.
@@ -452,6 +480,8 @@ int main(int argc, char** argv) {
                           << unitig_distance::neat_number_str(n_edges) << " edges." << std::endl;
                 std::cout << timer.get_time_block_since_start_and_set_mark() << " Calculating distances in the " << n_sggs << " single genome graphs took "
                           << t_sgg_distances.get_stopwatch_time() << "." << std::endl;
+                std::cout << timer.get_time_block_since_start_and_set_mark() << " Deconstructing " << n_sggs << " single genome graphs took "
+                          << t_deconstruct.get_stopwatch_time() << "." << std::endl;
             }
 
             // Output single genome graphs graph distances.

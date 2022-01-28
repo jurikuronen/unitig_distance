@@ -52,9 +52,10 @@ public:
         m_output_outliers = has_arg("-x", "--output-outliers");
         m_verbose = has_arg("-v", "--verbose");
         if (has_arg("-s", "--n-sggs")) {
-            set_value(m_n_sggs, "-s", "--n-sggs");
+            set_value(m_n_sggs_to_hold_in_memory, "-s", "--n-sggs");
+            m_n_sggs_to_hold_in_memory = std::min(n_sggs_to_hold_in_memory(), n_threads());
         } else {
-            m_n_sggs = std::max((int_t) 10, n_threads());
+            m_n_sggs_to_hold_in_memory = n_threads();
         }
 
         set_operating_mode();
@@ -70,7 +71,7 @@ public:
     const std::string& filter_filename() const { return m_filter_filename; }
     const std::string& sgg_counts_filename() const { return m_sgg_counts_filename; }
     int_t k() const { return m_k; }
-    int_t n_sggs() const { return m_n_sggs; }
+    int_t n_sggs_to_hold_in_memory() const { return m_n_sggs_to_hold_in_memory; }
     int_t n_queries() const { return m_n_queries; }
     int_t block_size() const { return m_block_size; }
     real_t max_distance() const { return m_max_distance; }
@@ -138,7 +139,7 @@ public:
         if (operating_mode(OperatingMode::SGGS)) {
             double_push_back(arguments, "  --sgg-paths-file", sggs_filename());
             double_push_back(arguments, "  --run-sggs-only", run_sggs_only() ? "TRUE" : "FALSE");
-            double_push_back(arguments, "  --n-sggs", std::to_string(n_sggs()));
+            double_push_back(arguments, "  --n-sggs", std::to_string(n_sggs_to_hold_in_memory()));
         }
         if (!queries_filename().empty() && n_queries() > 0) {
             double_push_back(arguments, "  --queries-file", queries_filename());
@@ -200,7 +201,7 @@ private:
     real_t m_ld_distance_score = 0.8;
     int_t m_ld_distance_nth_score = 10;
     real_t m_outlier_threshold = -1.0;
-    int_t m_n_sggs = 10;
+    int_t m_n_sggs_to_hold_in_memory = 1;
     bool m_graphs_one_based = false;
     bool m_filter_one_based = false;
     bool m_queries_one_based = false;
@@ -289,7 +290,7 @@ private:
             "CDBG and/or SGGS operating mode:", "",
             "  -S  [ --sgg-paths-file ] arg", "Path to file containing paths to single genome graph edge files.",
             "  -r  [ --run-sggs-only ]", "Calculate distances only in the single genome graphs.",
-            "  -s  [ --n-sggs ] arg (=max(10, --threads))", "Number of single genome graphs to construct and hold in memory at a time.",
+            "  -s  [ --n-sggs ] arg (=--threads)", "Maximum number of single genome graphs to construct and hold in memory at a time.",
             "", "",
             "Distance queries:", "",
             "  -Q  [ --queries-file ] arg", "Path to queries file.",
