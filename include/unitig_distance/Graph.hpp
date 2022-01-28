@@ -66,7 +66,7 @@ public:
             }
             real_t self_edge_weight = (real_t) fields[1].size() - kmer_length;
             if (self_edge_weight < 0.0) {
-                std::cout << "self_edge_weight = " << self_edge_weight << " < 1.0 -- wrong k-mer length?" << std::endl;
+                std::cout << "self_edge_weight = " << self_edge_weight << " < 0.0 -- wrong k-mer length?" << std::endl;
                 return;
             }
             add_node();
