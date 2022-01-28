@@ -14,13 +14,17 @@ class Timer {
 public:
     using clock = std::chrono::high_resolution_clock;
 
-    Timer() : m_start(now()), m_mark(m_start), m_stopwatch(clock::duration()) { }
+    Timer() : m_start(now()), m_mark(m_start), m_stopwatch(clock::duration()), m_lap(m_stopwatch) { }
 
     void set_mark() { m_mark = now(); }
+
+    void set_lap() { m_lap = m_stopwatch; }
 
     void add_time_since_mark() { m_stopwatch += time_elapsed(m_mark); }
 
     std::string get_stopwatch_time() const { return get_time_str(m_stopwatch); }
+
+    std::string get_stopwatch_time_since_lap_and_set_lap() { auto time_str = get_time_str(m_stopwatch - m_lap); set_lap(); return time_str; }
 
     std::string get_time_since_start() const { return get_time_str(time_elapsed(m_start)); }
 
@@ -42,6 +46,7 @@ private:
     clock::time_point m_start; // Set when Timer is created.
     clock::time_point m_mark; // Custom time point mark.
     clock::duration m_stopwatch; // Accumulates time.
+    clock::duration m_lap; // Stores time at last lap.
 
     clock::time_point now() const { return clock::now(); }
 
