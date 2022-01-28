@@ -381,7 +381,7 @@ int main(int argc, char** argv) {
 
             // Printing variables for verbose mode.
             Timer t_sgg, t_sgg_distances, t_deconstruct;
-            int_t print_interval = n_sggs / 5 + (n_sggs % 5 != 0), print_i = 1, n_nodes = 0, n_edges = 0;
+            int_t print_interval = (n_sggs + 4) / 5, print_i = 1, n_nodes = 0, n_edges = 0;
             if (print_interval % batch_size) print_interval += batch_size - (print_interval % batch_size); // Round up.
             bool print_now = false;
 
