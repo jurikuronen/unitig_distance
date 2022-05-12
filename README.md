@@ -175,7 +175,7 @@ unitig_distance can run in outlier tools mode for already calculated distances b
 
 **Outlier tools example.** Assume the distances have been calculated from a queries file that contained pairwise scores according to the example at [Calculating distances in single genome graphs](#calculating-distances-in-single-genome-graphs). The following runs unitig_distance in outlier tools mode (`-x`) using the mean distances as the queries file (`-Q <output_stem>.ud_sgg_mean_0_based`). The counts file (`-C <output_stem>.ud_sgg_counts_0_based`) is provided as well and the count threshold is set to 50 (`-Cc 50`). Unitig_distance will determine the linkage disequilibrium distance cutoff automatically and calculates the outlier threshold and extreme outlier threshold values, which will be written to the outlier stats file. Verbose-mode (`-v`) is set and a log will be written to the terminal.
 ```
-./bin/unitig_distance -x --Q <output_stem>.ud_sgg_mean_0_based \
+./bin/unitig_distance -x -Q <output_stem>.ud_sgg_mean_0_based \
                       -C <output_stem>.ud_sgg_counts_0_based -Cc 50 \
                       -o <output_stem_sgg> -v
 ```
