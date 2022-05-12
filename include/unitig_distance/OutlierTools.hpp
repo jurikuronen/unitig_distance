@@ -117,12 +117,12 @@ private:
     real_t m_extreme_outlier_threshold = -1.0;
     int_t m_v_coverage = -1;
 
-    bool low_count(int_t count) const { return m_sgg_count_threshold && count < m_sgg_count_threshold; }
+    bool low_count(std::size_t idx) const { return m_sgg_count_threshold && m_counts[idx] < m_sgg_count_threshold; }
 
     real_t get_largest_distance() const {
         real_t largest_distance = 0.0;
         for (std::size_t i = 0; i < m_queries.size(); ++i) {
-            if (low_count(m_counts[i])) continue;
+            if (low_count(i)) continue;
             largest_distance = std::max(largest_distance, unitig_distance::fixed_distance(m_distances[i], m_max_distance));
         }
         return largest_distance;
@@ -167,7 +167,7 @@ private:
         std::vector<real_t> v_scores(sz);
 
         for (std::size_t i = 0; i < m_queries.size(); ++i) {
-            if (low_count(m_counts[i])) continue;
+            if (low_count(i)) continue;
             if (m_distances[i] <= m_ld_distance) continue;
             int_t v = m_queries.v(i);
             int_t w = m_queries.w(i);
@@ -200,7 +200,7 @@ private:
         m_outlier_indices.clear();
         m_extreme_outlier_indices.clear();
         for (std::size_t i = 0; i < m_queries.size(); ++i) {
-            if (low_count(m_counts[i])) continue;
+            if (low_count(i)) continue;
             real_t distance = m_distances[i];
             if (distance < m_ld_distance) continue;
             real_t score = m_queries.score(i);
