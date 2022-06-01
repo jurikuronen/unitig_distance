@@ -24,14 +24,12 @@ public:
         set_value(m_queries_filename, "-Q", "--queries-file");
         set_value(m_sggs_filename, "-S", "--sgg-paths-file");
         set_value(m_out_stem, "-o", "--output-stem");
-        set_value(m_filter_filename, "-F", "--filter-file");
         set_value(m_sgg_counts_filename, "-C", "--sgg-counts-file");
         set_value(m_k, "-k", "--k-mer-length");
         set_value(m_n_queries, "-n", "--n-queries");
         set_value(m_block_size, "-b", "--block-size");
         set_value(m_max_distance, "-d", "--max-distance");
         set_value(m_n_threads, "-t", "--threads");
-        set_value(m_filter_criterion, "-c", "--filter-criterion");
         set_value(m_sgg_count_threshold, "-Cc", "--sgg-count-threshold");
         set_value(m_ld_distance, "-l", "--ld-distance");
         set_value(m_ld_distance_min, "-lm", "--ld-distance-min");
@@ -39,16 +37,14 @@ public:
         set_value(m_ld_distance_nth_score, "-ln", "--ld-distance-nth-score");
         set_value(m_outlier_threshold, "-ot", "--outlier-threshold");
         if (has_1_arg()) {
-            m_graphs_one_based = m_filter_one_based = m_queries_one_based = m_sgg_counts_one_based = m_output_one_based = true;
+            m_graphs_one_based = m_queries_one_based = m_sgg_counts_one_based = m_output_one_based = true;
         } else {
             m_graphs_one_based = has_arg("-1g", "--graphs-one-based");
-            m_filter_one_based = has_arg("-1f", "--filter-one-based");
             m_queries_one_based = has_arg("-1q", "--queries-one-based");
             m_sgg_counts_one_based = has_arg("-1c", "--sgg_counts-one-based");
             m_output_one_based = has_arg("-1o", "--output-one-based");
         }
         m_run_sggs_only = has_arg("-r", "--run-sggs-only");
-        m_run_filter_only = has_arg("-f", "--run-filter-only");
         m_output_outliers = has_arg("-x", "--output-outliers");
         m_verbose = has_arg("-v", "--verbose");
         if (has_arg("-s", "--n-sggs")) {
@@ -68,7 +64,6 @@ public:
     const std::string& queries_filename() const { return m_queries_filename; }
     const std::string& sggs_filename() const { return m_sggs_filename; }
     const std::string& out_stem() const { return m_out_stem; }
-    const std::string& filter_filename() const { return m_filter_filename; }
     const std::string& sgg_counts_filename() const { return m_sgg_counts_filename; }
     int_t k() const { return m_k; }
     int_t n_sggs_to_hold_in_memory() const { return m_n_sggs_to_hold_in_memory; }
@@ -76,7 +71,6 @@ public:
     int_t block_size() const { return m_block_size; }
     real_t max_distance() const { return m_max_distance; }
     int_t n_threads() const { return m_n_threads; }
-    real_t filter_criterion() const { return m_filter_criterion; }
     int_t sgg_count_threshold() const { return m_sgg_count_threshold; }
     int_t ld_distance() const { return m_ld_distance; }
     int_t ld_distance_min() const { return m_ld_distance_min; }
@@ -84,12 +78,10 @@ public:
     int_t ld_distance_nth_score() const { return m_ld_distance_nth_score; }
     real_t outlier_threshold() const { return m_outlier_threshold; }
     bool graphs_one_based() const { return m_graphs_one_based; }
-    bool filter_one_based() const { return m_filter_one_based; }
     bool queries_one_based() const { return m_queries_one_based; }
     bool sgg_counts_one_based() const { return m_sgg_counts_one_based; }
     bool output_one_based() const { return m_output_one_based; }
     bool run_sggs_only() const { return m_run_sggs_only; }
-    bool run_filter_only() const { return m_run_filter_only; }
     bool output_outliers() const { return m_output_outliers; }
     bool verbose() const { return m_verbose; }
 
@@ -99,18 +91,15 @@ public:
     bool operating_mode(const OperatingMode& om) const { return operating_mode_to_bool(m_om & om); }
 
     const std::string out_filename() const { return out_stem() + ".ud" + based_str(); }
-    const std::string out_filtered_filename() const { return out_stem() + ".ud_filtered" + based_str(); }
     const std::string out_sgg_min_filename() const { return out_stem() + ".ud_sgg_min" + based_str(); }
     const std::string out_sgg_max_filename() const { return out_stem() + ".ud_sgg_max" + based_str(); }
     const std::string out_sgg_mean_filename() const { return out_stem() + ".ud_sgg_mean" + based_str(); }
     const std::string out_sgg_counts_filename() const { return out_stem() + ".ud_sgg_counts" + based_str(); }
     const std::string out_outliers_filename() const { return out_stem() + ".ud_outliers" + based_str(); }
-    const std::string out_filtered_outliers_filename() const { return out_stem() + ".ud_filtered_outliers" + based_str(); }
     const std::string out_sgg_min_outliers_filename() const { return out_stem() + ".ud_sgg_min_outliers" + based_str(); }
     const std::string out_sgg_max_outliers_filename() const { return out_stem() + ".ud_sgg_max_outliers" + based_str(); }
     const std::string out_sgg_mean_outliers_filename() const { return out_stem() + ".ud_sgg_mean_outliers" + based_str(); }
     const std::string out_outlier_stats_filename() const { return out_stem() + ".ud_outlier_stats"; }
-    const std::string out_filtered_outlier_stats_filename() const { return out_stem() + ".ud_filtered_outlier_stats"; }
     const std::string out_sgg_min_outlier_stats_filename() const { return out_stem() + ".ud_sgg_min_outlier_stats"; }
     const std::string out_sgg_max_outlier_stats_filename() const { return out_stem() + ".ud_sgg_max_outlier_stats"; }
     const std::string out_sgg_mean_outlier_stats_filename() const { return out_stem() + ".ud_sgg_mean_outlier_stats"; }
@@ -129,12 +118,6 @@ public:
         if (operating_mode(OperatingMode::CDBG)) {
             double_push_back(arguments, "  --unitigs-file", unitigs_filename());
             double_push_back(arguments, "  --k-mer-length", std::to_string(k()));
-        }
-        if (operating_mode(OperatingMode::FILTER)) {
-            double_push_back(arguments, "  --filter-file", filter_filename());
-            double_push_back(arguments, "  --filter-one-based", filter_one_based() ? "TRUE" : "FALSE");
-            double_push_back(arguments, "  --filter-criterion", std::to_string(filter_criterion()));
-            double_push_back(arguments, "  --run-filter-only", run_filter_only() ? "TRUE" : "FALSE");
         }
         if (operating_mode(OperatingMode::SGGS)) {
             double_push_back(arguments, "  --sgg-paths-file", sggs_filename());
@@ -187,14 +170,12 @@ private:
     std::string m_queries_filename = "";
     std::string m_sggs_filename = "";
     std::string m_out_stem = "out";
-    std::string m_filter_filename = "";
     std::string m_sgg_counts_filename = "";
     int_t m_k = 0;
     int_t m_n_queries = INT_T_MAX;
     int_t m_block_size = 10000;
     real_t m_max_distance = REAL_T_MAX;
     int_t m_n_threads = 1;
-    real_t m_filter_criterion = 2.0;
     int_t m_sgg_count_threshold = 10;
     int_t m_ld_distance = -1;
     int_t m_ld_distance_min = 1000;
@@ -203,12 +184,10 @@ private:
     real_t m_outlier_threshold = -1.0;
     int_t m_n_sggs_to_hold_in_memory = 1;
     bool m_graphs_one_based = false;
-    bool m_filter_one_based = false;
     bool m_queries_one_based = false;
     bool m_sgg_counts_one_based = false;
     bool m_output_one_based = false;
     bool m_run_sggs_only = false;
-    bool m_run_filter_only = false;
     bool m_output_outliers = false;
     bool m_verbose = false;
 
@@ -218,7 +197,6 @@ private:
 
     void set_operating_mode() {
         if (output_outliers()) m_om |= OperatingMode::OUTLIER_TOOLS;
-        if (!filter_filename().empty()) m_om |= OperatingMode::FILTER;
         if (!edges_filename().empty()) {
             if (unitigs_filename().empty()) {
                 m_om |= OperatingMode::GENERAL;
@@ -276,12 +254,6 @@ private:
             "Graph edges:", "",
             "  -E  [ --edges-file ] arg", "Path to file containing graph edges.",
             "  -1g [ --graphs-one-based ]", "Graph files use one-based numbering.",
-            "", "",
-            "Filter the graph:", "",
-            "  -F  [ --filter-file ] arg", "Path to file containing vertices/unitigs that will be filtered.",
-            "  -1f [ --filter-one-based ]", "Filter file uses one-based numbering.",
-            "  -c  [ --filter-criterion ] arg (=2.0)", "Criterion for the filter.",
-            "  -f  [ --run-filter-only ]", "Calculate distances only in the filtered graph.",
             "", "",
             "CDBG operating mode:", "",
             "  -U  [ --unitigs-file ] arg", "Path to file containing unitigs.",

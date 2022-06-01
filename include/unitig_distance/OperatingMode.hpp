@@ -13,14 +13,6 @@ enum class OperatingMode {
     CDBG_AND_SGGS_FILTERED          = 0x07, // Not implemented.
     GENERAL                         = 0x08,
 
-    FILTER                          = 0x10,
-    CDBG_FILTERED                   = 0x11,
-    CDBG_FILTERED_AND_SGGS          = 0x13,
-
-    CDBG_FILTERED_AND_SGGS_FILTERED = 0x17, // Not implemented.
-
-    GENERAL_FILTERED                = 0x18,
-
     OUTLIER_TOOLS                   = 0x20
 
 };
@@ -53,10 +45,6 @@ inline std::ostream& operator<<(std::ostream& os, OperatingMode om) {
         case OperatingMode::CDBG:                            os << "CDBG"; break;
         case OperatingMode::CDBG_AND_SGGS:                   os << "CDBG_AND_SGGS"; break;
         case OperatingMode::GENERAL:                         os << "GENERAL"; break;
-        case OperatingMode::CDBG_FILTERED:                   os << "CDBG_FILTERED"; break;
-        case OperatingMode::CDBG_FILTERED_AND_SGGS:          os << "CDBG_FILTERED_AND_SGGS"; break;
-        case OperatingMode::CDBG_FILTERED_AND_SGGS_FILTERED: os << "CDBG_FILTERED_AND_SGGS_FILTERED"; break;
-        case OperatingMode::GENERAL_FILTERED:                os << "GENERAL_FILTERED"; break;
         default:                                             os << "DEFAULT";
     }
     return os;

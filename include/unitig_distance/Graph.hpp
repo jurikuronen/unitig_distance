@@ -121,29 +121,6 @@ public:
         }
     }
 
-    // Construct a filtered subgraph from a given graph.
-    Graph(const Graph& graph, const std::string& filter_filename, real_t criterion) : Graph(graph) {
-        // Filter edges.
-        std::ifstream ifs(filter_filename);
-        for (std::string line; std::getline(ifs, line); ) {
-            auto fields = unitig_distance::get_fields(line);
-            if (fields.size() == 0) {
-                std::cout << "Wrong number of fields in filter file: " << filter_filename << std::endl;
-                return;
-            }
-            int_t v = std::stoll(fields[0]) - one_based();
-            real_t value = fields.size() >= 2 ? std::stod(fields[1]) : REAL_T_MAX;
-            if (value >= criterion) {
-                if (two_sided()) {
-                    disconnect_node(left_node(v));
-                    disconnect_node(right_node(v));
-                } else {
-                    disconnect_node(v);
-                }
-            }
-        }
-    }
-
     bool contains(int_t v) const { return v < (int_t) m_adj.size(); }
 
     void add_node() { m_adj.emplace_back(); }
