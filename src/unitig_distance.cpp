@@ -261,6 +261,11 @@ int main(int argc, char** argv) {
             for (std::string path_edges; std::getline(ifs, path_edges); ) path_edge_files.emplace_back(path_edges);
             std::size_t n_sggs = path_edge_files.size(), batch_size = po.n_sggs_to_hold_in_memory();
 
+            if (n_sggs == 0) {
+                std::cout << "Couldn't read single genome graph files." << std::endl;
+                return 1;
+            }
+
             // Printing variables for verbose mode.
             Timer t_sgg, t_sgg_distances, t_deconstruct;
             int_t print_interval = (n_sggs + 4) / 5, print_i = 1, n_nodes = 0, n_edges = 0;
