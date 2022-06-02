@@ -8,12 +8,12 @@
 #include <utility>
 #include <vector>
 
+#include "Distance.hpp"
+#include "DistanceVector.hpp"
 #include "Graph.hpp"
 #include "SearchJobs.hpp"
 #include "Timer.hpp"
 #include "types.hpp"
-
-using distance_pair_t = std::pair<real_t, int_t>;
 
 class SingleGenomeGraphDistances {
 public:
@@ -29,8 +29,8 @@ public:
     { }
 
     // Calculate distances for single genome graphs.
-    std::vector<std::unordered_map<int_t, distance_pair_t>> solve(const SearchJobs& search_jobs) {
-        std::vector<std::unordered_map<int_t, distance_pair_t>> sgg_batch_distances(m_n_threads);
+    std::vector<std::unordered_map<int_t, Distance>> solve(const SearchJobs& search_jobs) {
+        std::vector<std::unordered_map<int_t, Distance>> sgg_batch_distances(m_n_threads);
         auto calculate_distance_block = [this, &search_jobs, &sgg_batch_distances](std::size_t thr, std::size_t block_start, std::size_t block_end) {
             const auto& graph = m_graph;
             for (std::size_t i = block_start + thr; i < block_end; i += m_n_threads) {
@@ -152,14 +152,14 @@ private:
         }
     }
 
-    void add_job_distances_to_sgg_distances(std::unordered_map<int_t, distance_pair_t>& sgg_distances, const SearchJob& job, const std::vector<real_t>& job_dist) {
+    void add_job_distances_to_sgg_distances(std::unordered_map<int_t, Distance>& sgg_distances, const SearchJob& job, const std::vector<real_t>& job_dist) {
         for (std::size_t w_idx = 0; w_idx < job_dist.size(); ++w_idx) {
             auto distance = job_dist[w_idx];
             if (distance >= m_max_distance) continue;
             auto original_idx = job.original_index(w_idx);
-            if (sgg_distances.find(original_idx) == sgg_distances.end()) sgg_distances.emplace(original_idx, std::make_pair(REAL_T_MAX, 0));
+            if (sgg_distances.find(original_idx) == sgg_distances.end()) sgg_distances.emplace(original_idx, Distance(0.0, 0));
             auto& distances = sgg_distances[original_idx];
-            distances += std::make_pair(distance, 1);
+            distances.add_distance(distance);
         }
     }
 

@@ -6,10 +6,13 @@
 #include <utility>
 #include <vector>
 
+#include "Distance.hpp"
+#include "DistanceVector.hpp"
 #include "Graph.hpp"
 #include "GraphDistances.hpp"
 #include "OperatingMode.hpp"
 #include "OutlierTools.hpp"
+#include "output_wrappers.hpp"
 #include "ProgramOptions.hpp"
 #include "Queries.hpp"
 #include "SearchJobs.hpp"
@@ -17,69 +20,7 @@
 #include "SingleGenomeGraphDistances.hpp"
 #include "Timer.hpp"
 #include "types.hpp"
-
-namespace unitig_distance {
-
-    std::vector<std::string> get_fields(const std::string& line, char delim) {
-        std::vector<std::string> fields;
-        std::stringstream ss(line);
-        for (std::string field; std::getline(ss, field, delim); ) fields.push_back(std::move(field));
-        return fields;
-    }
-
-    bool file_is_good(const std::string& filename) {
-        return std::ifstream(filename).good();
-    }
-
-    std::string neat_number_str(int_t number) {
-        std::vector<int_t> parts;
-        do parts.push_back(number % 1000);
-        while (number /= 1000);
-        std::string number_str = std::to_string(parts.back());
-        for (int_t i = parts.size() - 2; i >= 0; --i) {
-            number_str += ' ' + std::string(3 - std::to_string(parts[i]).size(), '0') + std::to_string(parts[i]);
-        }
-        return number_str;
-    }
-
-    std::string neat_decimal_str(int_t nom, int_t denom) {
-        std::string int_str = std::to_string(nom / denom);
-        std::string dec_str = std::to_string(nom * 100 / denom % 100);
-        return int_str + "." + std::string(2 - dec_str.size(), '0') + dec_str;
-    }
-
-    real_t fixed_distance(real_t distance, real_t max_distance) { return distance >= max_distance ? -1.0 : distance; }
-
-    int_t left_node(int_t v) { return v * 2; }
-    int_t right_node(int_t v) { return v * 2 + 1; }
-
-    bool is_numeric(const std::string& str) {
-        double x;
-        return (std::stringstream(str) >> x).eof();
-    }
-
-    template <typename T>
-    void clear(T& container) { T().swap(container); }
-
-    template <typename T, int IDX>
-    std::vector<T> transform_distance_pair_vector(const std::vector<std::pair<real_t, int_t>>& pair_vector) {
-        std::vector<T> vector(pair_vector.size());
-        static auto get_element = [](const std::pair<real_t, int_t>& pair) { return (T) std::get<IDX>(pair); };
-        std::transform(pair_vector.begin(), pair_vector.end(), vector.begin(), get_element);
-        return vector;
-    }
-
-}
-
-std::pair<real_t, int_t> operator+=(std::pair<real_t, int_t>& lhs, const std::pair<real_t, int_t> rhs) {
-    real_t mean, mean_2;
-    int_t count, count_2;
-    std::tie(mean, count) = lhs;
-    std::tie(mean_2, count_2) = rhs;
-    mean = (mean * count + mean_2 * count_2) / (count + count_2);
-    count += count_2;
-    return lhs = std::make_pair(mean, count);
-}
+#include "Utils.hpp"
 
 static void determine_outliers(const Queries& queries,
                                const std::vector<real_t>& distances,
@@ -121,7 +62,7 @@ static std::vector<int_t> read_counts(const std::string& counts_filename, int_t 
     std::ifstream ifs(counts_filename);
     int_t cnt = 0;
     for (std::string line; std::getline(ifs, line); ) {
-        auto fields = unitig_distance::get_fields(line);
+        auto fields = Utils::get_fields(line);
         if (fields.size() < 3) {
             std::cout << "Wrong number of fields in counts file: " << counts_filename << std::endl;
             return std::vector<int_t>();
@@ -141,25 +82,25 @@ static std::vector<int_t> read_counts(const std::string& counts_filename, int_t 
 
 static bool sanity_check_input_files(const ProgramOptions& po) {
     if (po.operating_mode() != OperatingMode::OUTLIER_TOOLS) {
-        if (!unitig_distance::file_is_good(po.edges_filename())) {
+        if (!Utils::file_is_good(po.edges_filename())) {
             std::cerr << "Can't open " << po.edges_filename() << std::endl;
             return false;
         }
 
         if (po.operating_mode(OperatingMode::CDBG)) {
-            if (!unitig_distance::file_is_good(po.unitigs_filename())) {
+            if (!Utils::file_is_good(po.unitigs_filename())) {
                 std::cerr << "Can't open " << po.unitigs_filename() << std::endl;
                 return false;
             }
 
             if (po.operating_mode(OperatingMode::SGGS)) {
-                if (!unitig_distance::file_is_good(po.sggs_filename())) {
+                if (!Utils::file_is_good(po.sggs_filename())) {
                     std::cerr << "Can't open " << po.sggs_filename() << std::endl;
                     return false;
                 }
                 std::ifstream ifs(po.sggs_filename());
                 for (std::string path_edges; std::getline(ifs, path_edges); ) {
-                    if (!unitig_distance::file_is_good(path_edges)) {
+                    if (!Utils::file_is_good(path_edges)) {
                         std::cerr << "Can't open " << path_edges << std::endl;
                         return false;
                     }
@@ -169,14 +110,14 @@ static bool sanity_check_input_files(const ProgramOptions& po) {
     }
 
     if (!po.queries_filename().empty() && po.n_queries() > 0) {
-        if (!unitig_distance::file_is_good(po.queries_filename())) {
+        if (!Utils::file_is_good(po.queries_filename())) {
             std::cerr << "Can't open " << po.queries_filename() << std::endl;
             return false;
         }
     }
 
     if (po.operating_mode() == OperatingMode::OUTLIER_TOOLS && !po.sgg_counts_filename().empty()) {
-        if (!unitig_distance::file_is_good(po.sgg_counts_filename())) {
+        if (!Utils::file_is_good(po.sgg_counts_filename())) {
             std::cerr << "Can't open " << po.sgg_counts_filename() << std::endl;
             return false;
         }
@@ -205,7 +146,7 @@ int main(int argc, char** argv) {
             return 1;
         }
         if (po.verbose()) {
-            std::cout << timer.get_time_block_since_start() << " Read " << unitig_distance::neat_number_str(queries.size())
+            std::cout << timer.get_time_block_since_start() << " Read " << Utils::neat_number_str(queries.size())
                       << " lines from queries file in " << timer.get_time_since_mark_and_set_mark() << "." << std::endl;
         }
 
@@ -222,7 +163,7 @@ int main(int argc, char** argv) {
             counts = read_counts(po.sgg_counts_filename(), po.n_queries());
             if (counts.empty()) return 1;
             if (po.verbose()) {
-                std::cout << timer.get_time_block_since_start() << " Read " << unitig_distance::neat_number_str(counts.size())
+                std::cout << timer.get_time_block_since_start() << " Read " << Utils::neat_number_str(counts.size())
                           << " counts in " << timer.get_time_since_mark_and_set_mark() << "." << std::endl;
             }
         }
@@ -270,7 +211,7 @@ int main(int argc, char** argv) {
         po.set_n_queries(queries.size());
 
         if (po.verbose()) {
-            std::cout << timer.get_time_block_since_start() << " Read " << unitig_distance::neat_number_str(queries.size())
+            std::cout << timer.get_time_block_since_start() << " Read " << Utils::neat_number_str(queries.size())
                       << " lines from queries file in " << timer.get_time_since_mark_and_set_mark() << "." << std::endl;
         }
 
@@ -278,7 +219,7 @@ int main(int argc, char** argv) {
         const SearchJobs search_jobs(queries);
 
         if (po.verbose()) {
-            std::cout << timer.get_time_block_since_start() << " Prepared " << unitig_distance::neat_number_str(search_jobs.size())
+            std::cout << timer.get_time_block_since_start() << " Prepared " << Utils::neat_number_str(search_jobs.size())
                       << " search jobs in " << timer.get_time_since_mark_and_set_mark() << "." << std::endl;
         }
 
@@ -326,7 +267,7 @@ int main(int argc, char** argv) {
             if (print_interval % batch_size) print_interval += batch_size - (print_interval % batch_size); // Round up.
             bool print_now = false;
 
-            std::vector<std::pair<real_t, int_t>> sgg_distances(po.n_queries(), std::make_pair(REAL_T_MAX, 0));
+            DistanceVector sgg_distances(po.n_queries(), 0.0, 0);
 
             if (po.verbose()) std::cout << timer.get_time_block_since_start_and_set_mark()
                                         << " Calculating distances in the single genome graphs." << std::endl;
@@ -385,9 +326,9 @@ int main(int argc, char** argv) {
                     for (const auto& distances : sgg_batch_distances) {
                         for (const auto& result : distances) {
                             int_t original_idx;
-                            std::pair<real_t, int_t> distance_pair;
-                            std::tie(original_idx, distance_pair) = result;
-                            sgg_distances[original_idx] += distance_pair;
+                            Distance distance;
+                            std::tie(original_idx, distance) = result;
+                            sgg_distances[original_idx] += distance;
                         }
                     }
                 }
@@ -410,15 +351,15 @@ int main(int argc, char** argv) {
 
             // Set distance correctly for disconnected queries.
             for (auto& distance : sgg_distances) {
-                if (std::get<1>(distance) == 0) distance = std::make_pair(REAL_T_MAX, 0);
+                if (distance.count() == 0) distance = Distance(REAL_T_MAX, 0);
             }
 
             if (po.verbose()) {
                 n_nodes /= n_sggs;
                 n_edges /= 2 * n_sggs;
                 std::cout << timer.get_time_block_since_start() << " Constructing " << n_sggs << " single genome graphs took " << t_sgg.get_stopwatch_time()
-                          << ". The compressed single genome graphs have on average " << unitig_distance::neat_number_str(n_nodes) << " connected nodes and "
-                          << unitig_distance::neat_number_str(n_edges) << " edges." << std::endl;
+                          << ". The compressed single genome graphs have on average " << Utils::neat_number_str(n_nodes) << " connected nodes and "
+                          << Utils::neat_number_str(n_edges) << " edges." << std::endl;
                 std::cout << timer.get_time_block_since_start_and_set_mark() << " Calculating distances in the " << n_sggs << " single genome graphs took "
                           << t_sgg_distances.get_stopwatch_time() << "." << std::endl;
                 std::cout << timer.get_time_block_since_start_and_set_mark() << " Deconstructing " << n_sggs << " single genome graphs took "
@@ -426,12 +367,12 @@ int main(int argc, char** argv) {
             }
 
             // Output single genome graphs graph distances.
-            auto mean_distances = unitig_distance::transform_distance_pair_vector<real_t, 0>(sgg_distances);
+            auto mean_distances = sgg_distances.distances();
             queries.output_distances(po.out_sgg_mean_filename(), mean_distances);
             if (po.verbose()) std::cout << timer.get_time_block_since_start() << " Output single genome graph mean distances to file "
                                         << po.out_sgg_mean_filename() << " in " << timer.get_time_since_mark_and_set_mark() << "." << std::endl;
 
-            auto sgg_counts = unitig_distance::transform_distance_pair_vector<int_t, 1>(sgg_distances);
+            auto sgg_counts = sgg_distances.counts();
             queries.output_counts(po.out_sgg_counts_filename(), sgg_counts);
             if (po.verbose()) std::cout << timer.get_time_block_since_start() << " Output single genome graph connected vertex pair counts to file "
                                         << po.out_sgg_counts_filename() << " in " << timer.get_time_since_mark_and_set_mark() << "." << std::endl;

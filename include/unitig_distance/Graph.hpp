@@ -9,7 +9,7 @@
 #include <vector>
 
 #include "types.hpp"
-#include "unitig_distance.hpp"
+#include "Utils.hpp"
 
 using edges_t = std::vector<std::pair<int_t, real_t>>;
 using edges_itr_t = typename edges_t::iterator;
@@ -31,14 +31,14 @@ public:
         std::ifstream ifs(edges_filename);
         int_t max_v = 0;
         for (std::string line; std::getline(ifs, line); ) {
-            auto fields = unitig_distance::get_fields(line);
+            auto fields = Utils::get_fields(line);
             if (fields.size() < 2) {
                 std::cout << "Wrong number of fields in graph edges file: " << edges_filename << std::endl;
                 return;
             }
             int_t v = std::stoll(fields[0]) - one_based();
             int_t w = std::stoll(fields[1]) - one_based();
-            real_t weight = fields.size() >= 3 && unitig_distance::is_numeric(fields[2]) ? std::stod(fields[2]) : 1.0;
+            real_t weight = fields.size() >= 3 && Utils::is_numeric(fields[2]) ? std::stod(fields[2]) : 1.0;
             edges.emplace_back(v, w, weight);
             max_v = std::max(max_v, std::max(v, w));
         }
@@ -59,7 +59,7 @@ public:
     {
         std::ifstream ifs_unitigs(unitigs_filename);
         for (std::string line; std::getline(ifs_unitigs, line); ) {
-            auto fields = unitig_distance::get_fields(line);
+            auto fields = Utils::get_fields(line);
             if (fields.size() < 2) {
                 std::cout << "Wrong number of fields in compacted de Bruijn graph unitigs file: " << unitigs_filename << std::endl;
                 return;
@@ -76,7 +76,7 @@ public:
 
         std::ifstream ifs_edges(edges_filename);
         for (std::string line; std::getline(ifs_edges, line); ) {
-            auto fields = unitig_distance::get_fields(line);
+            auto fields = Utils::get_fields(line);
             if (fields.size() < 3) {
                 std::cout << "Wrong number of fields in compacted de Bruijn graph edges file:" << edges_filename << std::endl;
                 return;
@@ -96,7 +96,7 @@ public:
         std::ifstream ifs_edges(edges_filename);
         int_t max_v = 0;
         for (std::string line; std::getline(ifs_edges, line); ) {
-            auto fields = unitig_distance::get_fields(line);
+            auto fields = Utils::get_fields(line);
             if (fields.size() < 3) {
                 std::cout << "Wrong number of fields in single genome graph edges file: " << edges_filename << std::endl;
                 return;
@@ -169,8 +169,8 @@ public:
 
     // Useful functions if graph stores two sides for each node.
     std::size_t true_size() const { return size() / 2; }
-    int_t left_node(int_t v) const { return unitig_distance::left_node(v); }
-    int_t right_node(int_t v) const { return unitig_distance::right_node(v); }
+    int_t left_node(int_t v) const { return Utils::left_node(v); }
+    int_t right_node(int_t v) const { return Utils::right_node(v); }
 
     bool one_based() const { return m_one_based; }
     bool two_sided() const { return m_two_sided; }
@@ -189,9 +189,9 @@ public:
             n_edges += sz;
             max_degree = std::max(max_degree, sz);
         }
-        std::string out_str = "Graph has " +  unitig_distance::neat_number_str(n_nodes) + " connected" + (two_sided() ? " (half) " : " ") + "nodes and "
-                            + unitig_distance::neat_number_str(n_edges / 2) + " edges. Avg and max degree are " 
-                            + unitig_distance::neat_decimal_str(n_edges, n_nodes) + " and " + std::to_string(max_degree) + ".";
+        std::string out_str = "Graph has " +  Utils::neat_number_str(n_nodes) + " connected" + (two_sided() ? " (half) " : " ") + "nodes and "
+                            + Utils::neat_number_str(n_edges / 2) + " edges. Avg and max degree are " 
+                            + Utils::neat_decimal_str(n_edges, n_nodes) + " and " + std::to_string(max_degree) + ".";
         std::cout << out_str << std::endl;
     }
 

@@ -6,7 +6,7 @@
 
 #include "Queries.hpp"
 #include "types.hpp"
-#include "unitig_distance.hpp"
+#include "Utils.hpp"
 
 class OutlierTools {
 public:
@@ -87,7 +87,7 @@ public:
             std::cout << "OutlierTools: extreme outlier threshold=" << m_extreme_outlier_threshold
                       << " (" << m_extreme_outlier_indices.size() << " extreme outliers)" << std::endl;
             std::cout << "OutlierTools: vertex coverage=" << m_v_coverage
-                      << " (" << unitig_distance::neat_decimal_str(100 * m_v_coverage, m_queries.n_vs()) << "% queries covered)" << std::endl;
+                      << " (" << Utils::neat_decimal_str(100 * m_v_coverage, m_queries.n_vs()) << "% queries covered)" << std::endl;
         }
     }
 
@@ -123,7 +123,7 @@ private:
         real_t largest_distance = 0.0;
         for (std::size_t i = 0; i < m_queries.size(); ++i) {
             if (low_count(i)) continue;
-            largest_distance = std::max(largest_distance, unitig_distance::fixed_distance(m_distances[i], m_max_distance));
+            largest_distance = std::max(largest_distance, Utils::fixed_distance(m_distances[i], m_max_distance));
         }
         return largest_distance;
     }
@@ -142,7 +142,7 @@ private:
                 std::cout << "    OutlierTools: Iteration " << iter++
                           << ", outlier threshold=" << m_outlier_threshold << ", extreme outlier threshold=" << m_extreme_outlier_threshold
                           << ", ld distance=" << (int_t) m_ld_distance
-                          << ", coverage=" << m_v_coverage << " (" << unitig_distance::neat_decimal_str(100 * m_v_coverage, m_queries.n_vs()) << "%)" << std::endl;
+                          << ", coverage=" << m_v_coverage << " (" << Utils::neat_decimal_str(100 * m_v_coverage, m_queries.n_vs()) << "%)" << std::endl;
             }
         }
     }

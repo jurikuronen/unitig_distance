@@ -9,7 +9,7 @@
 #include <vector>
 
 #include "types.hpp"
-#include "unitig_distance.hpp"
+#include "Utils.hpp"
 
 class Queries {
 public:
@@ -25,7 +25,7 @@ public:
         std::ifstream ifs(queries_filename);
         int_t cnt = 0;
         for (std::string line; std::getline(ifs, line); ) {
-            auto fields = unitig_distance::get_fields(line);
+            auto fields = Utils::get_fields(line);
             if (fields.size() < 2) {
                 std::cout << "Wrong number of fields in queries file: " << queries_filename << std::endl;
                 return;
@@ -70,7 +70,7 @@ public:
     void output_distances(const std::string& out_filename, const std::vector<real_t>& distances) const {
         std::ofstream ofs(out_filename);
         for (std::size_t i = 0; i < size(); ++i) {
-            int_t distance = (int_t) unitig_distance::fixed_distance(distances[i], m_max_distance);
+            int_t distance = (int_t) Utils::fixed_distance(distances[i], m_max_distance);
             ofs << v(i) + m_output_one_based << ' ' << w(i) + m_output_one_based << ' ' << distance;
             for (std::size_t field_idx = 3; field_idx < m_fields[i].size(); ++field_idx) {
                 ofs << ' ' << m_fields[i][field_idx];
