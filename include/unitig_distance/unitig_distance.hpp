@@ -2,6 +2,7 @@
 
 #include <sstream>
 #include <string>
+#include <utility>
 #include <vector>
 
 #include "types.hpp"
@@ -26,8 +27,8 @@ namespace unitig_distance {
     void clear(T& container);
 
     template <typename T, int IDX>
-    std::vector<T> transform_distance_tuple_vector(const std::vector<std::tuple<real_t, real_t, real_t, int_t>>& tuple_vector);
+    std::vector<T> transform_distance_pair_vector(const std::vector<std::pair<real_t, int_t>>& pair_vector);
 
 }
 
-std::tuple<real_t, real_t, real_t, int_t> operator+=(std::tuple<real_t, real_t, real_t, int_t>& lhs, const std::tuple<real_t, real_t, real_t, int_t> rhs);
+std::pair<real_t, int_t> operator+=(std::pair<real_t, int_t>& lhs, const std::pair<real_t, int_t> rhs);

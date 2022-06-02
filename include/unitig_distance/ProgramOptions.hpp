@@ -91,17 +91,11 @@ public:
     bool operating_mode(const OperatingMode& om) const { return operating_mode_to_bool(m_om & om); }
 
     const std::string out_filename() const { return out_stem() + ".ud" + based_str(); }
-    const std::string out_sgg_min_filename() const { return out_stem() + ".ud_sgg_min" + based_str(); }
-    const std::string out_sgg_max_filename() const { return out_stem() + ".ud_sgg_max" + based_str(); }
     const std::string out_sgg_mean_filename() const { return out_stem() + ".ud_sgg_mean" + based_str(); }
     const std::string out_sgg_counts_filename() const { return out_stem() + ".ud_sgg_counts" + based_str(); }
     const std::string out_outliers_filename() const { return out_stem() + ".ud_outliers" + based_str(); }
-    const std::string out_sgg_min_outliers_filename() const { return out_stem() + ".ud_sgg_min_outliers" + based_str(); }
-    const std::string out_sgg_max_outliers_filename() const { return out_stem() + ".ud_sgg_max_outliers" + based_str(); }
     const std::string out_sgg_mean_outliers_filename() const { return out_stem() + ".ud_sgg_mean_outliers" + based_str(); }
     const std::string out_outlier_stats_filename() const { return out_stem() + ".ud_outlier_stats"; }
-    const std::string out_sgg_min_outlier_stats_filename() const { return out_stem() + ".ud_sgg_min_outlier_stats"; }
-    const std::string out_sgg_max_outlier_stats_filename() const { return out_stem() + ".ud_sgg_max_outlier_stats"; }
     const std::string out_sgg_mean_outlier_stats_filename() const { return out_stem() + ".ud_sgg_mean_outlier_stats"; }
 
     // For updating the value after queries were read.

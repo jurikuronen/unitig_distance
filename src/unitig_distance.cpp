@@ -62,25 +62,23 @@ namespace unitig_distance {
     void clear(T& container) { T().swap(container); }
 
     template <typename T, int IDX>
-    std::vector<T> transform_distance_tuple_vector(const std::vector<std::tuple<real_t, real_t, real_t, int_t>>& tuple_vector) {
-        std::vector<T> vector(tuple_vector.size());
-        static auto get_element = [](const std::tuple<real_t, real_t, real_t, int_t>& tuple) { return (T) std::get<IDX>(tuple); };
-        std::transform(tuple_vector.begin(), tuple_vector.end(), vector.begin(), get_element);
+    std::vector<T> transform_distance_pair_vector(const std::vector<std::pair<real_t, int_t>>& pair_vector) {
+        std::vector<T> vector(pair_vector.size());
+        static auto get_element = [](const std::pair<real_t, int_t>& pair) { return (T) std::get<IDX>(pair); };
+        std::transform(pair_vector.begin(), pair_vector.end(), vector.begin(), get_element);
         return vector;
     }
 
 }
 
-std::tuple<real_t, real_t, real_t, int_t> operator+=(std::tuple<real_t, real_t, real_t, int_t>& lhs, const std::tuple<real_t, real_t, real_t, int_t> rhs) {
-    real_t min, max, mean, min_2, max_2, mean_2;
+std::pair<real_t, int_t> operator+=(std::pair<real_t, int_t>& lhs, const std::pair<real_t, int_t> rhs) {
+    real_t mean, mean_2;
     int_t count, count_2;
-    std::tie(min, max, mean, count) = lhs;
-    std::tie(min_2, max_2, mean_2, count_2) = rhs;
-    min = std::min(min, min_2);
-    max = std::max(max, max_2);
+    std::tie(mean, count) = lhs;
+    std::tie(mean_2, count_2) = rhs;
     mean = (mean * count + mean_2 * count_2) / (count + count_2);
     count += count_2;
-    return lhs = std::make_tuple(min, max, mean, count);
+    return lhs = std::make_pair(mean, count);
 }
 
 static void determine_outliers(const Queries& queries,
@@ -328,7 +326,7 @@ int main(int argc, char** argv) {
             if (print_interval % batch_size) print_interval += batch_size - (print_interval % batch_size); // Round up.
             bool print_now = false;
 
-            std::vector<std::tuple<real_t, real_t, real_t, int_t>> sgg_distances(po.n_queries(), std::make_tuple(REAL_T_MAX, 0.0, 0.0, 0));
+            std::vector<std::pair<real_t, int_t>> sgg_distances(po.n_queries(), std::make_pair(REAL_T_MAX, 0));
 
             if (po.verbose()) std::cout << timer.get_time_block_since_start_and_set_mark()
                                         << " Calculating distances in the single genome graphs." << std::endl;
@@ -387,9 +385,9 @@ int main(int argc, char** argv) {
                     for (const auto& distances : sgg_batch_distances) {
                         for (const auto& result : distances) {
                             int_t original_idx;
-                            std::tuple<real_t, real_t, real_t, int_t> distance_tuple;
-                            std::tie(original_idx, distance_tuple) = result;
-                            sgg_distances[original_idx] += distance_tuple;
+                            std::pair<real_t, int_t> distance_pair;
+                            std::tie(original_idx, distance_pair) = result;
+                            sgg_distances[original_idx] += distance_pair;
                         }
                     }
                 }
@@ -412,7 +410,7 @@ int main(int argc, char** argv) {
 
             // Set distance correctly for disconnected queries.
             for (auto& distance : sgg_distances) {
-                if (std::get<3>(distance) == 0) distance = std::make_tuple(REAL_T_MAX, REAL_T_MAX, REAL_T_MAX, 0);
+                if (std::get<1>(distance) == 0) distance = std::make_pair(REAL_T_MAX, 0);
             }
 
             if (po.verbose()) {
@@ -428,22 +426,12 @@ int main(int argc, char** argv) {
             }
 
             // Output single genome graphs graph distances.
-            auto min_distances = unitig_distance::transform_distance_tuple_vector<real_t, 0>(sgg_distances);
-            queries.output_distances(po.out_sgg_min_filename(), min_distances);
-            if (po.verbose()) std::cout << timer.get_time_block_since_start() << " Output single genome graph min distances to file "
-                                        << po.out_sgg_min_filename() << " in " << timer.get_time_since_mark_and_set_mark() << "." << std::endl;
-
-            auto max_distances = unitig_distance::transform_distance_tuple_vector<real_t, 1>(sgg_distances);
-            queries.output_distances(po.out_sgg_max_filename(), max_distances);
-            if (po.verbose()) std::cout << timer.get_time_block_since_start() << " Output single genome graph max distances to file "
-                                        << po.out_sgg_max_filename() << " in " << timer.get_time_since_mark_and_set_mark() << "." << std::endl;
-
-            auto mean_distances = unitig_distance::transform_distance_tuple_vector<real_t, 2>(sgg_distances);
+            auto mean_distances = unitig_distance::transform_distance_pair_vector<real_t, 0>(sgg_distances);
             queries.output_distances(po.out_sgg_mean_filename(), mean_distances);
             if (po.verbose()) std::cout << timer.get_time_block_since_start() << " Output single genome graph mean distances to file "
                                         << po.out_sgg_mean_filename() << " in " << timer.get_time_since_mark_and_set_mark() << "." << std::endl;
 
-            auto sgg_counts = unitig_distance::transform_distance_tuple_vector<int_t, 3>(sgg_distances);
+            auto sgg_counts = unitig_distance::transform_distance_pair_vector<int_t, 1>(sgg_distances);
             queries.output_counts(po.out_sgg_counts_filename(), sgg_counts);
             if (po.verbose()) std::cout << timer.get_time_block_since_start() << " Output single genome graph connected vertex pair counts to file "
                                         << po.out_sgg_counts_filename() << " in " << timer.get_time_since_mark_and_set_mark() << "." << std::endl;
@@ -460,10 +448,6 @@ int main(int argc, char** argv) {
 
                 // Determine outliers.
                 if (po.operating_mode(OperatingMode::OUTLIER_TOOLS)) {
-                    determine_outliers(queries, min_distances, sgg_counts, po, "single genome graph min distances",
-                                       po.out_sgg_min_outliers_filename(), po.out_sgg_min_outlier_stats_filename(), timer);
-                    determine_outliers(queries, max_distances, sgg_counts, po, "single genome graph max distances",
-                                       po.out_sgg_max_outliers_filename(), po.out_sgg_max_outlier_stats_filename(), timer);
                     determine_outliers(queries, mean_distances, sgg_counts, po, "single genome graph mean distances",
                                        po.out_sgg_mean_outliers_filename(), po.out_sgg_mean_outlier_stats_filename(), timer);
                 }
