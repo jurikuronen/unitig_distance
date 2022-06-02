@@ -4,6 +4,7 @@
 #include <string>
 #include <vector>
 
+#include "ProgramOptions.hpp"
 #include "types.hpp"
 
 class Utils {
@@ -48,6 +49,54 @@ public:
 
     template <typename T>
     static void clear(T& container) { T().swap(container); }
+
+    static bool sanity_check_input_files(const ProgramOptions& po) {
+        if (po.operating_mode() != OperatingMode::OUTLIER_TOOLS) {
+            if (!Utils::file_is_good(po.edges_filename())) {
+                std::cerr << "Can't open " << po.edges_filename() << std::endl;
+                return false;
+            }
+
+            if (po.operating_mode(OperatingMode::CDBG)) {
+                if (!Utils::file_is_good(po.unitigs_filename())) {
+                    std::cerr << "Can't open " << po.unitigs_filename() << std::endl;
+                    return false;
+                }
+
+                if (po.operating_mode(OperatingMode::SGGS)) {
+                    if (!Utils::file_is_good(po.sggs_filename())) {
+                        std::cerr << "Can't open " << po.sggs_filename() << std::endl;
+                        return false;
+                    }
+                    std::ifstream ifs(po.sggs_filename());
+                    for (std::string path_edges; std::getline(ifs, path_edges); ) {
+                        if (!Utils::file_is_good(path_edges)) {
+                            std::cerr << "Can't open " << path_edges << std::endl;
+                            return false;
+                        }
+                    }
+                }
+            }
+        }
+
+        if (!po.queries_filename().empty() && po.n_queries() > 0) {
+            if (!Utils::file_is_good(po.queries_filename())) {
+                std::cerr << "Can't open " << po.queries_filename() << std::endl;
+                return false;
+            }
+        }
+
+        if (po.operating_mode() == OperatingMode::OUTLIER_TOOLS && !po.sgg_counts_filename().empty()) {
+            if (!Utils::file_is_good(po.sgg_counts_filename())) {
+                std::cerr << "Can't open " << po.sgg_counts_filename() << std::endl;
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    static void print_license() { std::cout << "unitig_distance | MIT License | Copyright (c) 2020-2022 Juri Kuronen\n\n"; }
 
 private:
 
