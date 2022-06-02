@@ -1,6 +1,5 @@
 #pragma once
 
-#include <fstream>
 #include <string>
 #include <vector>
 
@@ -95,8 +94,6 @@ public:
 
         return true;
     }
-
-    static void print_license() { std::cout << "unitig_distance | MIT License | Copyright (c) 2020-2022 Juri Kuronen\n\n"; }
 
 private:
 

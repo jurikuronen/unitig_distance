@@ -7,6 +7,7 @@
 #include <vector>
 
 #include "Graph.hpp"
+#include "PrintUtils.hpp"
 #include "SearchJobs.hpp"
 #include "Timer.hpp"
 #include "types.hpp"
@@ -56,9 +57,7 @@ public:
             std::vector<std::thread> threads;
             for (int_t thr = 0; thr < m_n_threads; ++thr) threads.emplace_back(calculate_distance_block, thr, block_start, block_end);
             for (auto& thr : threads) thr.join();
-            if (m_verbose) std::cout << m_timer.get_time_block_since_start() << " Calculated distances for block "
-                                     << block_start + 1 << '-' << block_end << " / " << search_jobs.size()
-                                     << " in " << t.get_time_since_mark() << "." << std::endl;
+            if (m_verbose) PrintUtils::print_tbss(m_timer, "Calculated distances for block", block_start + 1, '-', block_end, '/', search_jobs.size());
         }
 
         return res;

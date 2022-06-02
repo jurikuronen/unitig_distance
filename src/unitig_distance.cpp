@@ -12,7 +12,7 @@
 #include "GraphDistances.hpp"
 #include "OperatingMode.hpp"
 #include "OutlierTools.hpp"
-#include "output_wrappers.hpp"
+#include "PrintUtils.hpp"
 #include "ProgramOptions.hpp"
 #include "Queries.hpp"
 #include "SearchJobs.hpp"
@@ -42,19 +42,15 @@ static void determine_outliers(const Queries& queries,
     }
     if (po.verbose()) {
         if (ot.ok()) {
-            std::cout << timer.get_time_block_since_start() << " Determined outliers for " << graph_name << " distances in "
-                  << timer.get_time_since_mark_and_set_mark() << "." << std::endl;
+            PrintUtils::print_tbss_tsmasm(timer, "Determined outliers for", graph_name, "distances");
         } else {
-            std::cout << timer.get_time_block_since_start() << " Unable to determine outliers for " << graph_name << " distances: "
-                      << ot.reason() << "." << std::endl;
+            PrintUtils::print_tbss(timer, "Unable to determine outliers for", graph_name, "distances:", ot.reason());
         }
         ot.print_details();
     }
     if (!ot.ok()) return;
     ot.output_outliers(out_outliers_filename, out_outlier_stats_filename);
-    if (po.verbose()) std::cout << timer.get_time_block_since_start_and_set_mark() << " Output outliers to files "
-                                << out_outliers_filename << " and " << out_outlier_stats_filename << " in "
-                                << timer.get_time_since_mark_and_set_mark() << "." << std::endl;
+    if (po.verbose()) PrintUtils::print_tbss_tsmasm(timer, "Output outliers to files", out_outliers_filename, "and", out_outlier_stats_filename);
 }
 
 static std::vector<int_t> read_counts(const std::string& counts_filename, int_t n_queries) {
@@ -85,7 +81,7 @@ int main(int argc, char** argv) {
 
     // Read command line arguments.
     ProgramOptions po(argc, argv);
-    if (po.verbose()) Utils::print_license();
+    if (po.verbose()) PrintUtils::print_license();
     if (!po.valid_state() || !Utils::sanity_check_input_files(po)) return 1;
 
     if (po.verbose()) po.print_run_details();
@@ -100,26 +96,19 @@ int main(int argc, char** argv) {
             return 1;
         }
         if (po.verbose()) {
-            std::cout << timer.get_time_block_since_start() << " Read " << Utils::neat_number_str(queries.size())
-                      << " lines from queries file in " << timer.get_time_since_mark_and_set_mark() << "." << std::endl;
+            PrintUtils::print_tbss_tsmasm(timer, "Read", Utils::neat_number_str(queries.size()), "lines from queries file");
         }
 
         po.set_n_queries(queries.size());
 
         const auto distances = queries.get_distance_vector();
-        if (po.verbose()) {
-            std::cout << timer.get_time_block_since_start() << " Got distance vector in "
-                      << timer.get_time_since_mark_and_set_mark() << "." << std::endl;
-        }
+        if (po.verbose()) PrintUtils::print_tbss_tsmasm(timer, "Got distance vector");
 
         std::vector<int_t> counts;
         if (!po.sgg_counts_filename().empty()) {
             counts = read_counts(po.sgg_counts_filename(), po.n_queries());
             if (counts.empty()) return 1;
-            if (po.verbose()) {
-                std::cout << timer.get_time_block_since_start() << " Read " << Utils::neat_number_str(counts.size())
-                          << " counts in " << timer.get_time_since_mark_and_set_mark() << "." << std::endl;
-            }
+            if (po.verbose()) PrintUtils::print_tbss_tsmasm(timer, "Read", Utils::neat_number_str(counts.size()), "counts");
         }
 
         determine_outliers(queries, distances, counts, po, "provided",
@@ -147,8 +136,7 @@ int main(int argc, char** argv) {
     }
 
     if (po.verbose()) {
-        std::cout << timer.get_time_block_since_start() << " Constructed " << graph_name << " in "
-                  << timer.get_time_since_mark_and_set_mark() << ". ";
+        PrintUtils::print_tbss_tsmasm_noendl(timer, "Constructed", graph_name);
         graph.print_details();
     }
 
@@ -164,25 +152,18 @@ int main(int argc, char** argv) {
 
         po.set_n_queries(queries.size());
 
-        if (po.verbose()) {
-            std::cout << timer.get_time_block_since_start() << " Read " << Utils::neat_number_str(queries.size())
-                      << " lines from queries file in " << timer.get_time_since_mark_and_set_mark() << "." << std::endl;
-        }
+        if (po.verbose()) PrintUtils::print_tbss_tsmasm(timer, "Read", Utils::neat_number_str(queries.size()), "lines from queries file");
 
         // Compute search jobs.
         const SearchJobs search_jobs(queries);
 
-        if (po.verbose()) {
-            std::cout << timer.get_time_block_since_start() << " Prepared " << Utils::neat_number_str(search_jobs.size())
-                      << " search jobs in " << timer.get_time_since_mark_and_set_mark() << "." << std::endl;
-        }
+        if (po.verbose()) PrintUtils::print_tbss_tsmasm(timer, "Prepared", Utils::neat_number_str(search_jobs.size()), "search jobs");
 
         std::vector<real_t> graph_distances;
 
         // Skip this part if user requested distances for the single genome graphs only.
         if (!(po.operating_mode(OperatingMode::SGGS) && po.run_sggs_only())) {
-            if (po.verbose()) std::cout << timer.get_time_block_since_start_and_set_mark()
-                                        << " Calculating distances in the " << graph_name << "." << std::endl;
+            if (po.verbose()) PrintUtils::print_tbssasm(timer, "Calculating distances in the", graph_name);
 
             // Calculate distances.
             GraphDistances gd(graph, timer, po.n_threads(), po.block_size(), po.max_distance(), po.verbose());
@@ -190,16 +171,13 @@ int main(int argc, char** argv) {
 
             // Output distances.
             queries.output_distances(po.out_filename(), graph_distances);
-            if (po.verbose()) std::cout << timer.get_time_block_since_start() << " Output " << graph_name << " distances to file "
-                                        << po.out_filename() << " in " << timer.get_time_since_mark_and_set_mark() << "." << std::endl;
+            if (po.verbose()) PrintUtils::print_tbss_tsmasm(timer, "Output", graph_name, "distances to file", po.out_filename());
 
             // Determine outliers.
             if (po.operating_mode(OperatingMode::OUTLIER_TOOLS)) {
                 if (po.operating_mode(OperatingMode::SGGS) && po.sgg_count_threshold() > 0) {
-                    if (po.verbose()) {
-                        std::cout << timer.get_time_block_since_start_and_set_mark() << " Running in SGGS mode with sgg_count_threshold > 0. Will "
-                                  << "determine outliers for " << graph_name << " distances after the single genome graph routines." << std::endl;
-                    }
+                    if (po.verbose()) PrintUtils::print_tbssasm(timer, "Running in SGGS mode with sgg_count_threshold > 0. Will determine outliers for",
+                                                                graph_name, "distances after the single genome graph routines");
                 } else {
                     determine_outliers(queries, graph_distances, std::vector<int_t>(), po, graph_name,
                                        po.out_outliers_filename(), po.out_outlier_stats_filename(), timer);
@@ -228,15 +206,14 @@ int main(int argc, char** argv) {
 
             DistanceVector sgg_distances(po.n_queries(), 0.0, 0);
 
-            if (po.verbose()) std::cout << timer.get_time_block_since_start_and_set_mark()
-                                        << " Calculating distances in the single genome graphs." << std::endl;
+            if (po.verbose()) PrintUtils::print_tbssasm(timer, "Calculating distances in the single genome graphs");
 
             for (std::size_t i = 0; i < n_sggs; i += batch_size) {
                 if (po.verbose()) {
                     t_deconstruct.add_time_since_mark();
                     if (print_now) {
-                        std::cout << timer.get_time_block_since_start() << " Deconstructed single genome graphs " << print_i << "-" << i
-                                  << " / " << n_sggs << " in " << t_deconstruct.get_stopwatch_time_since_lap_and_set_lap() << "." << std::endl;
+                        auto stslasl = t_deconstruct.get_stopwatch_time_since_lap_and_set_lap();
+                        PrintUtils::print_tbss(timer, "Deconstructed single genome graphs", print_i, "-", i, "/", n_sggs, "in", stslasl);
                         print_i = i + 1;
                     }
                     t_sgg.set_mark();
@@ -266,8 +243,8 @@ int main(int argc, char** argv) {
                 if (po.verbose()) {
                     t_sgg.add_time_since_mark();
                     if (print_now) {
-                        std::cout << timer.get_time_block_since_start() << " Constructed single genome graphs " << print_i << "-" << i + batch << " / " << n_sggs
-                                  << " in " << t_sgg.get_stopwatch_time_since_lap_and_set_lap() << "." << std::endl;
+                        auto stslasl = t_sgg.get_stopwatch_time_since_lap_and_set_lap();
+                        PrintUtils::print_tbss(timer, "Constructed single genome graphs", print_i, "-", i + batch, "/", n_sggs, "in", stslasl);
                     }
                     // Update n_nodes and n_edges.
                     for (const auto& sg_graph : sg_graphs) {
@@ -295,8 +272,8 @@ int main(int argc, char** argv) {
                 if (po.verbose()) {
                     t_sgg_distances.add_time_since_mark();
                     if (print_now) {
-                        std::cout << timer.get_time_block_since_start() << " Calculated distances in the single genome graphs " << print_i << "-" << i + batch
-                                  << " / " << n_sggs << " in " << t_sgg_distances.get_stopwatch_time_since_lap_and_set_lap() << "." << std::endl;
+                        auto stslasl = t_sgg_distances.get_stopwatch_time_since_lap_and_set_lap();
+                        PrintUtils::print_tbss(timer, "Calculated distances in the single genome graphs", print_i, "-", i + batch, "/", n_sggs, "in", stslasl);
                     }
                     t_deconstruct.set_mark();
                 }
@@ -304,8 +281,8 @@ int main(int argc, char** argv) {
 
             if (po.verbose()) {
                 t_deconstruct.add_time_since_mark();
-                std::cout << timer.get_time_block_since_start() << " Deconstructed single genome graphs and distances " << print_i << "-" << n_sggs
-                          << " / " << n_sggs << " in " << t_deconstruct.get_stopwatch_time_since_lap_and_set_lap() << "." << std::endl;
+                auto stslasl = t_deconstruct.get_stopwatch_time_since_lap_and_set_lap();
+                PrintUtils::print_tbss(timer, "Deconstructed single genome graphs and distances", print_i, "-", n_sggs, "/", n_sggs, "in", stslasl);
             }
 
             // Set distance correctly for disconnected queries.
@@ -316,25 +293,21 @@ int main(int argc, char** argv) {
             if (po.verbose()) {
                 n_nodes /= n_sggs;
                 n_edges /= 2 * n_sggs;
-                std::cout << timer.get_time_block_since_start() << " Constructing " << n_sggs << " single genome graphs took " << t_sgg.get_stopwatch_time()
-                          << ". The compressed single genome graphs have on average " << Utils::neat_number_str(n_nodes) << " connected nodes and "
-                          << Utils::neat_number_str(n_edges) << " edges." << std::endl;
-                std::cout << timer.get_time_block_since_start_and_set_mark() << " Calculating distances in the " << n_sggs << " single genome graphs took "
-                          << t_sgg_distances.get_stopwatch_time() << "." << std::endl;
-                std::cout << timer.get_time_block_since_start_and_set_mark() << " Deconstructing " << n_sggs << " single genome graphs took "
-                          << t_deconstruct.get_stopwatch_time() << "." << std::endl;
+                PrintUtils::print_tbss(timer, "Constructing", n_sggs, "single genome graphs took", t_sgg.get_stopwatch_time());
+                PrintUtils::print_tbss(timer, "The compressed single genome graphs have on average", Utils::neat_number_str(n_nodes), " connected nodes and", 
+                                       Utils::neat_number_str(n_edges), "edges");
+                PrintUtils::print_tbss(timer, "Calculating distances in the", n_sggs, "single genome graphs took", t_sgg_distances.get_stopwatch_time());
+                PrintUtils::print_tbssasm(timer, "Deconstructing", n_sggs, "single genome graphs took", t_sgg_distances.get_stopwatch_time());
             }
 
             // Output single genome graphs graph distances.
             auto mean_distances = sgg_distances.distances();
             queries.output_distances(po.out_sgg_mean_filename(), mean_distances);
-            if (po.verbose()) std::cout << timer.get_time_block_since_start() << " Output single genome graph mean distances to file "
-                                        << po.out_sgg_mean_filename() << " in " << timer.get_time_since_mark_and_set_mark() << "." << std::endl;
+            if (po.verbose()) PrintUtils::print_tbss_tsmasm(timer, "Output single genome graph mean distances to file", po.out_sgg_mean_filename());
 
             auto sgg_counts = sgg_distances.counts();
             queries.output_counts(po.out_sgg_counts_filename(), sgg_counts);
-            if (po.verbose()) std::cout << timer.get_time_block_since_start() << " Output single genome graph connected vertex pair counts to file "
-                                        << po.out_sgg_counts_filename() << " in " << timer.get_time_since_mark_and_set_mark() << "." << std::endl;
+            if (po.verbose()) PrintUtils::print_tbss_tsmasm(timer, "Output single genome graph connected vertex pair counts to file", po.out_sgg_counts_filename());
 
             // Determine outliers.
             if (po.operating_mode(OperatingMode::OUTLIER_TOOLS)) {
@@ -354,6 +327,6 @@ int main(int argc, char** argv) {
             }
         }
 
-        if (po.verbose()) std::cout << timer.get_time_block_since_start() << " Finished." << std::endl;
+        if (po.verbose()) PrintUtils::print_tbss(timer, "Finished");
     }
 }
