@@ -32,7 +32,7 @@ static void determine_outliers(const Queries& queries,
                                Timer& timer)
 {
     timer.set_mark();
-    OutlierTools ot(queries, distances, counts, po.sgg_count_threshold(), po.max_distance(), po.output_one_based(), po.verbose());
+    OutlierTools ot(queries, distances, counts, po.sgg_count_threshold(), po.max_distance(), po.verbose());
     if (po.ld_distance() >= 0 && po.outlier_threshold() >= 0.0) {
         // Use custom values.
         ot.determine_outliers(po.ld_distance(), po.outlier_threshold());
@@ -286,9 +286,7 @@ int main(int argc, char** argv) {
             }
 
             // Set distance correctly for disconnected queries.
-            for (auto& distance : sgg_distances) {
-                if (distance.count() == 0) distance = Distance(REAL_T_MAX, 0);
-            }
+            for (auto& distance : sgg_distances) if (distance.count() == 0) distance = Distance(REAL_T_MAX, 0);
 
             if (po.verbose()) {
                 n_nodes /= n_sggs;

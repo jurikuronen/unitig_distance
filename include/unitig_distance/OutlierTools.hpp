@@ -15,14 +15,12 @@ public:
                  const std::vector<int_t>& counts_vector,
                  int_t sgg_count_threshold,
                  real_t max_distance,
-                 bool output_one_based = false,
                  bool verbose = false)
     : m_queries(queries),
       m_distances(distance_vector),
       m_counts(counts_vector),
       m_sgg_count_threshold(set_count_threshold(sgg_count_threshold)),
       m_max_distance(max_distance),
-      m_output_one_based(output_one_based),
       m_verbose(verbose),
       m_ok(true)
     { }
@@ -103,7 +101,6 @@ private:
 
     real_t m_max_distance;
 
-    bool m_output_one_based;
     bool m_verbose;
     bool m_ok;
 
@@ -218,3 +215,4 @@ private:
     }
 
 };
+
