@@ -31,6 +31,14 @@ public:
     }
 
     template <typename... Ts>
+    static void print_tbss_tsm(const Timer& timer, Ts... ts) {
+        tbss(timer);
+        print(ts...);
+        tsm(timer);
+        dot_endl();
+    }
+
+    template <typename... Ts>
     static void print_tbss_tsmasm(Timer& timer, Ts... ts) {
         tbss(timer);
         print(ts...);
@@ -47,6 +55,7 @@ private:
 
     static void tbss(const Timer& timer) { std::cout << timer.get_time_block_since_start(); }
     static void tbssasm(Timer& timer) { std::cout << timer.get_time_block_since_start_and_set_mark(); }
+    static void tsm(const Timer& timer) { print("in", timer.get_time_since_mark()); }
     static void tsmasm(Timer& timer) { print("in", timer.get_time_since_mark_and_set_mark()); }
 
     static void dot_endl() { std::cout << '.' << std::endl; }
