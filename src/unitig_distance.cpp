@@ -9,6 +9,7 @@
 #include "Distance.hpp"
 #include "DistanceVector.hpp"
 #include "Graph.hpp"
+#include "GraphBuilder.hpp"
 #include "GraphDistances.hpp"
 #include "OperatingMode.hpp"
 #include "OutlierTools.hpp"
@@ -17,6 +18,7 @@
 #include "Queries.hpp"
 #include "SearchJobs.hpp"
 #include "SingleGenomeGraph.hpp"
+#include "SingleGenomeGraphBuilder.hpp"
 #include "SingleGenomeGraphDistances.hpp"
 #include "Timer.hpp"
 #include "types.hpp"
@@ -83,7 +85,6 @@ int main(int argc, char** argv) {
     ProgramOptions po(argc, argv);
     if (po.verbose()) PrintUtils::print_license();
     if (!po.valid_state() || !Utils::sanity_check_input_files(po)) return 1;
-
     if (po.verbose()) po.print_run_details();
 
     // Operating in outliers tool mode only.
@@ -117,16 +118,7 @@ int main(int argc, char** argv) {
     }
 
     // Construct the graph according to operating mode.
-    Graph graph;
-    if (po.operating_mode(OperatingMode::GENERAL)) {
-        graph = Graph(po.edges_filename(), po.graphs_one_based());
-    } else if (po.operating_mode(OperatingMode::CDBG)) {
-        graph = Graph(po.unitigs_filename(), po.edges_filename(), po.k(), po.graphs_one_based());
-    } else {
-        // Catch unknown operating mode -- this shouldn't happen.
-        std::cout << "Program logic error." << std::endl;
-        return 1;
-    }
+    Graph graph = GraphBuilder::build_correct_graph(po);
 
     const std::string graph_name = po.operating_mode(OperatingMode::CDBG) ? "compacted de Bruijn graph" : "graph";
 
@@ -226,7 +218,7 @@ int main(int argc, char** argv) {
                 // Construct a batch of single genome graphs.
                 std::vector<SingleGenomeGraph> sg_graphs(batch);
                 auto construct_sgg = [&graph, &sg_graphs](int_t thr, const std::string& path_edges) {
-                    sg_graphs[thr] = SingleGenomeGraph(graph, path_edges);
+                    sg_graphs[thr] = SingleGenomeGraphBuilder::build_sgg(graph, path_edges);
                 };
 
                 std::vector<std::thread> threads;

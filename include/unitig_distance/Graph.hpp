@@ -25,101 +25,7 @@ public:
     Graph(const Graph& other) = default;
     Graph(Graph&& other) : m_adj(std::move(other.m_adj)), m_one_based(other.m_one_based), m_two_sided(other.m_two_sided) { }
 
-    // Construct ordinary graph.
-    Graph(const std::string& edges_filename, bool ob = false) : m_one_based(ob), m_two_sided(false) {
-        std::vector<std::tuple<int_t, int_t, real_t>> edges;
-        std::ifstream ifs(edges_filename);
-        int_t max_v = 0;
-        for (std::string line; std::getline(ifs, line); ) {
-            auto fields = Utils::get_fields(line);
-            if (fields.size() < 2) {
-                std::cout << "Wrong number of fields in graph edges file: " << edges_filename << std::endl;
-                return;
-            }
-            int_t v = std::stoll(fields[0]) - one_based();
-            int_t w = std::stoll(fields[1]) - one_based();
-            real_t weight = fields.size() >= 3 && Utils::is_numeric(fields[2]) ? std::stod(fields[2]) : 1.0;
-            edges.emplace_back(v, w, weight);
-            max_v = std::max(max_v, std::max(v, w));
-        }
-        m_adj.resize(max_v + 1);
-        for (const auto& edge : edges) {
-            int_t v, w;
-            real_t weight;
-            std::tie(v, w, weight) = edge;
-            add_edge(v, w, weight);
-        }
-    }
-
-    /* Construct a compacted de Bruijn graph constructed from multiple genome references.
-       This graph stores two nodes for each unitig: one for its left side and one for its right side, considered from the canonical form. */
-    Graph(const std::string& unitigs_filename, const std::string& edges_filename, int_t kmer_length, bool ob = false)
-    : m_one_based(ob),
-      m_two_sided(true)
-    {
-        std::ifstream ifs_unitigs(unitigs_filename);
-        for (std::string line; std::getline(ifs_unitigs, line); ) {
-            auto fields = Utils::get_fields(line);
-            if (fields.size() < 2) {
-                std::cout << "Wrong number of fields in compacted de Bruijn graph unitigs file: " << unitigs_filename << std::endl;
-                return;
-            }
-            real_t self_edge_weight = (real_t) fields[1].size() - kmer_length;
-            if (self_edge_weight < 0.0) {
-                std::cout << "self_edge_weight = " << self_edge_weight << " < 0.0 -- wrong k-mer length?" << std::endl;
-                return;
-            }
-            add_node();
-            add_node();
-            add_edge(size() - 2, size() - 1, self_edge_weight);
-        }
-
-        std::ifstream ifs_edges(edges_filename);
-        for (std::string line; std::getline(ifs_edges, line); ) {
-            auto fields = Utils::get_fields(line);
-            if (fields.size() < 3) {
-                std::cout << "Wrong number of fields in compacted de Bruijn graph edges file:" << edges_filename << std::endl;
-                return;
-            }
-            bool good_overlap = fields.size() < 4 || std::stoll(fields[3]) != 0;
-            if (!good_overlap) continue; // Non-overlapping edges ignored.
-            std::string edge_type = fields[2];
-            int_t v = 2 * (std::stoll(fields[0]) - one_based()) + (edge_type[0] == 'F'); // F* edge means link comes from v's right side.
-            int_t w = 2 * (std::stoll(fields[1]) - one_based()) + (edge_type[1] == 'R'); // *R edge means link goes to w's right side.
-            add_edge(v, w, 1.0); // Weight 1.0 by definition.
-        }
-    }
-
-    // Construct an edge-induced subgraph from the compacted de Bruijn graph. Will be used to construct a single genome graph.
-    Graph(const Graph& cdbg, const std::string& edges_filename) : m_one_based(cdbg.one_based()), m_two_sided(false) {
-        std::vector<std::pair<int_t, int_t>> edges;
-        std::ifstream ifs_edges(edges_filename);
-        int_t max_v = 0;
-        for (std::string line; std::getline(ifs_edges, line); ) {
-            auto fields = Utils::get_fields(line);
-            if (fields.size() < 3) {
-                std::cout << "Wrong number of fields in single genome graph edges file: " << edges_filename << std::endl;
-                return;
-            }
-            bool good_overlap = fields.size() < 4 || std::stoll(fields[3]) != 0;
-            if (!good_overlap) continue; // Non-overlapping edges ignored.
-            std::string edge_type = fields[2];
-            int_t v = 2 * (std::stoll(fields[0]) - one_based()) + (edge_type[0] == 'F'); // F* edge means link comes from v's right side.
-            int_t w = 2 * (std::stoll(fields[1]) - one_based()) + (edge_type[1] == 'R'); // *R edge means link goes to w's right side.
-            edges.emplace_back(v, w);
-            max_v = std::max(max_v, std::max(v, w));
-        }
-        m_adj.resize((max_v | 1) + 1);
-
-        for (const auto& edge : edges) {
-            int_t v, w;
-            std::tie(v, w) = edge;
-            // Get self-edges from the original graph.
-            if (degree(v) == 0) add_edge(v, v ^ 1, cdbg.max_edge_weight(v));
-            if (degree(w) == 0) add_edge(w, w ^ 1, cdbg.max_edge_weight(w));
-            add_edge(v, w, 1.0); // Weight 1.0 by definition.
-        }
-    }
+    Graph(bool one_based, bool two_sided = false) : m_one_based(one_based), m_two_sided(two_sided) { }
 
     bool contains(int_t v) const { return v < (int_t) m_adj.size(); }
 
@@ -166,6 +72,8 @@ public:
     int_t degree(int_t v) const { return (*this)[v].size(); }
 
     std::size_t size() const { return m_adj.size(); }
+
+    void resize(std::size_t sz) { m_adj.resize(sz); }
 
     // Useful functions if graph stores two sides for each node.
     std::size_t true_size() const { return size() / 2; }
