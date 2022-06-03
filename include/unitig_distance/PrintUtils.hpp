@@ -27,7 +27,7 @@ public:
         tbss(timer);
         print(ts...);
         tsmasm(timer);
-        std::cout << ". ";
+        dot_noendl();
     }
 
     template <typename... Ts>
