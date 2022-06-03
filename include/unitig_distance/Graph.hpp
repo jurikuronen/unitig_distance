@@ -169,8 +169,8 @@ public:
 
     // Useful functions if graph stores two sides for each node.
     std::size_t true_size() const { return size() / 2; }
-    int_t left_node(int_t v) const { return Utils::left_node(v); }
-    int_t right_node(int_t v) const { return Utils::right_node(v); }
+    int_t left_node(int_t v) const { return v * 2; }
+    int_t right_node(int_t v) const { return v * 2 + 1; }
 
     bool one_based() const { return m_one_based; }
     bool two_sided() const { return m_two_sided; }

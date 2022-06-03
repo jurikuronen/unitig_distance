@@ -38,9 +38,6 @@ public:
 
     static real_t fixed_distance(real_t distance, real_t max_distance = REAL_T_MAX) { return distance >= max_distance ? -1.0 : distance; }
 
-    static int_t left_node(int_t v) { return v * 2; }
-    static int_t right_node(int_t v) { return v * 2 + 1; }
-
     static bool is_numeric(const std::string& str) {
         double x;
         return (std::stringstream(str) >> x).eof();
