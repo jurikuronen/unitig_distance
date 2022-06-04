@@ -14,7 +14,6 @@ See also the project [gfa1_parser](https://github.com/jurikuronen/gfa1_parser) w
   - [General graph](#general-graph)
   - [Compacted de Bruijn Graph](#compacted-de-bruijn-graph)
     - [Single genome graphs](#single-genome-graphs)
-  - [Applying a filter on the graph](#applying-a-filter-on-the-graph)
   - [Distance queries file](#distance-queries-file)
 - [Usage](#usage)
   - [List of available options](#list-of-available-options)
@@ -57,13 +56,6 @@ where `v` and `w` correspond to distinct unitigs (according to the order in the 
 #### Single genome graphs
 After providing the necessary files to construct a [compacted de Bruijn graph](#compacted-de-bruijn-graph), unitig_distance can also construct all the individual *single genome graphs* that compose the full graph. Each single genome graph requires a similar edges file as the full compacted de Bruijn graph. All such edge file paths should be collected in a single genome graph paths file (`-S [ --sgg-paths-file ] arg`) with one single genome graph edges file path per line. Distance calculation can be restricted to the single genome graphs (`-r [ --run-sggs-only]`).
 
-### Applying a filter on the graph
-It is possible to filter out unwanted vertices/unitigs (e.g. repetitive elements) by providing a filter file (`-F [ --filter-file ] arg`) where each line has the format
-```
-v (filter_value)
-```
-and a filter criterion (`-c [ --filter-criterion ] arg (=2.0)`). This will cause unitig_distance to construct an additional filtered graph, where given vertices `v` with `filter_value >= filter_criterion` will be disconnected in the graph. The `filter_value` field is optional and defauls to an infinite value.
-
 ### Distance queries file
 The simplest format for the queries file (`-Q [ --queries-file ] arg`) is a file where each line has the format
 ```
@@ -88,12 +80,6 @@ This list is available with the command line argument `-h [ --help ]`.
 Graph edges:                                  
   -E  [ --edges-file ] arg                    Path to file containing graph edges.
   -1g [ --graphs-one-based ]                  Graph files use one-based numbering.
-                                              
-Filter the graph:                             
-  -F  [ --filter-file ] arg                   Path to file containing vertices/unitigs that will be filtered.
-  -1f [ --filter-one-based ]                  Filter file uses one-based numbering.
-  -c  [ --filter-criterion ] arg (=2.0)       Criterion for the filter.
-  -f  [ --run-filter-only ]                   Calculate distances only in the filtered graph.
                                               
 CDBG operating mode:                          
   -U  [ --unitigs-file ] arg                  Path to file containing unitigs.
@@ -159,12 +145,10 @@ Following from the above section ([Calculating distances in compacted de Bruijn 
                       -o <output_stem> -t 16 -v | tee <output_stem>.ud_log
 ```
 The output will be written to
-- `<output_stem>.ud_sgg_min_0_based`
-- `<output_stem>.ud_sgg_max_0_based`
 - `<output_stem>.ud_sgg_mean_0_based`
 - `<output_stem>.ud_sgg_counts_0_based`
 
-where the \*min\*/\*max\*/\*mean\* files contain minimum, maximum and mean distances across the single genome graphs and the \*counts\* file contains, for each query, the count of single genome graphs where the query's vertex pair is connected.
+where the \*mean\* file contains the mean distances across the single genome graphs and the \*counts\* file contains, for each query, the count of single genome graphs where the query's vertex pair is connected.
 
 ### Determining outliers from supplied scores
 When the queries contain pairwise scores for the unitigs, for example when the output of a program such as [SpydrPick](https://github.com/santeripuranen/SpydrPick) is provided as the distance queries file (see [Input files - Distance queries file](#distance-queries-file)), unitig_distance can automatically determine outliers and outlier stats for all graphs being worked on with the command line argument `-x [ --output-outliers ]`. When working with single genome graphs, vertex pairs in the queries that are connected in less than `sgg_count_threshold` (default: 10) single genome graphs will also be filtered out. This option can be modified with the command line argument `-Cc [ --sgg-count-threshold ] arg (=10)` with a value of 0 completely disabling it.
