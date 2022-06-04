@@ -284,7 +284,7 @@ int main(int argc, char** argv) {
                 n_nodes /= n_sggs;
                 n_edges /= 2 * n_sggs;
                 PrintUtils::print_tbss(timer, "Constructing", n_sggs, "single genome graphs took", t_sgg.get_stopwatch_time());
-                PrintUtils::print_tbss(timer, "The compressed single genome graphs have on average", Utils::neat_number_str(n_nodes), " connected nodes and", 
+                PrintUtils::print_tbss(timer, "The compressed single genome graphs have on average", Utils::neat_number_str(n_nodes), "connected nodes and", 
                                        Utils::neat_number_str(n_edges), "edges");
                 PrintUtils::print_tbss(timer, "Calculating distances in the", n_sggs, "single genome graphs took", t_sgg_distances.get_stopwatch_time());
                 PrintUtils::print_tbssasm(timer, "Deconstructing", n_sggs, "single genome graphs took", t_sgg_distances.get_stopwatch_time());
