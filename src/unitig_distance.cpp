@@ -160,6 +160,7 @@ int main(int argc, char** argv) {
             // Calculate distances.
             GraphDistances gd(graph, timer, po.n_threads(), po.block_size(), po.max_distance(), po.verbose());
             graph_distances = gd.solve(search_jobs);
+            timer.set_mark();
 
             // Output distances.
             queries.output_distances(po.out_filename(), graph_distances);
@@ -248,7 +249,7 @@ int main(int argc, char** argv) {
 
                 // Calculate distances in the single genome graphs.
                 for (const auto& sg_graph : sg_graphs) {
-                    SingleGenomeGraphDistances sggd(sg_graph, po.n_threads(), po.block_size(), po.max_distance());
+                    SingleGenomeGraphDistances sggd(sg_graph, po.n_threads(), po.max_distance());
                     auto sgg_batch_distances = sggd.solve(search_jobs);
                     // Combine results across threads.
                     for (const auto& distances : sgg_batch_distances) {

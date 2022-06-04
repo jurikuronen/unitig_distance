@@ -20,20 +20,18 @@ public:
     SingleGenomeGraphDistances(
         const SingleGenomeGraph& graph,
         int_t n_threads,
-        int_t block_size,
         real_t max_distance = REAL_T_MAX)
     : m_graph(graph),
       m_n_threads(n_threads),
-      m_block_size(block_size),
       m_max_distance(max_distance)
     { }
 
     // Calculate distances for single genome graphs.
     std::vector<std::unordered_map<int_t, Distance>> solve(const SearchJobs& search_jobs) {
         std::vector<std::unordered_map<int_t, Distance>> sgg_batch_distances(m_n_threads);
-        auto calculate_distance_block = [this, &search_jobs, &sgg_batch_distances](std::size_t thr, std::size_t block_start, std::size_t block_end) {
+        auto calculate_distance_block = [this, &search_jobs, &sgg_batch_distances](std::size_t thr) {
             const auto& graph = m_graph;
-            for (std::size_t i = block_start + thr; i < block_end; i += m_n_threads) {
+            for (std::size_t i = thr; i < search_jobs.size(); i += m_n_threads) {
                 const auto& job = search_jobs[i];
 
                 auto v = job.v();
@@ -56,11 +54,8 @@ public:
             }
         };
         std::vector<std::thread> threads(m_n_threads);
-        for (std::size_t block_start = 0; block_start < search_jobs.size(); block_start += m_block_size) {
-            std::size_t block_end = std::min(block_start + m_block_size, search_jobs.size());
-            for (std::size_t thr = 0; thr < (std::size_t) m_n_threads; ++thr) threads[thr] = std::thread(calculate_distance_block, thr, block_start, block_end);
-            for (auto& thr : threads) thr.join();
-        }
+        for (std::size_t thr = 0; thr < (std::size_t) m_n_threads; ++thr) threads[thr] = std::thread(calculate_distance_block, thr);
+        for (auto& thr : threads) thr.join();
         return sgg_batch_distances;
     }
 
@@ -68,7 +63,6 @@ private:
     const SingleGenomeGraph& m_graph;
 
     int_t m_n_threads;
-    int_t m_block_size;
     real_t m_max_distance;
 
     // Update source distance if source exists, otherwise add new source.
