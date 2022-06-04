@@ -157,9 +157,7 @@ private:
             auto distance = job_dist[w_idx];
             if (distance >= m_max_distance) continue;
             auto original_idx = job.original_index(w_idx);
-            if (sgg_distances.find(original_idx) == sgg_distances.end()) sgg_distances.emplace(original_idx, Distance(0.0, 0));
-            auto& distances = sgg_distances[original_idx];
-            distances.add_distance(distance);
+            sgg_distances.emplace(original_idx, distance);
         }
     }
 
