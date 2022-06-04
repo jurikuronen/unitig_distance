@@ -158,7 +158,7 @@ int main(int argc, char** argv) {
             if (po.verbose()) PrintUtils::print_tbssasm(timer, "Calculating distances in the", graph_name);
 
             // Calculate distances.
-            GraphDistances gd(graph, timer, po.n_threads(), po.block_size(), po.max_distance(), po.verbose());
+            GraphDistances gd(graph, timer, po.n_threads(), po.max_distance(), po.verbose());
             graph_distances = gd.solve(search_jobs);
             timer.set_mark();
 

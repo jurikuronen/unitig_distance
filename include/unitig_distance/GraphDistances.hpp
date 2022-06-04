@@ -14,11 +14,10 @@
 
 class GraphDistances {
 public:
-    GraphDistances(const Graph& graph, const Timer& timer, int_t n_threads, int_t block_size, real_t max_distance = REAL_T_MAX, bool verbose = false)
+    GraphDistances(const Graph& graph, const Timer& timer, int_t n_threads, real_t max_distance = REAL_T_MAX, bool verbose = false)
     : m_graph(graph),
       m_timer(timer),
       m_n_threads(n_threads),
-      m_block_size(block_size),
       m_max_distance(max_distance),
       m_verbose(verbose)
     { }
@@ -51,9 +50,9 @@ public:
             }
         };
 
-        for (std::size_t block_start = 0; block_start < search_jobs.size(); block_start += m_block_size) {
+        for (std::size_t block_start = 0; block_start < search_jobs.size(); block_start += 10000) {
             Timer t;
-            std::size_t block_end = std::min(block_start + m_block_size, search_jobs.size());
+            std::size_t block_end = std::min(block_start + 10000, search_jobs.size());
             std::vector<std::thread> threads;
             for (int_t thr = 0; thr < m_n_threads; ++thr) threads.emplace_back(calculate_distance_block, thr, block_start, block_end);
             for (auto& thr : threads) thr.join();
@@ -68,7 +67,6 @@ private:
     const Timer& m_timer;
 
     int_t m_n_threads;
-    int_t m_block_size;
     real_t m_max_distance;
     bool m_verbose;
     

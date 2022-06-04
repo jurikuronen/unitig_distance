@@ -27,7 +27,6 @@ public:
         set_value(m_sgg_counts_filename, "-C", "--sgg-counts-file");
         set_value(m_k, "-k", "--k-mer-length");
         set_value(m_n_queries, "-n", "--n-queries");
-        set_value(m_block_size, "-b", "--block-size");
         set_value(m_max_distance, "-d", "--max-distance");
         set_value(m_n_threads, "-t", "--threads");
         set_value(m_sgg_count_threshold, "-Cc", "--sgg-count-threshold");
@@ -68,7 +67,6 @@ public:
     int_t k() const { return m_k; }
     int_t n_sggs_to_hold_in_memory() const { return m_n_sggs_to_hold_in_memory; }
     int_t n_queries() const { return m_n_queries; }
-    int_t block_size() const { return m_block_size; }
     real_t max_distance() const { return m_max_distance; }
     int_t n_threads() const { return m_n_threads; }
     int_t sgg_count_threshold() const { return m_sgg_count_threshold; }
@@ -123,7 +121,6 @@ public:
             double_push_back(arguments, "  --queries-one-based", queries_one_based() ? "TRUE" : "FALSE");
             double_push_back(arguments, "  --n-queries", n_queries() == INT_T_MAX ? "ALL" : std::to_string(n_queries()));
             if (operating_mode() != OperatingMode::OUTLIER_TOOLS) {
-                double_push_back(arguments, "  --block-size", std::to_string(block_size()));
                 double_push_back(arguments, "  --max-distance", max_distance() == REAL_T_MAX ? "INF" : std::to_string(max_distance()));
             }
         }
@@ -167,7 +164,6 @@ private:
     std::string m_sgg_counts_filename = "";
     int_t m_k = 0;
     int_t m_n_queries = INT_T_MAX;
-    int_t m_block_size = 10000;
     real_t m_max_distance = REAL_T_MAX;
     int_t m_n_threads = 1;
     int_t m_sgg_count_threshold = 10;
