@@ -1,6 +1,7 @@
 #pragma once
 
 #include <algorithm>
+#include <functional>
 #include <vector>
 
 #include "Distance.hpp"
@@ -15,15 +16,13 @@ public:
 
     std::vector<real_t> distances() const {
         std::vector<real_t> vector(size());
-        static auto get_distance = [](const Distance& distance) { return distance.distance(); };
-        std::transform(m_distances.begin(), m_distances.end(), vector.begin(), get_distance);
+        std::transform(begin(), end(), vector.begin(), std::mem_fn(&Distance::distance));
         return vector;
     }
 
     std::vector<int_t> counts() const {
         std::vector<int_t> vector(size());
-        static auto get_count = [](const Distance& distance) { return distance.count(); };
-        std::transform(m_distances.begin(), m_distances.end(), vector.begin(), get_count);
+        std::transform(begin(), end(), vector.begin(), std::mem_fn(&Distance::count));
         return vector;
     }
 
