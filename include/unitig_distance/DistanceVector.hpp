@@ -9,7 +9,6 @@
 
 class DistanceVector {
 public:
-    DistanceVector() = delete;
     DistanceVector(std::size_t sz) : m_distances(sz) { }
     DistanceVector(std::size_t sz, real_t distance_value) : m_distances(sz, Distance(distance_value)) { }
     DistanceVector(std::size_t sz, real_t distance_value, int_t count_value) : m_distances(sz, Distance(distance_value, count_value)) { }
@@ -25,6 +24,8 @@ public:
         std::transform(begin(), end(), vector.begin(), std::mem_fn(&Distance::count));
         return vector;
     }
+
+    void resize(std::size_t sz) { m_distances.resize(sz); }
 
     std::size_t size() const { return m_distances.size(); }
 
