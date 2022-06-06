@@ -158,8 +158,7 @@ int main(int argc, char** argv) {
             if (po.verbose()) PrintUtils::print_tbssasm(timer, "Calculating distances in the", graph_name);
 
             // Calculate distances.
-            GraphDistances gd(graph, timer, po.n_threads(), po.max_distance(), po.verbose());
-            graph_distances = gd.solve(search_jobs);
+            graph_distances = GraphDistances(graph, timer, po.n_threads(), po.max_distance(), po.verbose()).solve(search_jobs);
             timer.set_mark();
 
             // Output distances.
@@ -249,8 +248,7 @@ int main(int argc, char** argv) {
 
                 // Calculate distances in the single genome graphs.
                 for (const auto& sg_graph : sg_graphs) {
-                    SingleGenomeGraphDistances sggd(sg_graph, po.n_threads(), po.max_distance());
-                    auto sgg_batch_distances = sggd.solve(search_jobs);
+                    auto sgg_batch_distances = SingleGenomeGraphDistances(sg_graph, po.n_threads(), po.max_distance()).solve(search_jobs);
                     // Combine results across threads.
                     for (const auto& distances : sgg_batch_distances) {
                         for (const auto& result : distances) {
