@@ -199,14 +199,21 @@ private:
 
     bool all_required_arguments_provided() const {
         bool ok = true;
-        // Check required files based on operating mode.
-        if (operating_mode() == OperatingMode::OUTLIER_TOOLS) {
-            // Operating in outlier tools mode only.
-            if (queries_filename().empty()) std::cout << "Missing queries filename.\n", ok = false;
-        } else {
-            // Normal operating modes.
-            if (edges_filename().empty()) std::cout << "Missing edges filename.\n", ok = false;
-            if (operating_mode(OperatingMode::CDBG) && k() <= 0) std::cout << "Missing k-mer length.\n", ok = false;
+        // Always require queries.
+        if (queries_filename().empty()) {
+            std::cout << "Missing queries filename.\n";
+            ok = false;
+        }
+        // Normal operating modes.
+        if (operating_mode() != OperatingMode::OUTLIER_TOOLS) {
+            if (edges_filename().empty()) {
+                std::cout << "Missing edges filename.\n";
+                ok = false;
+            }
+            if (operating_mode(OperatingMode::CDBG) && k() <= 0) {
+                std::cout << "Missing k-mer length.\n";
+                ok = false;
+            }
         }
         if (!ok) print_no_args();
         return ok;
