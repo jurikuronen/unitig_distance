@@ -9,9 +9,17 @@
 
 class DistanceVector {
 public:
+    DistanceVector() = default;
+    DistanceVector(const DistanceVector& other) = delete;
+    DistanceVector(DistanceVector&& other) = default;
+
     DistanceVector(std::size_t sz) : m_distances(sz) { }
     DistanceVector(std::size_t sz, real_t distance_value) : m_distances(sz, Distance(distance_value)) { }
     DistanceVector(std::size_t sz, real_t distance_value, int_t count_value) : m_distances(sz, Distance(distance_value, count_value)) { }
+
+    DistanceVector(const DistanceVector& other, const std::vector<int_t>& indices) {
+        for (auto i : indices) m_distances.emplace_back(other[i]);
+    }
 
     std::vector<real_t> distances() const {
         std::vector<real_t> vector(size());
@@ -25,11 +33,14 @@ public:
         return vector;
     }
 
+    void emplace_back(real_t distance, int_t count = 1) { m_distances.emplace_back(distance, count); }
+
     void resize(std::size_t sz) { m_distances.resize(sz); }
 
     std::size_t size() const { return m_distances.size(); }
 
     Distance& operator[](std::size_t idx) { return m_distances[idx]; }
+    const Distance& operator[](std::size_t idx) const { return m_distances[idx]; }
 
     typename std::vector<Distance>::iterator begin() { return m_distances.begin(); }
     typename std::vector<Distance>::iterator end() { return m_distances.end(); }

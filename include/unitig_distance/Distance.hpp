@@ -17,6 +17,7 @@ public:
     Distance& operator+=(const Distance& other) {
         return *this = *this + other;
     }
+    operator real_t() const { return m_distance; }
 
 private:
     real_t m_distance;

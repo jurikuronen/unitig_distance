@@ -26,6 +26,7 @@ public:
         set_value(m_out_stem, "-o", "--output-stem");
         set_value(m_sgg_counts_filename, "-C", "--sgg-counts-file");
         set_value(m_k, "-k", "--k-mer-length");
+        set_value(m_queries_type, "-q", "--queries-type");
         set_value(m_n_queries, "-n", "--n-queries");
         set_value(m_max_distance, "-d", "--max-distance");
         set_value(m_n_threads, "-t", "--threads");
@@ -66,6 +67,7 @@ public:
     const std::string& sgg_counts_filename() const { return m_sgg_counts_filename; }
     int_t k() const { return m_k; }
     int_t n_sggs_to_hold_in_memory() const { return m_n_sggs_to_hold_in_memory; }
+    int_t queries_type() const { return m_queries_type; }
     int_t n_queries() const { return m_n_queries; }
     real_t max_distance() const { return m_max_distance; }
     int_t n_threads() const { return m_n_threads; }
@@ -96,9 +98,6 @@ public:
     const std::string out_outlier_stats_filename() const { return out_stem() + ".ud_outlier_stats"; }
     const std::string out_sgg_mean_outlier_stats_filename() const { return out_stem() + ".ud_sgg_mean_outlier_stats"; }
 
-    // For updating the value after queries were read.
-    void set_n_queries(int_t n_queries) { m_n_queries = n_queries; }
-
     // Print details about this run.
     void print_run_details() const {
         std::vector<std::string> arguments;
@@ -118,6 +117,7 @@ public:
         }
         if (!queries_filename().empty() && n_queries() > 0) {
             double_push_back(arguments, "  --queries-file", queries_filename());
+            double_push_back(arguments, "  --queries-type", std::to_string(queries_type()));
             double_push_back(arguments, "  --queries-one-based", queries_one_based() ? "TRUE" : "FALSE");
             double_push_back(arguments, "  --n-queries", n_queries() == INT_T_MAX ? "ALL" : std::to_string(n_queries()));
             if (operating_mode() != OperatingMode::OUTLIER_TOOLS) {
@@ -163,6 +163,7 @@ private:
     std::string m_out_stem = "out";
     std::string m_sgg_counts_filename = "";
     int_t m_k = 0;
+    int_t m_queries_type = -1;
     int_t m_n_queries = INT_T_MAX;
     real_t m_max_distance = REAL_T_MAX;
     int_t m_n_threads = 1;
