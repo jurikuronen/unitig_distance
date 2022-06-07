@@ -55,6 +55,8 @@ static void determine_outliers(const Queries& queries,
     if (po.verbose()) PrintUtils::print_tbss_tsmasm(timer, "Output outliers to files", out_outliers_filename, "and", out_outlier_stats_filename);
 }
 
+static int fail_with_error(const std::string& error) { std::cerr << error << std::endl; return 1; }
+
 int main(int argc, char** argv) {
     Timer timer;
 
@@ -66,10 +68,7 @@ int main(int argc, char** argv) {
 
     // Read queries.
     const Queries queries = QueriesReader::read_queries(po.queries_filename(), po.n_queries(), po.queries_type(), po.queries_one_based());
-    if (queries.size() == 0) {
-        std::cerr << "Failed to read queries." << std::endl;
-        return 1;
-    }
+    if (queries.size() == 0) return fail_with_error("Failed to read queries.");
     if (po.verbose()) PrintUtils::print_tbss_tsmasm(timer, "Read", Utils::neat_number_str(queries.size()), "lines from queries file");
 
     // Operating in outliers tool mode only.
@@ -85,10 +84,7 @@ int main(int argc, char** argv) {
 
     // Construct the graph according to operating mode.
     Graph graph = GraphBuilder::build_correct_graph(po);
-    if (graph.size() == 0) {
-        std::cout << "Failed to construct main graph." << std::endl;
-        return 1;
-    }
+    if (graph.size() == 0) return fail_with_error("Failed to construct main graph.");
     if (po.verbose()) {
         PrintUtils::print_tbss_tsmasm_noendl(timer, "Constructed main graph");
         graph.print_details();
@@ -105,10 +101,7 @@ int main(int argc, char** argv) {
         for (std::string path_edges; std::getline(ifs, path_edges); ) path_edge_files.emplace_back(path_edges);
         std::size_t n_sggs = path_edge_files.size(), batch_size = po.n_sggs_to_hold_in_memory();
 
-        if (n_sggs == 0) {
-            std::cout << "Couldn't read single genome graph files." << std::endl;
-            return 1;
-        }
+        if (n_sggs == 0) fail_with_error("Couldn't read single genome graph files.");
 
         // Printing variables for verbose mode.
         Timer t_sgg, t_sgg_distances, t_deconstruct;
@@ -144,10 +137,7 @@ int main(int argc, char** argv) {
             for (auto& thr : threads) thr.join();
 
             for (const auto& sg_graph : sg_graphs) {
-                if (sg_graph.size() == 0) {
-                    std::cout << "Failed to construct single genome graph." << std::endl;
-                    return 1;
-                }
+                if (sg_graph.size() == 0) fail_with_error("Failed to construct single genome graph.");
             }
 
             if (po.verbose()) {
