@@ -29,7 +29,6 @@
 static void determine_outliers(const Queries& queries,
                                const DistanceVector& dv,
                                const ProgramOptions& po,
-                               const std::string& graph_name,
                                const std::string& out_outliers_filename,
                                const std::string& out_outlier_stats_filename,
                                Timer& timer)
@@ -45,9 +44,9 @@ static void determine_outliers(const Queries& queries,
     }
     if (po.verbose()) {
         if (ot.ok()) {
-            PrintUtils::print_tbss_tsmasm(timer, "Determined outliers for", graph_name, "distances");
+            PrintUtils::print_tbss_tsmasm(timer, "Determined outliers");
         } else {
-            PrintUtils::print_tbss(timer, "Unable to determine outliers for", graph_name, "distances:", ot.reason());
+            PrintUtils::print_tbss(timer, "Unable to determine outliers:", ot.reason());
         }
         ot.print_details();
     }
@@ -76,8 +75,7 @@ int main(int argc, char** argv) {
     // Operating in outliers tool mode only.
     if (po.operating_mode() == OperatingMode::OUTLIER_TOOLS) {
         // Recode this part
-        determine_outliers(queries, queries.distances(), po, "provided",
-                           po.out_outliers_filename(), po.out_outlier_stats_filename(), timer);
+        determine_outliers(queries, queries.distances(), po, po.out_outliers_filename(), po.out_outlier_stats_filename(), timer);
         return 0;
     }
 
@@ -87,13 +85,12 @@ int main(int argc, char** argv) {
 
     // Construct the graph according to operating mode.
     Graph graph = GraphBuilder::build_correct_graph(po);
-    const std::string graph_name = po.operating_mode(OperatingMode::CDBG) ? "compacted de Bruijn graph" : "graph";
     if (graph.size() == 0) {
-        std::cout << "Failed to construct " << graph_name << "." << std::endl;
+        std::cout << "Failed to construct main graph." << std::endl;
         return 1;
     }
     if (po.verbose()) {
-        PrintUtils::print_tbss_tsmasm_noendl(timer, "Constructed", graph_name);
+        PrintUtils::print_tbss_tsmasm_noendl(timer, "Constructed main graph");
         graph.print_details();
     }
 
@@ -219,8 +216,7 @@ int main(int argc, char** argv) {
 
             // Determine outliers.
             if (po.operating_mode(OperatingMode::OUTLIER_TOOLS)) {
-                determine_outliers(queries, sgg_distances, po, "single genome graph mean distances",
-                                   po.out_sgg_mean_outliers_filename(), po.out_sgg_mean_outlier_stats_filename(), timer);
+                determine_outliers(queries, sgg_distances, po, po.out_sgg_mean_outliers_filename(), po.out_sgg_mean_outlier_stats_filename(), timer);
             }
         }
 
@@ -228,23 +224,17 @@ int main(int argc, char** argv) {
 
     // Run normal graph
     if (!(po.operating_mode(OperatingMode::SGGS) && po.run_sggs_only())) {
-        if (po.verbose()) PrintUtils::print_tbssasm(timer, "Calculating distances in the", graph_name);
+        if (po.verbose()) PrintUtils::print_tbssasm(timer, "Calculating distances in the main graph");
         // Calculate distances.
         auto graph_distances = GraphDistances(graph, timer, po.n_threads(), po.max_distance(), po.verbose()).solve(search_jobs);
         timer.set_mark();
 
         ResultsWriter::output_results(po.out_filename(), queries, graph_distances, po.output_one_based(), po.max_distance());
-        if (po.verbose()) PrintUtils::print_tbss_tsmasm(timer, "Output", graph_name, "distances to file", po.out_filename());
+        if (po.verbose()) PrintUtils::print_tbss_tsmasm(timer, "Output main graph distances to file", po.out_filename());
 
         // Determine outliers.
         if (po.operating_mode(OperatingMode::OUTLIER_TOOLS)) {
-            if (po.operating_mode(OperatingMode::SGGS) && po.sgg_count_threshold() > 0) {
-                if (po.verbose()) PrintUtils::print_tbssasm(timer, "Running in SGGS mode with sgg_count_threshold > 0. Will determine outliers for",
-                                                            graph_name, "distances after the single genome graph routines");
-            } else {
-                determine_outliers(queries, graph_distances, po, graph_name,
-                                   po.out_outliers_filename(), po.out_outlier_stats_filename(), timer);
-            }
+            determine_outliers(queries, graph_distances, po, po.out_outliers_filename(), po.out_outlier_stats_filename(), timer);
         }
 
     }
