@@ -111,9 +111,9 @@ public:
         return graph;
     }
 
-    static Graph build_correct_graph(const ProgramOptions& po) {
-        if (po.operating_mode(OperatingMode::GENERAL)) return build_ordinary_graph(po.edges_filename(), po.graphs_one_based());
-        if (po.operating_mode(OperatingMode::CDBG)) return build_cdbg(po.unitigs_filename(), po.edges_filename(), po.k(), po.graphs_one_based());
+    static Graph build_correct_graph() {
+        if (ProgramOptions::has_operating_mode(OperatingMode::GENERAL)) return build_ordinary_graph(ProgramOptions::edges_filename, ProgramOptions::graphs_one_based);
+        if (ProgramOptions::has_operating_mode(OperatingMode::CDBG)) return build_cdbg(ProgramOptions::unitigs_filename, ProgramOptions::edges_filename, ProgramOptions::k, ProgramOptions::graphs_one_based);
         std::cout << "Program logic error." << std::endl;
         return Graph();
     }

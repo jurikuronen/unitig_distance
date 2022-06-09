@@ -13,205 +13,176 @@
 // A command line argument handler class.
 class ProgramOptions {
 public:
-    ProgramOptions(int argc, char** argv) : m_argc(argc), m_argv(argv) {
+    static void read_command_line_arguments(int ac, char** av) {
+        argc = ac;
+        argv = av;
         if (has_arg("-h", "--help")) {
             print_help();
-            m_valid_state = false;
+            valid_state = false;
             return;
         }
-        set_value(m_unitigs_filename, "-U", "--unitigs-file");
-        set_value(m_edges_filename, "-E", "--edges-file");
-        set_value(m_queries_filename, "-Q", "--queries-file");
-        set_value(m_sggs_filename, "-S", "--sgg-paths-file");
-        set_value(m_out_stem, "-o", "--output-stem");
-        set_value(m_sgg_counts_filename, "-C", "--sgg-counts-file");
-        set_value(m_k, "-k", "--k-mer-length");
-        set_value(m_queries_type, "-q", "--queries-type");
-        set_value(m_n_queries, "-n", "--n-queries");
-        set_value(m_max_distance, "-d", "--max-distance");
-        set_value(m_n_threads, "-t", "--threads");
-        set_value(m_sgg_count_threshold, "-Cc", "--sgg-count-threshold");
-        set_value(m_ld_distance, "-l", "--ld-distance");
-        set_value(m_ld_distance_min, "-lm", "--ld-distance-min");
-        set_value(m_ld_distance_score, "-ls", "--ld-distance-score");
-        set_value(m_ld_distance_nth_score, "-ln", "--ld-distance-nth-score");
-        set_value(m_outlier_threshold, "-ot", "--outlier-threshold");
-        if (has_1_arg()) {
-            m_graphs_one_based = m_queries_one_based = m_sgg_counts_one_based = m_output_one_based = true;
+        set_value(unitigs_filename, "-U", "--unitigs-file");
+        set_value(edges_filename, "-E", "--edges-file");
+        set_value(queries_filename, "-Q", "--queries-file");
+        set_value(sggs_filename, "-S", "--sgg-paths-file");
+        set_value(out_stem, "-o", "--output-stem");
+        set_value(sgg_counts_filename, "-C", "--sgg-counts-file");
+        set_value(k, "-k", "--k-mer-length");
+        set_value(queries_type, "-q", "--queries-type");
+        set_value(n_queries, "-n", "--n-queries");
+        set_value(max_distance, "-d", "--max-distance");
+        set_value(n_threads, "-t", "--threads");
+        set_value(sgg_count_threshold, "-Cc", "--sgg-count-threshold");
+        set_value(ld_distance, "-l", "--ld-distance");
+        set_value(ld_distance_min, "-lm", "--ld-distance-min");
+        set_value(ld_distance_score, "-ls", "--ld-distance-score");
+        set_value(ld_distance_nth_score, "-ln", "--ld-distance-nth-score");
+        set_value(outlier_threshold, "-ot", "--outlier-threshold");
+        if (has_arg("-1", "--all-one-based")) {
+            graphs_one_based = queries_one_based = sgg_counts_one_based = output_one_based = true;
         } else {
-            m_graphs_one_based = has_arg("-1g", "--graphs-one-based");
-            m_queries_one_based = has_arg("-1q", "--queries-one-based");
-            m_sgg_counts_one_based = has_arg("-1c", "--sgg_counts-one-based");
-            m_output_one_based = has_arg("-1o", "--output-one-based");
+            graphs_one_based = has_arg("-1g", "--graphs-one-based");
+            queries_one_based = has_arg("-1q", "--queries-one-based");
+            sgg_counts_one_based = has_arg("-1c", "--sgg_counts-one-based");
+            output_one_based = has_arg("-1o", "--output-one-based");
         }
-        m_run_sggs_only = has_arg("-r", "--run-sggs-only");
-        m_output_outliers = has_arg("-x", "--output-outliers");
-        m_verbose = has_arg("-v", "--verbose");
+        run_sggs_only = has_arg("-r", "--run-sggs-only");
+        output_outliers = has_arg("-x", "--output-outliers");
+        verbose = has_arg("-v", "--verbose");
         if (has_arg("-s", "--n-sggs")) {
-            set_value(m_n_sggs_to_hold_in_memory, "-s", "--n-sggs");
-            m_n_sggs_to_hold_in_memory = std::min(n_sggs_to_hold_in_memory(), n_threads());
+            set_value(n_sggs_to_hold_in_memory, "-s", "--n-sggs");
+            n_sggs_to_hold_in_memory = std::min(n_sggs_to_hold_in_memory, n_threads);
         } else {
-            m_n_sggs_to_hold_in_memory = n_threads();
+            n_sggs_to_hold_in_memory = n_threads;
         }
 
         set_operating_mode();
 
-        m_valid_state = all_required_arguments_provided();
+        valid_state = all_required_arguments_provided();
     }
 
-    const std::string& unitigs_filename() const { return m_unitigs_filename; }
-    const std::string& edges_filename() const { return m_edges_filename; }
-    const std::string& queries_filename() const { return m_queries_filename; }
-    const std::string& sggs_filename() const { return m_sggs_filename; }
-    const std::string& out_stem() const { return m_out_stem; }
-    const std::string& sgg_counts_filename() const { return m_sgg_counts_filename; }
-    int_t k() const { return m_k; }
-    int_t n_sggs_to_hold_in_memory() const { return m_n_sggs_to_hold_in_memory; }
-    int_t queries_type() const { return m_queries_type; }
-    int_t n_queries() const { return m_n_queries; }
-    real_t max_distance() const { return m_max_distance; }
-    int_t n_threads() const { return m_n_threads; }
-    int_t sgg_count_threshold() const { return m_sgg_count_threshold; }
-    int_t ld_distance() const { return m_ld_distance; }
-    int_t ld_distance_min() const { return m_ld_distance_min; }
-    real_t ld_distance_score() const { return m_ld_distance_score; }
-    int_t ld_distance_nth_score() const { return m_ld_distance_nth_score; }
-    real_t outlier_threshold() const { return m_outlier_threshold; }
-    bool graphs_one_based() const { return m_graphs_one_based; }
-    bool queries_one_based() const { return m_queries_one_based; }
-    bool sgg_counts_one_based() const { return m_sgg_counts_one_based; }
-    bool output_one_based() const { return m_output_one_based; }
-    bool run_sggs_only() const { return m_run_sggs_only; }
-    bool output_outliers() const { return m_output_outliers; }
-    bool verbose() const { return m_verbose; }
+    static bool has_operating_mode(const OperatingMode& om) { return operating_mode_to_bool(operating_mode & om); }
 
-    bool valid_state() const { return m_valid_state; }
-
-    const OperatingMode& operating_mode() const { return m_om; }
-    bool operating_mode(const OperatingMode& om) const { return operating_mode_to_bool(m_om & om); }
-
-    const std::string out_filename() const { return out_stem() + ".ud" + based_str(); }
-    const std::string out_sgg_mean_filename() const { return out_stem() + ".ud_sgg_mean" + based_str(); }
-    const std::string out_sgg_counts_filename() const { return out_stem() + ".ud_sgg_counts" + based_str(); }
-    const std::string out_outliers_filename() const { return out_stem() + ".ud_outliers" + based_str(); }
-    const std::string out_sgg_mean_outliers_filename() const { return out_stem() + ".ud_sgg_mean_outliers" + based_str(); }
-    const std::string out_outlier_stats_filename() const { return out_stem() + ".ud_outlier_stats"; }
-    const std::string out_sgg_mean_outlier_stats_filename() const { return out_stem() + ".ud_sgg_mean_outlier_stats"; }
+    static std::string out_filename() { return out_stem + ".ud" + based_str(); }
+    static std::string out_sgg_mean_filename() { return out_stem + ".ud_sgg_mean" + based_str(); }
+    static std::string out_sgg_counts_filename() { return out_stem + ".ud_sgg_counts" + based_str(); }
+    static std::string out_outliers_filename() { return out_stem + ".ud_outliers" + based_str(); }
+    static std::string out_sgg_mean_outliers_filename() { return out_stem + ".ud_sgg_mean_outliers" + based_str(); }
+    static std::string out_outlier_stats_filename() { return out_stem + ".ud_outlier_stats"; }
+    static std::string out_sgg_mean_outlier_stats_filename() { return out_stem + ".ud_sgg_mean_outlier_stats"; }
 
     // Print details about this run.
-    void print_run_details() const {
+    static void print_run_details() {
         std::vector<std::string> arguments;
 
-        if (!edges_filename().empty()) {
-            double_push_back(arguments, "  --edges-file", edges_filename());
-            double_push_back(arguments, "  --graphs-one-based", graphs_one_based() ? "TRUE" : "FALSE");
+        if (!edges_filename.empty()) {
+            double_push_back(arguments, "  --edges-file", edges_filename);
+            double_push_back(arguments, "  --graphs-one-based", graphs_one_based ? "TRUE" : "FALSE");
         }
-        if (operating_mode(OperatingMode::CDBG)) {
-            double_push_back(arguments, "  --unitigs-file", unitigs_filename());
-            double_push_back(arguments, "  --k-mer-length", std::to_string(k()));
+        if (has_operating_mode(OperatingMode::CDBG)) {
+            double_push_back(arguments, "  --unitigs-file", unitigs_filename);
+            double_push_back(arguments, "  --k-mer-length", std::to_string(k));
         }
-        if (operating_mode(OperatingMode::SGGS)) {
-            double_push_back(arguments, "  --sgg-paths-file", sggs_filename());
-            double_push_back(arguments, "  --run-sggs-only", run_sggs_only() ? "TRUE" : "FALSE");
-            double_push_back(arguments, "  --n-sggs", std::to_string(n_sggs_to_hold_in_memory()));
+        if (has_operating_mode(OperatingMode::SGGS)) {
+            double_push_back(arguments, "  --sgg-paths-file", sggs_filename);
+            double_push_back(arguments, "  --run-sggs-only", run_sggs_only ? "TRUE" : "FALSE");
+            double_push_back(arguments, "  --n-sggs", std::to_string(n_sggs_to_hold_in_memory));
         }
-        if (!queries_filename().empty() && n_queries() > 0) {
-            double_push_back(arguments, "  --queries-file", queries_filename());
-            double_push_back(arguments, "  --queries-type", std::to_string(queries_type()));
-            double_push_back(arguments, "  --queries-one-based", queries_one_based() ? "TRUE" : "FALSE");
-            double_push_back(arguments, "  --n-queries", n_queries() == INT_T_MAX ? "ALL" : std::to_string(n_queries()));
-            if (operating_mode() != OperatingMode::OUTLIER_TOOLS) {
-                double_push_back(arguments, "  --max-distance", max_distance() == REAL_T_MAX ? "INF" : std::to_string(max_distance()));
+        if (!queries_filename.empty() && n_queries > 0) {
+            double_push_back(arguments, "  --queries-file", queries_filename);
+            double_push_back(arguments, "  --queries-type", std::to_string(queries_type));
+            double_push_back(arguments, "  --queries-one-based", queries_one_based ? "TRUE" : "FALSE");
+            double_push_back(arguments, "  --n-queries", n_queries == INT_T_MAX ? "ALL" : std::to_string(n_queries));
+            if (operating_mode != OperatingMode::OUTLIER_TOOLS) {
+                double_push_back(arguments, "  --max-distance", max_distance == REAL_T_MAX ? "INF" : std::to_string(max_distance));
             }
         }
-        if (operating_mode(OperatingMode::OUTLIER_TOOLS)) {
-            double_push_back(arguments, "  --output-outliers", output_outliers() ? "TRUE" : "FALSE");
-            if (!sgg_counts_filename().empty()) {
-                double_push_back(arguments, "  --sgg-counts-file", sgg_counts_filename());
-                double_push_back(arguments, "  --sgg-counts-one-based", sgg_counts_one_based() ? "TRUE" : "FALSE");
+        if (has_operating_mode(OperatingMode::OUTLIER_TOOLS)) {
+            double_push_back(arguments, "  --output-outliers", output_outliers ? "TRUE" : "FALSE");
+            if (!sgg_counts_filename.empty()) {
+                double_push_back(arguments, "  --sgg-counts-file", sgg_counts_filename);
+                double_push_back(arguments, "  --sgg-counts-one-based", sgg_counts_one_based ? "TRUE" : "FALSE");
             }
-            if (!sgg_counts_filename().empty() || operating_mode(OperatingMode::SGGS)) {
-                double_push_back(arguments, "  --sgg-count-threshold", std::to_string(sgg_count_threshold()));
+            if (!sgg_counts_filename.empty() || has_operating_mode(OperatingMode::SGGS)) {
+                double_push_back(arguments, "  --sgg-count-threshold", std::to_string(sgg_count_threshold));
             }
-            double_push_back(arguments, "  --ld-distance", ld_distance() < 0 ? "AUTOM" : std::to_string(ld_distance()));
-            if (ld_distance() < 0) {
-                double_push_back(arguments, "  --ld-distance-min", std::to_string(ld_distance_min()));
-                double_push_back(arguments, "  --ld-distance-score", std::to_string(ld_distance_score()));
-                double_push_back(arguments, "  --ld-distance-nth-score", std::to_string(ld_distance_nth_score()));
+            double_push_back(arguments, "  --ld-distance", ld_distance < 0 ? "AUTOM" : std::to_string(ld_distance));
+            if (ld_distance < 0) {
+                double_push_back(arguments, "  --ld-distance-min", std::to_string(ld_distance_min));
+                double_push_back(arguments, "  --ld-distance-score", std::to_string(ld_distance_score));
+                double_push_back(arguments, "  --ld-distance-nth-score", std::to_string(ld_distance_nth_score));
             }
-            if (ld_distance() >= 0 && outlier_threshold() >= 0.0) double_push_back(arguments, "  --outlier-threshold", std::to_string(outlier_threshold()));
+            if (ld_distance >= 0 && outlier_threshold >= 0.0) double_push_back(arguments, "  --outlier-threshold", std::to_string(outlier_threshold));
         }
-        double_push_back(arguments, "  --output-stem", out_stem());
-        double_push_back(arguments, "  --output-one-based", output_one_based() ? "TRUE" : "FALSE");
-        double_push_back(arguments, "  --threads", std::to_string(n_threads()));
+        double_push_back(arguments, "  --output-stem", out_stem);
+        double_push_back(arguments, "  --output-one-based", output_one_based ? "TRUE" : "FALSE");
+        double_push_back(arguments, "  --threads", std::to_string(n_threads));
 
         std::cout << "Using following arguments:" << std::endl;
         for (std::size_t i = 0; i < arguments.size(); i += 2) std::printf("%-30s %s\n", arguments[i].data(), arguments[i + 1].data());
         std::cout << std::endl;
 
-        std::cout << "Operating mode: " << operating_mode() << std::endl << std::endl;
+        std::cout << "Operating mode: " << operating_mode << std::endl << std::endl;
     }
 
+    static std::string unitigs_filename;
+    static std::string edges_filename;
+    static std::string queries_filename;
+    static std::string sggs_filename;
+    static std::string out_stem;
+    static std::string sgg_counts_filename;
+    static int_t k;
+    static int_t queries_type;
+    static int_t n_queries;
+    static real_t max_distance;
+    static int_t n_threads;
+    static int_t sgg_count_threshold;
+    static int_t ld_distance;
+    static int_t ld_distance_min;
+    static real_t ld_distance_score;
+    static int_t ld_distance_nth_score;
+    static real_t outlier_threshold;
+    static int_t n_sggs_to_hold_in_memory;
+    static bool graphs_one_based;
+    static bool queries_one_based;
+    static bool sgg_counts_one_based;
+    static bool output_one_based;
+    static bool run_sggs_only;
+    static bool output_outliers;
+    static bool verbose;
+    static bool valid_state;
+    static OperatingMode operating_mode;
+
 private:
-    int m_argc;
-    char** m_argv;
+    static int argc;
+    static char** argv;
 
-    std::string m_unitigs_filename = "";
-    std::string m_edges_filename = "";
-    std::string m_queries_filename = "";
-    std::string m_sggs_filename = "";
-    std::string m_out_stem = "out";
-    std::string m_sgg_counts_filename = "";
-    int_t m_k = 0;
-    int_t m_queries_type = -1;
-    int_t m_n_queries = INT_T_MAX;
-    real_t m_max_distance = REAL_T_MAX;
-    int_t m_n_threads = 1;
-    int_t m_sgg_count_threshold = 10;
-    int_t m_ld_distance = -1;
-    int_t m_ld_distance_min = 1000;
-    real_t m_ld_distance_score = 0.8;
-    int_t m_ld_distance_nth_score = 10;
-    real_t m_outlier_threshold = -1.0;
-    int_t m_n_sggs_to_hold_in_memory = 1;
-    bool m_graphs_one_based = false;
-    bool m_queries_one_based = false;
-    bool m_sgg_counts_one_based = false;
-    bool m_output_one_based = false;
-    bool m_run_sggs_only = false;
-    bool m_output_outliers = false;
-    bool m_verbose = false;
-
-    bool m_valid_state;
-
-    OperatingMode m_om = OperatingMode::DEFAULT;
-
-    void set_operating_mode() {
-        if (output_outliers()) m_om |= OperatingMode::OUTLIER_TOOLS;
-        if (!edges_filename().empty()) {
-            if (unitigs_filename().empty()) {
-                m_om |= OperatingMode::GENERAL;
+    static void set_operating_mode() {
+        if (output_outliers) operating_mode |= OperatingMode::OUTLIER_TOOLS;
+        if (!edges_filename.empty()) {
+            if (unitigs_filename.empty()) {
+                operating_mode |= OperatingMode::GENERAL;
             } else {
-                m_om |= OperatingMode::CDBG;
-                if (!sggs_filename().empty()) m_om |= OperatingMode::SGGS;
+                operating_mode |= OperatingMode::CDBG;
+                if (!sggs_filename.empty()) operating_mode |= OperatingMode::SGGS;
             }
         }
     }
 
-    bool all_required_arguments_provided() const {
+    static bool all_required_arguments_provided() {
         bool ok = true;
         // Always require queries.
-        if (queries_filename().empty()) {
+        if (queries_filename.empty()) {
             std::cout << "Missing queries filename.\n";
             ok = false;
         }
         // Normal operating modes.
-        if (operating_mode() != OperatingMode::OUTLIER_TOOLS) {
-            if (edges_filename().empty()) {
+        if (operating_mode != OperatingMode::OUTLIER_TOOLS) {
+            if (edges_filename.empty()) {
                 std::cout << "Missing edges filename.\n";
                 ok = false;
             }
-            if (operating_mode(OperatingMode::CDBG) && k() <= 0) {
+            if (has_operating_mode(OperatingMode::CDBG) && k <= 0) {
                 std::cout << "Missing k-mer length.\n";
                 ok = false;
             }
@@ -220,34 +191,27 @@ private:
         return ok;
     }
 
-    const std::string based_str() const { return output_one_based() ? "_1_based" : "_0_based"; }
+    static std::string based_str() { return output_one_based ? "_1_based" : "_0_based"; }
 
-    char** begin() const { return m_argv + 1; }
-    char** end() const { return m_argv + m_argc; }
-    char** find(const std::string& opt) const { return std::find(begin(), end(), opt); }
-    char* has_arg(const std::string& opt) const { return has_arg(opt, opt); }
-    char* has_arg(const std::string& opt, const std::string& alt) const {
+    static char** begin() { return argv + 1; }
+    static char** end() { return argv + argc; }
+    static char** find(const std::string& opt) { return std::find(begin(), end(), opt); }
+    static char* has_arg(const std::string& opt) { return has_arg(opt, opt); }
+    static char* has_arg(const std::string& opt, const std::string& alt) {
         // Don't need the value, return either nullptr or anything for a boolean check.
         return find(opt) != end() || find(alt) != end() ? begin()[0] : nullptr;
     }
-    char* find_arg_value(const std::string& opt) const { return find_arg_value(opt, opt); }
-    char* find_arg_value(const std::string& opt, const std::string& alt) const {
+    static char* find_arg_value(const std::string& opt) { return find_arg_value(opt, opt); }
+    static char* find_arg_value(const std::string& opt, const std::string& alt) {
         auto it = find(opt);
         if (it != end() && ++it != end()) return *it;
         it = find(alt);
         return it != end() && ++it != end() ? *it : nullptr;
     }
-    bool has_1_arg() {
-        for (auto it = begin(); it != end(); ++it) {
-            std::string opt = std::string(*it);
-            if (opt == "-1" || opt == "--all-one-based") return true;
-        }
-        return false;
-    }
 
-    void print_no_args() const { std::cout << "Use '-h' or '--help' for a list of available options.\n"; }
+    static void print_no_args() { std::cout << "Use '-h' or '--help' for a list of available options.\n"; }
 
-    void print_help() const {
+    static void print_help() {
         std::vector<std::string> options{
             "Graph edges:", "",
             "  -E  [ --edges-file ] arg", "Path to file containing graph edges.",
@@ -291,13 +255,13 @@ private:
         for (std::size_t i = 0; i < options.size(); i += 2) std::printf("%-45s %s\n", options[i].data(), options[i + 1].data());
     }
 
-    void double_push_back(std::vector<std::string>& arguments, const std::string& opt, const std::string& val) const {
+    static void double_push_back(std::vector<std::string>& arguments, const std::string& opt, const std::string& val) {
         arguments.push_back(opt);
         arguments.push_back(val);
     }
 
     template <typename T>
-    void set_value(T& value, const std::string& opt, const std::string& alt) { if (has_arg(opt, alt)) std::stringstream(find_arg_value(opt, alt)) >> value; }
+    static void set_value(T& value, const std::string& opt, const std::string& alt) { if (has_arg(opt, alt)) std::stringstream(find_arg_value(opt, alt)) >> value; }
 
 };
 

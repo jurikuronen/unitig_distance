@@ -10,18 +10,19 @@
 #include "DistanceVector.hpp"
 #include "Graph.hpp"
 #include "PrintUtils.hpp"
+#include "ProgramOptions.hpp"
 #include "SearchJobs.hpp"
 #include "Timer.hpp"
 #include "types.hpp"
 
 class GraphDistances {
 public:
-    GraphDistances(const Graph& graph, const Timer& timer, int_t n_threads, real_t max_distance = REAL_T_MAX, bool verbose = false)
+    GraphDistances(const Graph& graph, const Timer& timer)
     : m_graph(graph),
       m_timer(timer),
-      m_n_threads(n_threads),
-      m_max_distance(max_distance),
-      m_verbose(verbose)
+      m_n_threads(ProgramOptions::n_threads),
+      m_max_distance(ProgramOptions::max_distance),
+      m_verbose(ProgramOptions::verbose)
     { }
 
     // Calculate distances for general graphs and compacted de Bruijn graphs.

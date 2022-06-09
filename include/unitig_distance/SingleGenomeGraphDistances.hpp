@@ -11,20 +11,14 @@
 #include "Distance.hpp"
 #include "DistanceVector.hpp"
 #include "Graph.hpp"
+#include "ProgramOptions.hpp"
 #include "SearchJobs.hpp"
 #include "Timer.hpp"
 #include "types.hpp"
 
 class SingleGenomeGraphDistances {
 public:
-    SingleGenomeGraphDistances(
-        const SingleGenomeGraph& graph,
-        int_t n_threads,
-        real_t max_distance = REAL_T_MAX)
-    : m_graph(graph),
-      m_n_threads(n_threads),
-      m_max_distance(max_distance)
-    { }
+    SingleGenomeGraphDistances(const SingleGenomeGraph& graph) : m_graph(graph), m_n_threads(ProgramOptions::n_threads), m_max_distance(ProgramOptions::max_distance) { }
 
     // Calculate distances for single genome graphs.
     std::vector<std::unordered_map<int_t, Distance>> solve(const SearchJobs& search_jobs) {
