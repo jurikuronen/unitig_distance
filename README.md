@@ -1,11 +1,9 @@
 # unitig_distance
-unitig_distance is a command line program that calculates graph-theoretic shortest-path distances in bulk for graphs which do not admit any straightforward decompositions. That is, it is a rather brute-force-ish distance calculator that aims to speed up the calculations by smart arrangement of the graph search jobs and through parallel operation.
+unitig_distance is a command line program that calculates shortest path distances in a compacted de Bruijn graph which has been constructed from genome sequences. Since such graphs tend to be very large and do not admit straightforward decompositions, unitig_distance aims to speed up the calculations by smart arrangement of the graph search jobs and through parallel operation.
 
-As the name suggests, the impetus for designing unitig_distance comes from bioinformatics. The primary motivation is to be able to calculate, in reasonable time, millions of distance queries in compacted de Bruijn graphs constructed from genome references, where graph vertices correspond to unitigs. These kind of graphs tend to be very large (millions of vertices and edges) and highly connected with vertex-connectivity in the bulk of the graph being at least 4, which means that typical graph decompositions into 2-connected or 3-connected components in order to obtain fast distance calculation algorithms are not suitable.
+unitig_distance can be used together with programs such as [SpydrPick](https://github.com/santeripuranen/SpydrPick) that calculate pairwise scores for the unitigs, but cannot calculate their distances in the underlying compacted de Bruijn graph. For such use cases, see [Input files - Distance queries file](#distance-queries-file), [Usage - Calculating distances in compacted de Bruijn graphs](#calculating-distances-in-compacted-de-bruijn-graphs) and [Usage - Determining outliers from supplied scores](#determining-outliers-from-supplied-scores).
 
-unitig_distance can be used to supplement programs such as [SpydrPick](https://github.com/santeripuranen/SpydrPick) that calculate pairwise scores for the unitigs, but cannot calculate their distances in the underlying compacted de Bruijn graph. For such use cases, see [Input files - Distance queries file](#distance-queries-file), [Usage - Calculating distances in compacted de Bruijn graphs](#calculating-distances-in-compacted-de-bruijn-graphs) and [Usage - Determining outliers from supplied scores](#determining-outliers-from-supplied-scores).
-
-See also the project [gfa1_parser](https://github.com/jurikuronen/gfa1_parser) which can be used to create suitable input files for unitig_distance from genome references.
+See also the project [gfa1_parser](https://github.com/jurikuronen/gfa1_parser) which can be used to create suitable input files for unitig_distance from a [Graphical Fragment Assembly (GFA) file](https://github.com/GFA-spec/GFA-spec/blob/master/GFA1.md).
 
 ## Table of contents
 
@@ -31,7 +29,7 @@ make
 This will create an executable named `unitig_distance` inside the `bin` directory.
 
 ## Input files
-unitig_distance reads as input **space-separated values** text files whose paths and any additional options should be provided as command line arguments. This section details how the input files should be prepared and provided.
+unitig_distance reads as input text files with **space-separated values** whose paths and any additional options should be provided as command line arguments. This section details how the input files should be prepared and provided.
 
 ### General Graph
 The simplest graph input file for unitig_distance is an edges file (`-E [ --edges-file ] arg`) where lines should have the format
@@ -45,16 +43,16 @@ To construct a compacted de Bruijn graph, unitig_distance needs to know the valu
 ```
 id sequence
 ```
-where `sequence` is the unitig's sequence. The unitig's `id` is arbitrary, but nevertheless the unitigs should be in the correct order with respect to the vertex mapping. The field `id` is not used by unitig_distance, but is required to retain compatibility with other programs. The unitig `sequence` together with the k-mer length `k` will be used to determine self-edge weights.
+where `sequence` is the unitig's sequence. The unitigs should be in the correct order with respect to the vertex mapping. The field `id` is not used by unitig_distance, but is required to retain compatibility with other programs. The unitig `sequence` together with the k-mer length `k` will be used to determine self-edge weights.
 
-The lines in the edges file (`-E [ --edges-file ] arg`) should have the **extended format**
+The lines in the edges file (`-E [ --edges-file ] arg`) should have the extended format
 ```
 v w edge_type (overlap)
 ```
-where `v` and `w` correspond to distinct unitigs (according to the order in the unitigs file) which are connected according to the `edge_type` (FF, RR, FR or RF, indicating the overlap type of the forward/reverse complement sequences). The `overlap` field is optional and mostly used to distinguish between `k-1`-overlapping edges (default) and `0`-overlapping edges. Edges of the latter type are skipped in unitig_distance, since they often correspond to read errors in the genome references.
+where `v` and `w` correspond to distinct unitigs (according to the order in the unitigs file) which are connected according to the `edge_type` (FF, RR, FR or RF, indicating the overlap type of the forward/reverse complement sequences). The `overlap` field is optional and mostly used to distinguish between `k-1`-overlapping edges (default) and `0`-overlapping edges. Edges of the latter type are skipped in unitig_distance, since they often correspond to read errors in the genome sequences.
 
 #### Single genome graphs
-After providing the necessary files to construct a [compacted de Bruijn graph](#compacted-de-bruijn-graph), unitig_distance can also construct all the individual *single genome graphs* that compose the full graph. Each single genome graph requires a similar edges file as the full compacted de Bruijn graph. All such edge file paths should be collected in a single genome graph paths file (`-S [ --sgg-paths-file ] arg`) with one single genome graph edges file path per line. Distance calculation can be restricted to the single genome graphs (`-r [ --run-sggs-only]`).
+After providing the necessary files to construct a [compacted de Bruijn graph](#compacted-de-bruijn-graph), unitig_distance can also construct all the individual *single genome graphs* that compose the full graph. Each single genome graph requires a similar edges file as the full compacted de Bruijn graph. All such edge file paths should be collected in a single genome graph paths file (`-S [ --sgg-paths-file ] arg`) with one single genome graph edges file path per line. Distance calculation can be restricted to the single genome graphs only (`-r [ --run-sggs-only]`).
 
 ### Distance queries file
 The simplest format for the queries file (`-Q [ --queries-file ] arg`) is a file where each line has the format
@@ -65,9 +63,9 @@ that is, each line is a distance query for vertices `v` and `w`. The vertices in
 
 If the distance queries file is the output of a program such as [SpydrPick](https://github.com/santeripuranen/SpydrPick) that has calculated the top pairwise scores for a set of unitig pairs, unitig_distance assumes that the line format is
 ```
-v w distance <unused> score <unused> ... <unused>
+v w distance flag score
 ```
-where the third column `distance` will be replaced by unitig_distance, fourth column is unused, fifth `score` column will be used to calculate some statistics and the remaining columns are unused. The unused fields will still be written back to unitig_distance's output files &ndash; only the `distance` field will be replaced.
+where the third column `distance` will be replaced by unitig_distance, fourth column is is a Boolean value and the fifth `score` column will be used to calculate some statistics. The `flag` and `score` fields will be written back to unitig_distance's output files &ndash; only the `distance` field will be replaced.
 
 Restricting the number of queries to be read from the queries file can be done with `-n [ --n-queries ] arg (=inf)`.
 
@@ -88,19 +86,15 @@ CDBG operating mode:
 CDBG and/or SGGS operating mode:              
   -S  [ --sgg-paths-file ] arg                Path to file containing paths to single genome graph edge files.
   -r  [ --run-sggs-only ]                     Calculate distances only in the single genome graphs.
-  -s  [ --n-sggs ] arg (=--threads)           Maximum number of single genome graphs to construct and hold in memory at a time.
                                               
 Distance queries:                             
   -Q  [ --queries-file ] arg                  Path to queries file.
   -1q [ --queries-one-based ]                 Queries file uses one-based numbering.
   -n  [ --n-queries ] arg (=inf)              Number of queries to read from the queries file.
-  -b  [ --block-size ] arg (=10000)           Process this many queries/tasks at a time.
   -d  [ --max-distance ] arg (=inf)           Maximum allowed graph distance (for constraining the searches).
                                               
 Tools for determining outliers:               
   -x  [ --output-outliers ]                   Output a list of outliers and outlier statistics.
-  -C  [ --sgg-counts-file ] arg               Path to single genome graph counts file.
-  -1c [ --sgg-counts-one-based ]              Single genome graph counts file uses one-based numbering.
   -Cc [ --sgg-count-threshold ] arg (=10)     Filter low count single genome graph distances.
   -l  [ --ld-distance ] arg (=-1)             Linkage disequilibrium distance (automatically determined if negative).
   -lm [ --ld-distance-min ] arg (=1000)       Minimum ld distance for automatic ld distance determination.
@@ -144,9 +138,7 @@ Following from the above section ([Calculating distances in compacted de Bruijn 
                       -S <path_to_sggs_file> -r \
                       -o <output_stem> -t 16 -v | tee <output_stem>.ud_log
 ```
-The output will be written to
-- `<output_stem>.ud_sgg_mean_0_based`
-- `<output_stem>.ud_sgg_counts_0_based`
+The output will be written to `<output_stem>.ud_sgg_0_based`.
 
 where the \*mean\* file contains the mean distances across the single genome graphs and the \*counts\* file contains, for each query, the count of single genome graphs where the query's vertex pair is connected.
 
