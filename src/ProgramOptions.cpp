@@ -21,7 +21,6 @@ int_t ProgramOptions::ld_distance_nth_score = 10;
 real_t ProgramOptions::outlier_threshold = -1.0;
 bool ProgramOptions::graphs_one_based = false;
 bool ProgramOptions::queries_one_based = false;
-bool ProgramOptions::sgg_counts_one_based = false;
 bool ProgramOptions::output_one_based = false;
 bool ProgramOptions::run_sggs_only = false;
 bool ProgramOptions::output_outliers = false;
