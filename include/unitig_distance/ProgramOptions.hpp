@@ -49,6 +49,8 @@ public:
 
         set_operating_mode();
 
+        if (sggs_filename.empty()) sgg_count_threshold = 0;
+
         valid_state = all_required_arguments_provided();
     }
 
@@ -77,12 +79,10 @@ public:
             double_push_back(arguments, "  --sgg-paths-file", sggs_filename);
             double_push_back(arguments, "  --run-sggs-only", run_sggs_only ? "TRUE" : "FALSE");
         }
-        if (!queries_filename.empty()) {
-            double_push_back(arguments, "  --queries-file", queries_filename);
-            double_push_back(arguments, "  --queries-one-based", queries_one_based ? "TRUE" : "FALSE");
-            double_push_back(arguments, "  --n-queries", n_queries == INT_T_MAX ? "ALL" : std::to_string(n_queries));
-            double_push_back(arguments, "  --max-distance", max_distance == REAL_T_MAX ? "INF" : std::to_string(max_distance));
-        }
+        double_push_back(arguments, "  --queries-file", queries_filename);
+        double_push_back(arguments, "  --queries-one-based", queries_one_based ? "TRUE" : "FALSE");
+        double_push_back(arguments, "  --n-queries", n_queries == INT_T_MAX ? "ALL" : std::to_string(n_queries));
+        double_push_back(arguments, "  --max-distance", max_distance == REAL_T_MAX ? "INF" : std::to_string(max_distance));
         if (has_operating_mode(OperatingMode::OUTLIER_TOOLS)) {
             double_push_back(arguments, "  --output-outliers", output_outliers ? "TRUE" : "FALSE");
             double_push_back(arguments, "  --sgg-count-threshold", std::to_string(sgg_count_threshold));
