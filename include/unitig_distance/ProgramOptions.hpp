@@ -26,9 +26,7 @@ public:
         set_value(queries_filename, "-Q", "--queries-file");
         set_value(sggs_filename, "-S", "--sgg-paths-file");
         set_value(out_stem, "-o", "--output-stem");
-        set_value(sgg_counts_filename, "-C", "--sgg-counts-file");
         set_value(k, "-k", "--k-mer-length");
-        set_value(queries_type, "-q", "--queries-type");
         set_value(n_queries, "-n", "--n-queries");
         set_value(max_distance, "-d", "--max-distance");
         set_value(n_threads, "-t", "--threads");
@@ -39,11 +37,10 @@ public:
         set_value(ld_distance_nth_score, "-ln", "--ld-distance-nth-score");
         set_value(outlier_threshold, "-ot", "--outlier-threshold");
         if (has_arg("-1", "--all-one-based")) {
-            graphs_one_based = queries_one_based = sgg_counts_one_based = output_one_based = true;
+            graphs_one_based = queries_one_based = output_one_based = true;
         } else {
             graphs_one_based = has_arg("-1g", "--graphs-one-based");
             queries_one_based = has_arg("-1q", "--queries-one-based");
-            sgg_counts_one_based = has_arg("-1c", "--sgg_counts-one-based");
             output_one_based = has_arg("-1o", "--output-one-based");
         }
         run_sggs_only = has_arg("-r", "--run-sggs-only");
@@ -59,7 +56,6 @@ public:
 
     static std::string out_filename() { return out_stem + ".ud" + based_str(); }
     static std::string out_sgg_filename() { return out_stem + ".ud_sgg" + based_str(); }
-    static std::string out_sgg_counts_filename() { return out_stem + ".ud_sgg_counts" + based_str(); }
     static std::string out_outliers_filename() { return out_stem + ".ud_outliers" + based_str(); }
     static std::string out_sgg_outliers_filename() { return out_stem + ".ud_sgg_outliers" + based_str(); }
     static std::string out_outlier_stats_filename() { return out_stem + ".ud_outlier_stats"; }
@@ -81,31 +77,22 @@ public:
             double_push_back(arguments, "  --sgg-paths-file", sggs_filename);
             double_push_back(arguments, "  --run-sggs-only", run_sggs_only ? "TRUE" : "FALSE");
         }
-        if (!queries_filename.empty() && n_queries > 0) {
+        if (!queries_filename.empty()) {
             double_push_back(arguments, "  --queries-file", queries_filename);
-            double_push_back(arguments, "  --queries-type", std::to_string(queries_type));
             double_push_back(arguments, "  --queries-one-based", queries_one_based ? "TRUE" : "FALSE");
             double_push_back(arguments, "  --n-queries", n_queries == INT_T_MAX ? "ALL" : std::to_string(n_queries));
-            if (operating_mode != OperatingMode::OUTLIER_TOOLS) {
-                double_push_back(arguments, "  --max-distance", max_distance == REAL_T_MAX ? "INF" : std::to_string(max_distance));
-            }
+            double_push_back(arguments, "  --max-distance", max_distance == REAL_T_MAX ? "INF" : std::to_string(max_distance));
         }
         if (has_operating_mode(OperatingMode::OUTLIER_TOOLS)) {
             double_push_back(arguments, "  --output-outliers", output_outliers ? "TRUE" : "FALSE");
-            if (!sgg_counts_filename.empty()) {
-                double_push_back(arguments, "  --sgg-counts-file", sgg_counts_filename);
-                double_push_back(arguments, "  --sgg-counts-one-based", sgg_counts_one_based ? "TRUE" : "FALSE");
-            }
-            if (!sgg_counts_filename.empty() || has_operating_mode(OperatingMode::SGGS)) {
-                double_push_back(arguments, "  --sgg-count-threshold", std::to_string(sgg_count_threshold));
-            }
+            double_push_back(arguments, "  --sgg-count-threshold", std::to_string(sgg_count_threshold));
             double_push_back(arguments, "  --ld-distance", ld_distance < 0 ? "AUTOM" : std::to_string(ld_distance));
             if (ld_distance < 0) {
                 double_push_back(arguments, "  --ld-distance-min", std::to_string(ld_distance_min));
                 double_push_back(arguments, "  --ld-distance-score", std::to_string(ld_distance_score));
                 double_push_back(arguments, "  --ld-distance-nth-score", std::to_string(ld_distance_nth_score));
             }
-            if (ld_distance >= 0 && outlier_threshold >= 0.0) double_push_back(arguments, "  --outlier-threshold", std::to_string(outlier_threshold));
+            if (outlier_threshold >= 0.0) double_push_back(arguments, "  --outlier-threshold", std::to_string(outlier_threshold));
         }
         double_push_back(arguments, "  --output-stem", out_stem);
         double_push_back(arguments, "  --output-one-based", output_one_based ? "TRUE" : "FALSE");
@@ -123,9 +110,7 @@ public:
     static std::string queries_filename;
     static std::string sggs_filename;
     static std::string out_stem;
-    static std::string sgg_counts_filename;
     static int_t k;
-    static int_t queries_type;
     static int_t n_queries;
     static real_t max_distance;
     static int_t n_threads;
@@ -221,12 +206,10 @@ private:
             "  -Q  [ --queries-file ] arg", "Path to queries file.",
             "  -1q [ --queries-one-based ]", "Queries file uses one-based numbering.",
             "  -n  [ --n-queries ] arg (=inf)", "Number of queries to read from the queries file.",
-            "  -b  [ --block-size ] arg (=10000)", "Process this many queries/tasks at a time.",
             "  -d  [ --max-distance ] arg (=inf)", "Maximum allowed graph distance (for constraining the searches).",
             "", "",
             "Tools for determining outliers:", "",
             "  -x  [ --output-outliers ]", "Output a list of outliers and outlier statistics.",
-            "  -C  [ --sgg-counts-file ] arg", "Path to single genome graph counts file.",
             "  -1c [ --sgg-counts-one-based ]", "Single genome graph counts file uses one-based numbering.",
             "  -Cc [ --sgg-count-threshold ] arg (=10)", "Filter low count single genome graph distances.",
             "  -l  [ --ld-distance ] arg (=-1)", "Linkage disequilibrium distance (automatically determined if negative).",

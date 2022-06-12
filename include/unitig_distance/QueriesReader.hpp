@@ -13,84 +13,98 @@ using po = ProgramOptions;
 class QueriesReader {
 public:
     static Queries read_queries() {
-        if (ProgramOptions::queries_type == 0) return read_general_input();
-        if (ProgramOptions::queries_type == 1) return read_spydrpick_input();
-        if (ProgramOptions::queries_type == 2) return read_ud_output();
-        return Queries();
+        Queries queries;
+
+        std::ifstream ifs(ProgramOptions::queries_filename);
+        std::string line;
+        std::getline(ifs, line);
+        auto fields_sz = Utils::get_fields(line).size();
+
+        if (fields_sz == 2) {
+            read_general_input_line(queries, line, 1);
+            if (!read_general_input(queries, ifs)) return Queries();
+        }
+        if (fields_sz == 5) {
+            read_spydrpick_input_line(queries, line, 1);
+            if (!read_spydrpick_input(queries, ifs)) return Queries();
+        }
+        if (fields_sz == 6) {
+            read_ud_input_line(queries, line, 1);
+            if (!read_ud_input(queries, ifs)) return Queries();
+        }
+        return queries;
     }
 
 private:
-    static void print_error(const std::string& line, int_t n_columns) {
+    static void print_error(const std::string& line, int_t n_columns, int_t count) {
         std::cerr << "Not enough columns (" << n_columns << " required) in queries file \"" << po::queries_filename
-                  << "\" line \"" << line << "\". Is the file space-separated?" << std::endl;
-    }
-    static Queries read_general_input() {
-        Queries queries(po::queries_type);
-        std::ifstream ifs(po::queries_filename);
-        int_t cnt = 0;
-
-        for (std::string line; std::getline(ifs, line); ) {
-            auto fields = Utils::get_fields(line);
-            if (fields.size() < 2) {
-                print_error(line, 5);
-                return Queries();
-            }
-            int_t v = std::stoll(fields[0]) - po::queries_one_based;
-            int_t w = std::stoll(fields[1]) - po::queries_one_based;
-            queries.emplace_back(v, w);
-
-            if (++cnt == ProgramOptions::n_queries) break;
-        }
-
-        return queries;
+                  << "\" line " << count << " \"" << line << "\". Is the file space-separated?" << std::endl;
     }
 
-    static Queries read_spydrpick_input() {
-        Queries queries(po::queries_type);
-        std::ifstream ifs(po::queries_filename);
-        int_t cnt = 0;
-
-        for (std::string line; std::getline(ifs, line); ) {
-            auto fields = Utils::get_fields(line);
-            if (fields.size() < 5) {
-                print_error(line, 6);
-                return Queries();
-            }
-            int_t v = std::stoll(fields[0]) - po::queries_one_based;
-            int_t w = std::stoll(fields[1]) - po::queries_one_based;
-            // Ignore SpydrPick's 3rd field.
-            bool flag = std::stoi(fields[3]);
-            real_t score = std::stod(fields[4]);
-            queries.emplace_back(v, w, flag, score);
-
-            if (++cnt == ProgramOptions::n_queries) break;
+    static bool read_general_input_line(Queries& queries, const std::string& line, int_t cnt) {
+        auto fields = Utils::get_fields(line);
+        if (fields.size() < 2) {
+            print_error(line, 2, cnt);
+            return false;
         }
-
-        return queries;
+        int_t v = std::stoll(fields[0]) - po::queries_one_based;
+        int_t w = std::stoll(fields[1]) - po::queries_one_based;
+        queries.emplace_back(v, w);
+        return true;
     }
 
-    static Queries read_ud_output() {
-        Queries queries(po::queries_type);
-        std::ifstream ifs(po::queries_filename);
-        int_t cnt = 0;
-
-        for (std::string line; std::getline(ifs, line); ) {
-            auto fields = Utils::get_fields(line);
-            if (fields.size() < 5) {
-                print_error(line, 5);
-                return Queries();
-            }
-            int_t v = std::stoll(fields[0]) - po::queries_one_based;
-            int_t w = std::stoll(fields[1]) - po::queries_one_based;
-            int_t distance = std::stoll(fields[2]);
-            bool flag = std::stoi(fields[3]);
-            real_t score = std::stod(fields[4]);
-            int_t count = std::stoll(fields[5]);
-            queries.emplace_back(v, w, flag, score, distance, count);
-
-            if (++cnt == ProgramOptions::n_queries) break;
+    static bool read_spydrpick_input_line(Queries& queries, const std::string& line, int_t cnt) {
+        auto fields = Utils::get_fields(line);
+        if (fields.size() < 5) {
+            print_error(line, 5, cnt);
+            return false;
         }
+        int_t v = std::stoll(fields[0]) - po::queries_one_based;
+        int_t w = std::stoll(fields[1]) - po::queries_one_based;
+        // Ignore SpydrPick's 3rd field.
+        bool flag = std::stoi(fields[3]);
+        real_t score = std::stod(fields[4]);
+        queries.emplace_back(v, w, flag, score);
+        return true;
+    }
 
-        return queries;
+    static bool read_ud_input_line(Queries& queries, const std::string& line, int_t cnt) {
+        auto fields = Utils::get_fields(line);
+        if (fields.size() < 6) {
+            print_error(line, 6, cnt);
+            return false;
+        }
+        int_t v = std::stoll(fields[0]) - po::queries_one_based;
+        int_t w = std::stoll(fields[1]) - po::queries_one_based;
+        int_t distance = std::stoll(fields[2]);
+        bool flag = std::stoi(fields[3]);
+        real_t score = std::stod(fields[4]);
+        int_t count = std::stoll(fields[5]);
+        queries.emplace_back(v, w, flag, score, distance, count);
+        return true;
+    }
+
+    static bool read_general_input(Queries& queries, std::ifstream& ifs) {
+        int_t cnt = 1;
+        for (std::string line; ++cnt <= ProgramOptions::n_queries && std::getline(ifs, line); ) {
+            if (!read_general_input_line(queries, line, cnt)) return false;
+        }
+        return true;
+    }
+
+    static bool read_spydrpick_input(Queries& queries, std::ifstream& ifs) {
+        int_t cnt = 1;
+        for (std::string line; ++cnt <= ProgramOptions::n_queries && std::getline(ifs, line); ) {
+            if (!read_spydrpick_input_line(queries, line, cnt)) return false;
+        }
+        return true;
+    }
+
+    static bool read_ud_input(Queries& queries, std::ifstream& ifs) {
+        int_t cnt = 1;
+        for (std::string line; ++cnt <= ProgramOptions::n_queries && std::getline(ifs, line); ) {
+            if (!read_ud_input_line(queries, line, cnt)) return false;
+        }
+        return true;
     }
 };

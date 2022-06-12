@@ -76,16 +76,9 @@ public:
             }
         }
 
-        if (!ProgramOptions::queries_filename.empty() && ProgramOptions::n_queries > 0) {
+        if (!ProgramOptions::queries_filename.empty()) {
             if (!Utils::file_is_good(ProgramOptions::queries_filename)) {
                 std::cerr << "Can't open " << ProgramOptions::queries_filename << std::endl;
-                return false;
-            }
-        }
-
-        if (ProgramOptions::operating_mode == OperatingMode::OUTLIER_TOOLS && !ProgramOptions::sgg_counts_filename.empty()) {
-            if (!Utils::file_is_good(ProgramOptions::sgg_counts_filename)) {
-                std::cerr << "Can't open " << ProgramOptions::sgg_counts_filename << std::endl;
                 return false;
             }
         }
