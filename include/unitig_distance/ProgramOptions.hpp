@@ -165,17 +165,17 @@ private:
         bool ok = true;
         // Always require queries.
         if (queries_filename.empty()) {
-            std::cout << "Missing queries filename.\n";
+            std::cerr << "Missing queries filename.\n";
             ok = false;
         }
         // Normal operating modes.
         if (operating_mode != OperatingMode::OUTLIER_TOOLS) {
             if (edges_filename.empty()) {
-                std::cout << "Missing edges filename.\n";
+                std::cerr << "Missing edges filename.\n";
                 ok = false;
             }
             if (has_operating_mode(OperatingMode::CDBG) && k <= 0) {
-                std::cout << "Missing k-mer length.\n";
+                std::cerr << "Missing k-mer length.\n";
                 ok = false;
             }
         }
