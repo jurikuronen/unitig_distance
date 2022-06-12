@@ -58,12 +58,12 @@ public:
     static bool has_operating_mode(const OperatingMode& om) { return operating_mode_to_bool(operating_mode & om); }
 
     static std::string out_filename() { return out_stem + ".ud" + based_str(); }
-    static std::string out_sgg_mean_filename() { return out_stem + ".ud_sgg_mean" + based_str(); }
+    static std::string out_sgg_filename() { return out_stem + ".ud_sgg" + based_str(); }
     static std::string out_sgg_counts_filename() { return out_stem + ".ud_sgg_counts" + based_str(); }
     static std::string out_outliers_filename() { return out_stem + ".ud_outliers" + based_str(); }
-    static std::string out_sgg_mean_outliers_filename() { return out_stem + ".ud_sgg_mean_outliers" + based_str(); }
+    static std::string out_sgg_outliers_filename() { return out_stem + ".ud_sgg_outliers" + based_str(); }
     static std::string out_outlier_stats_filename() { return out_stem + ".ud_outlier_stats"; }
-    static std::string out_sgg_mean_outlier_stats_filename() { return out_stem + ".ud_sgg_mean_outlier_stats"; }
+    static std::string out_sgg_outlier_stats_filename() { return out_stem + ".ud_sgg_outlier_stats"; }
 
     // Print details about this run.
     static void print_run_details() {

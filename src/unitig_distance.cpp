@@ -41,10 +41,12 @@ int main(int argc, char** argv) {
     if (queries.size() == 0) return fail_with_error("Failed to read queries.");
     if (po::verbose) PrintUtils::print_tbss_tsmasm(timer, "Read", Utils::neat_number_str(queries.size()), "lines from queries file");
 
+    // Set up outlier tools.
+    OutlierTools ot(queries, timer);
+
     // Operating in outliers tool mode only.
     if (po::operating_mode == OperatingMode::OUTLIER_TOOLS) {
-        // Recode this part
-        //determine_outliers(queries, queries.distances(), po, po::out_outliers_filename, po::out_outlier_stats_filename, timer);
+        ot.determine_and_output_outliers(queries.distances(), po::out_outliers_filename(), po::out_outlier_stats_filename());
         return 0;
     }
 
@@ -168,23 +170,20 @@ int main(int argc, char** argv) {
         }
 
         // Output single genome graphs graph distances.
-        ResultsWriter::output_results(po::out_sgg_mean_filename(), queries, sgg_distances);
-        if (po::verbose) PrintUtils::print_tbss_tsmasm(timer, "Output single genome graph mean distances to file", po::out_sgg_mean_filename());
+        ResultsWriter::output_results(po::out_sgg_filename(), queries, sgg_distances);
+        if (po::verbose) PrintUtils::print_tbss_tsmasm(timer, "Output single genome graph mean distances to file", po::out_sgg_filename());
 
         // Determine outliers.
         if (po::has_operating_mode(OperatingMode::OUTLIER_TOOLS)) {
-
-            // Determine outliers.
-            if (po::has_operating_mode(OperatingMode::OUTLIER_TOOLS)) {
-                //determine_outliers(queries, sgg_distances, po, po::out_sgg_mean_outliers_filename, po::out_sgg_mean_outlier_stats_filename, timer);
-            }
+            ot.determine_and_output_outliers(sgg_distances, po::out_sgg_outliers_filename(), po::out_sgg_outlier_stats_filename());
         }
 
     }
 
     // Run normal graph
-    if (!(po::has_operating_mode(OperatingMode::SGGS) && po::run_sggs_only)) {
+    if (!po::run_sggs_only) {
         if (po::verbose) PrintUtils::print_tbssasm(timer, "Calculating distances in the main graph");
+
         // Calculate distances.
         auto graph_distances = GraphDistances(graph, timer).solve(search_jobs);
         timer.set_mark();
@@ -194,7 +193,7 @@ int main(int argc, char** argv) {
 
         // Determine outliers.
         if (po::has_operating_mode(OperatingMode::OUTLIER_TOOLS)) {
-            //determine_outliers(queries, graph_distances, po, po::out_outliers_filename, po::out_outlier_stats_filename, timer);
+            ot.determine_and_output_outliers(graph_distances, po::out_outliers_filename(), po::out_outlier_stats_filename());
         }
 
     }
