@@ -49,6 +49,7 @@ public:
 
         set_operating_mode();
 
+        if (n_queries < 0) n_queries = INT_T_MAX;
         if (sggs_filename.empty()) sgg_count_threshold = 0;
 
         valid_state = all_required_arguments_provided();
