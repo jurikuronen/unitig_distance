@@ -49,12 +49,6 @@ public:
         run_sggs_only = has_arg("-r", "--run-sggs-only");
         output_outliers = has_arg("-x", "--output-outliers");
         verbose = has_arg("-v", "--verbose");
-        if (has_arg("-s", "--n-sggs")) {
-            set_value(n_sggs_to_hold_in_memory, "-s", "--n-sggs");
-            n_sggs_to_hold_in_memory = std::min(n_sggs_to_hold_in_memory, n_threads);
-        } else {
-            n_sggs_to_hold_in_memory = n_threads;
-        }
 
         set_operating_mode();
 
@@ -86,7 +80,6 @@ public:
         if (has_operating_mode(OperatingMode::SGGS)) {
             double_push_back(arguments, "  --sgg-paths-file", sggs_filename);
             double_push_back(arguments, "  --run-sggs-only", run_sggs_only ? "TRUE" : "FALSE");
-            double_push_back(arguments, "  --n-sggs", std::to_string(n_sggs_to_hold_in_memory));
         }
         if (!queries_filename.empty() && n_queries > 0) {
             double_push_back(arguments, "  --queries-file", queries_filename);
@@ -142,7 +135,6 @@ public:
     static real_t ld_distance_score;
     static int_t ld_distance_nth_score;
     static real_t outlier_threshold;
-    static int_t n_sggs_to_hold_in_memory;
     static bool graphs_one_based;
     static bool queries_one_based;
     static bool sgg_counts_one_based;

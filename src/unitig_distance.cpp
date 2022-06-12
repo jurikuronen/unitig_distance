@@ -69,7 +69,7 @@ int main(int argc, char** argv) {
         std::vector<std::string> path_edge_files;
         std::ifstream ifs(po::sggs_filename);
         for (std::string path_edges; std::getline(ifs, path_edges); ) path_edge_files.emplace_back(path_edges);
-        std::size_t n_sggs = path_edge_files.size(), batch_size = po::n_sggs_to_hold_in_memory;
+        std::size_t n_sggs = path_edge_files.size(), batch_size = po::n_threads;
 
         if (n_sggs == 0) fail_with_error("Couldn't read single genome graph files.");
 

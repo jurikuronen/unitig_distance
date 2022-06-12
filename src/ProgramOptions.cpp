@@ -21,7 +21,6 @@ int_t ProgramOptions::ld_distance_min = 1000;
 real_t ProgramOptions::ld_distance_score = 0.8; 
 int_t ProgramOptions::ld_distance_nth_score = 10;
 real_t ProgramOptions::outlier_threshold = -1.0;
-int_t ProgramOptions::n_sggs_to_hold_in_memory = 1; 
 bool ProgramOptions::graphs_one_based = false;
 bool ProgramOptions::queries_one_based = false;
 bool ProgramOptions::sgg_counts_one_based = false;
