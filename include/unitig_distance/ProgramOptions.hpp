@@ -122,7 +122,6 @@ public:
     static real_t outlier_threshold;
     static bool graphs_one_based;
     static bool queries_one_based;
-    static bool sgg_counts_one_based;
     static bool output_one_based;
     static bool run_sggs_only;
     static bool output_outliers;
@@ -210,7 +209,6 @@ private:
             "", "",
             "Tools for determining outliers:", "",
             "  -x  [ --output-outliers ]", "Output a list of outliers and outlier statistics.",
-            "  -1c [ --sgg-counts-one-based ]", "Single genome graph counts file uses one-based numbering.",
             "  -Cc [ --sgg-count-threshold ] arg (=10)", "Filter low count single genome graph distances.",
             "  -l  [ --ld-distance ] arg (=-1)", "Linkage disequilibrium distance (automatically determined if negative).",
             "  -lm [ --ld-distance-min ] arg (=1000)", "Minimum ld distance for automatic ld distance determination.",
