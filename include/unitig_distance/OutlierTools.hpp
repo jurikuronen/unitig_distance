@@ -22,11 +22,15 @@ public:
       m_outlier_threshold(ProgramOptions::outlier_threshold),
       m_extreme_outlier_threshold(ProgramOptions::outlier_threshold)
     {
-        if (ProgramOptions::has_operating_mode(OperatingMode::OUTLIER_TOOLS)) calculate_query_values();
+        if (ProgramOptions::has_operating_mode(OperatingMode::OUTLIER_TOOLS) && queries.extended_format()) calculate_query_values();
     }
 
     // Estimate outlier thresholds. Also estimate linkage disequilibrium distance if ld_distance < 0.
     void determine_and_output_outliers(const DistanceVector& dv, const std::string& outliers_filename, const std::string& outlier_stats_filename) {
+        if (!m_queries.extended_format()) {
+            std::cout << "    OutlierTools: No scores for unitig pairs available. Cannot determine outliers." << std::endl;
+            return;
+        }
         // Estimate ld distance if necessary.
         if (m_ld_distance < 0) {
             real_t largest_distance = calculate_largest_distance(dv);
@@ -35,7 +39,7 @@ public:
 
             if (largest_distance < min_distance) {
                 if (ProgramOptions::verbose) {
-                    std::cout << "Distances in queries are smaller than the provided minimum ld distance (" << (int_t) largest_distance
+                    std::cout << "    OutlierTools: Distances in queries are smaller than the provided minimum ld distance (" << (int_t) largest_distance
                               << '<' << min_distance << "). Ignoring the given value." << std::endl;
                 }
                 min_distance = 0.0;
