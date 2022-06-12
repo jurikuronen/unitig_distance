@@ -10,12 +10,10 @@
 // Class for storing queries read from input. Not all fields may be available.
 class Queries {
 public:
-    Queries() = default;
-    Queries(int_t queries_type) : m_queries_type(queries_type), m_largest_v(-1) { }
+    Queries() : m_largest_v(-1) { }
 
     std::size_t size() const { return m_queries.size(); }
 
-    int_t queries_type() const { return m_queries_type; }
     int_t largest_v() const { return m_largest_v; }
 
     const DistanceVector& distances() const { return m_distances; }
@@ -44,6 +42,8 @@ public:
         m_distances.emplace_back(distance, count);
     }
 
+    bool extended_format() const { return m_scores.size() > 0; } 
+
     //typename std::vector<std::pair<int_t, int_t>>::iterator begin() { return m_queries.begin(); }
     //typename std::vector<std::pair<int_t, int_t>>::iterator end() { return m_queries.end(); }
     //typename std::vector<std::pair<int_t, int_t>>::const_iterator begin() const { return m_queries.begin(); }
@@ -55,7 +55,6 @@ private:
     std::vector<real_t> m_scores;
     DistanceVector m_distances;
 
-    int_t m_queries_type;
     int_t m_largest_v;
 
 };
