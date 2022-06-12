@@ -13,9 +13,9 @@ public:
     DistanceVector(const DistanceVector& other) = delete;
     DistanceVector(DistanceVector&& other) = default;
 
-    DistanceVector(std::size_t sz) : m_distances(sz) { }
-    DistanceVector(std::size_t sz, real_t distance_value) : m_distances(sz, Distance(distance_value)) { }
-    DistanceVector(std::size_t sz, real_t distance_value, int_t count_value) : m_distances(sz, Distance(distance_value, count_value)) { }
+    DistanceVector(std::size_t sz) : m_distances(sz), m_mean_distances(false) { }
+    DistanceVector(std::size_t sz, real_t distance_value) : m_distances(sz, Distance(distance_value)), m_mean_distances(false) { }
+    DistanceVector(std::size_t sz, real_t distance_value, int_t count_value) : m_distances(sz, Distance(distance_value, count_value)), m_mean_distances(false) { }
 
     std::vector<real_t> distances() const {
         std::vector<real_t> vector(size());
@@ -35,6 +35,9 @@ public:
 
     std::size_t size() const { return m_distances.size(); }
 
+    bool storing_mean_distances() const { return m_mean_distances; }
+    void set_mean_distances() { m_mean_distances = true; }
+
     Distance& operator[](std::size_t idx) { return m_distances[idx]; }
     const Distance& operator[](std::size_t idx) const { return m_distances[idx]; }
 
@@ -45,5 +48,7 @@ public:
 
 private:
     std::vector<Distance> m_distances;
+
+    bool m_mean_distances;
 
 };

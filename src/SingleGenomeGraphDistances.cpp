@@ -16,6 +16,8 @@
 DistanceVector calculate_sgg_distances(const Graph& graph, const SearchJobs& search_jobs, Timer& timer) {
     DistanceVector sgg_distances(search_jobs.n_queries(), 0.0, 0);
 
+    sgg_distances.set_mean_distances();
+
     // Read single genome graph edge files.
     std::vector<std::string> path_edge_files;
     std::ifstream ifs(ProgramOptions::sggs_filename);
