@@ -2,6 +2,8 @@
 Useful scripts have been added here.
 
 ## R plot 
+**Note: This file is outdated, will be updated soon.**
+
 When unitig_distance is used on queries that contained pairwise scores for the unitigs, unitig_distance's output can be visualized as a *GWES Manhattan plot*. gwes_plot.r is an easy to use R script to create such a plot. You can fill in file paths and plotting parameters yourself or call it from the command line as follows:
 ```
 Rscript gwes_plot.r <ud_output> <plot_name> <n_queries> <score_name> \
