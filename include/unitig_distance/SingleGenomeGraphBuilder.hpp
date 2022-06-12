@@ -2,6 +2,7 @@
 
 #include <string>
 
+#include "GraphBuilder.hpp"
 #include "SingleGenomeGraph.hpp"
 #include "types.hpp"
 

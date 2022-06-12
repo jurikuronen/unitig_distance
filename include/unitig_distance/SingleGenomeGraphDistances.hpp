@@ -10,11 +10,13 @@
 
 #include "Distance.hpp"
 #include "DistanceVector.hpp"
-#include "Graph.hpp"
 #include "ProgramOptions.hpp"
 #include "SearchJobs.hpp"
+#include "SingleGenomeGraph.hpp"
 #include "Timer.hpp"
 #include "types.hpp"
+
+DistanceVector calculate_sgg_distances(const Graph& graph, const SearchJobs& search_jobs, Timer& timer);
 
 class SingleGenomeGraphDistances {
 public:
