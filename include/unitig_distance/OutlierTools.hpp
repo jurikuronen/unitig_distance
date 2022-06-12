@@ -42,11 +42,13 @@ public:
             }
 
             determine_ld_automatically(dv, min_distance, largest_distance, required_score);
-        }
-
-        // Use a custom outlier threshold if required.
-        if (ProgramOptions::outlier_threshold >= 0.0) {
-            m_outlier_threshold = m_extreme_outlier_threshold = ProgramOptions::outlier_threshold;
+        } else {
+            // Use custom outlier threshold if required, otherwise calculate values with given ld distance.
+            if (ProgramOptions::outlier_threshold >= 0.0) {
+                m_outlier_threshold = m_extreme_outlier_threshold = ProgramOptions::outlier_threshold;
+            } else {
+                calculate_outlier_thresholds(dv);
+            }
         }
 
         // Collect outliers.
@@ -54,7 +56,7 @@ public:
 
         // Output outliers.
         if (outlier_indices.size() > 0) {
-            ResultsWriter::output_results(outliers_filename, Queries(m_queries, outlier_indices), DistanceVector(dv, outlier_indices));
+            ResultsWriter::output_results(outliers_filename, m_queries, dv, outlier_indices);
 
             std::ofstream ofs(outlier_stats_filename);
             ofs << (int_t) m_ld_distance << ' ' << m_outlier_threshold << ' ' << m_extreme_outlier_threshold << ' ' << ProgramOptions::sgg_count_threshold << '\n';
@@ -65,18 +67,7 @@ public:
         }
     }
 
-    void print_details() const {
-        std::cout << "OutlierTools: LD distance=" << (int_t) m_ld_distance << std::endl;
-        std::cout << "OutlierTools: outlier threshold=" << m_outlier_threshold 
-                  << " (" << m_outlier_indices.size() << " outliers)" << std::endl;
-        std::cout << "OutlierTools: extreme outlier threshold=" << m_extreme_outlier_threshold
-                  << " (" << m_extreme_outlier_indices.size() << " extreme outliers)" << std::endl;
-        std::cout << "OutlierTools: vertex coverage=" << m_v_coverage
-                  << " (" << Utils::neat_decimal_str(100 * m_v_coverage, m_n_vs) << "% queries covered)" << std::endl;
-    }
-
 private:
-
     const Queries& m_queries;
     Timer& m_timer;
 
@@ -86,9 +77,6 @@ private:
     real_t m_largest_score;
     real_t m_outlier_threshold;
     real_t m_extreme_outlier_threshold;
-
-    std::vector<int_t> m_outlier_indices;
-    std::vector<int_t> m_extreme_outlier_indices;
 
     void calculate_query_values() {
         std::unordered_set<int_t> vs;
@@ -109,9 +97,10 @@ private:
         return largest_distance;
     }
 
-    void determine_ld_automatically(const DistanceVector& dv, real_t a, real_t b, real_t required_score) {
+    void determine_ld_automatically(const DistanceVector& dv, int_t a, int_t b, real_t required_score) {
         int_t iter = 0;
-        for (m_ld_distance = (a + b) / 2.0; b - a > 2.0; m_ld_distance = (a + b) / 2.0) {
+        while (b - a > 1) {
+            m_ld_distance = (a + b) >> 1;
             real_t max_score = calculate_outlier_thresholds(dv);
             if (max_score < required_score) {
                 b = m_ld_distance;

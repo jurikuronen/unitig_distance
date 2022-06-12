@@ -17,10 +17,6 @@ public:
     DistanceVector(std::size_t sz, real_t distance_value) : m_distances(sz, Distance(distance_value)) { }
     DistanceVector(std::size_t sz, real_t distance_value, int_t count_value) : m_distances(sz, Distance(distance_value, count_value)) { }
 
-    DistanceVector(const DistanceVector& other, const std::vector<int_t>& indices) {
-        for (auto i : indices) m_distances.emplace_back(other[i]);
-    }
-
     std::vector<real_t> distances() const {
         std::vector<real_t> vector(size());
         std::transform(begin(), end(), vector.begin(), std::mem_fn(&Distance::distance));

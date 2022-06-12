@@ -13,16 +13,6 @@ public:
     Queries() = default;
     Queries(int_t queries_type) : m_queries_type(queries_type), m_largest_v(-1) { }
 
-    // Create a copy with given indices.
-    Queries(const Queries& other, const std::vector<int_t>& indices) {
-        for (auto i : indices) {
-            m_queries.emplace_back(other.v(i), other.w(i));
-            m_flags.push_back(other.flag(i));
-            m_scores.push_back(other.score(i));
-            m_distances.emplace_back(other.distance(i), other.count(i));
-        }
-    }
-
     std::size_t size() const { return m_queries.size(); }
 
     int_t queries_type() const { return m_queries_type; }
