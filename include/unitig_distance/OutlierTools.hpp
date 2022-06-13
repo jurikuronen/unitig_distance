@@ -32,7 +32,7 @@ public:
             return;
         }
         // Estimate ld distance if necessary.
-        if (m_ld_distance < 0) {
+        if (ProgramOptions::ld_distance < 0) {
             real_t largest_distance = calculate_largest_distance(dv);
             real_t min_distance = ProgramOptions::ld_distance_min;
             real_t required_score = ProgramOptions::ld_distance_score * m_largest_score;
@@ -47,6 +47,8 @@ public:
 
             determine_ld_automatically(dv, min_distance, largest_distance, required_score);
         } else {
+            m_ld_distance = ProgramOptions::ld_distance;
+
             // Use custom outlier threshold if required, otherwise calculate values with given ld distance.
             if (ProgramOptions::outlier_threshold >= 0.0) {
                 m_outlier_threshold = m_extreme_outlier_threshold = ProgramOptions::outlier_threshold;
