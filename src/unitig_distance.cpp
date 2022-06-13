@@ -57,7 +57,7 @@ int main(int argc, char** argv) {
 
     // Calculate distances in the single genome graphs if the single genome graph files were provided.
     if (ProgramOptions::has_operating_mode(OperatingMode::SGGS)) {
-        auto sgg_distances = calculate_sgg_distances(graph, search_jobs, timer);
+        const auto sgg_distances = calculate_sgg_distances(graph, search_jobs, timer);
 
         if (sgg_distances.size() == 0) return 1;
 
@@ -77,7 +77,7 @@ int main(int argc, char** argv) {
         if (ProgramOptions::verbose) PrintUtils::print_tbssasm(timer, "Calculating distances in the main graph");
 
         // Calculate distances.
-        auto graph_distances = GraphDistances(graph, timer).solve(search_jobs);
+        const auto graph_distances = GraphDistances(graph, timer).solve(search_jobs);
         timer.set_mark();
 
         ResultsWriter::output_results(ProgramOptions::out_filename(), queries, graph_distances);
