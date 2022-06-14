@@ -10,14 +10,17 @@
 // Class for storing queries read from input. Not all fields may be available.
 class Queries {
 public:
-    Queries() : m_largest_v(-1) { }
+    Queries() : m_largest_v(-1), m_queries_format(-1) { }
+    Queries(int_t queries_format) : m_largest_v(-1), m_queries_format(queries_format) { }
 
     std::size_t size() const { return m_queries.size(); }
 
     int_t largest_v() const { return m_largest_v; }
+    int_t queries_format() const { return m_queries_format; }
 
     // Queries will store distances when running in outlier tools mode.
     const DistanceVector& distances() const { return m_distances; }
+    void set_mean_distances() { m_distances.set_mean_distances(); }
 
     int_t v(std::size_t idx) const { return m_queries[idx].first; }
     int_t w(std::size_t idx) const { return m_queries[idx].second; }
@@ -46,6 +49,7 @@ private:
     DistanceVector m_distances;
 
     int_t m_largest_v;
+    int_t m_queries_format;
 
 };
 

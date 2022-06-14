@@ -2,6 +2,7 @@
 
 #include <fstream>
 #include <string>
+#include <tuple>
 #include <vector>
 
 #include "ProgramOptions.hpp"
@@ -116,6 +117,17 @@ public:
             case 5: return "v w distance flag score count";
         }
         return "invalid format";
+    }
+
+    static std::tuple<int_t, int_t, int_t, int_t> get_field_indices(int_t queries_format) {
+        bool ot_mode = ProgramOptions::operating_mode == OperatingMode::OUTLIER_TOOLS;
+
+        int_t distance_field = ot_mode ? 2 : 0;
+        int_t flag_field = queries_format == 3 || queries_format == 5 ? 3 : 0;
+        int_t score_field = queries_format > 1 ? 3 + (queries_format % 2) : 2 * (queries_format == 1);
+        int_t count_field = queries_format > 3 ? queries_format : 0;
+
+        return std::make_tuple(distance_field, flag_field, score_field, count_field);
     }
 
 private:

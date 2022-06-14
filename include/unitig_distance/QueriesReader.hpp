@@ -22,8 +22,6 @@
 class QueriesReader {
 public:
     static Queries read_queries() {
-        Queries queries;
-
         std::ifstream ifs(ProgramOptions::queries_filename);
         std::string line;
         std::getline(ifs, line);
@@ -31,17 +29,21 @@ public:
         int_t queries_format = ProgramOptions::queries_format < 0 ? Utils::deduce_queries_format(line) : ProgramOptions::queries_format;
         if (queries_format < 0) {
             std::cerr << "Could not automatically deduce queries format. Please set it with option -q [ --queries-type ] arg." << std::endl;
-            return queries;
+            return Queries();
         }
         if (ProgramOptions::operating_mode == OperatingMode::OUTLIER_TOOLS && queries_format < 4) {
             std::cerr << "Not enough columns (5 or 6 required) in queries file for outlier tools mode." << std::endl;
-            return queries;
+            return Queries();
         }
         std::cout << "Reading queries with format: " << Utils::get_queries_format_string(queries_format) << std::endl;
 
+        Queries queries(queries_format);
+
         int_t distance_field, flag_field, score_field, count_field;
-        std::tie(distance_field, flag_field, score_field, count_field) = get_field_indices(queries_format);
+        std::tie(distance_field, flag_field, score_field, count_field) = Utils::get_field_indices(queries_format);
         std::size_t n_fields = queries_format + 2 - (queries_format > 3);
+
+        if (distance_field && count_field) queries.set_mean_distances();
 
         int_t n = 0;
 
@@ -72,17 +74,6 @@ private:
     static void print_error(const std::string& line, int_t n_columns, int_t count) {
         std::cerr << "Not enough columns (" << n_columns << " required) in queries file \"" << ProgramOptions::queries_filename
                   << "\" line " << count << " \"" << line << "\". Is the file space-separated?" << std::endl;
-    }
-
-    static std::tuple<int_t, int_t, int_t, int_t> get_field_indices(int_t queries_format) {
-        bool ot_mode = ProgramOptions::operating_mode == OperatingMode::OUTLIER_TOOLS;
-
-        int_t distance_field = ot_mode ? 2 : 0;
-        int_t flag_field = queries_format == 3 || queries_format == 5 ? 3 : 0;
-        int_t score_field = queries_format > 1 ? 3 + (queries_format % 2) : 2 * (queries_format == 1);
-        int_t count_field = queries_format > 3 ? queries_format : 0;
-
-        return std::make_tuple(distance_field, flag_field, score_field, count_field);
     }
 
 };
