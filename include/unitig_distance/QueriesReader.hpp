@@ -8,8 +8,7 @@
 #include "Queries.hpp"
 #include "Utils.hpp"
 
-using po = ProgramOptions;
-
+// Class which handles reading queries. Supports process substitution input.
 class QueriesReader {
 public:
     static Queries read_queries() {
@@ -37,7 +36,7 @@ public:
 
 private:
     static void print_error(const std::string& line, int_t n_columns, int_t count) {
-        std::cerr << "Not enough columns (" << n_columns << " required) in queries file \"" << po::queries_filename
+        std::cerr << "Not enough columns (" << n_columns << " required) in queries file \"" << ProgramOptions::queries_filename
                   << "\" line " << count << " \"" << line << "\". Is the file space-separated?" << std::endl;
     }
 
@@ -47,9 +46,9 @@ private:
             print_error(line, 2, cnt);
             return false;
         }
-        int_t v = std::stoll(fields[0]) - po::queries_one_based;
-        int_t w = std::stoll(fields[1]) - po::queries_one_based;
-        queries.emplace_back(v, w);
+        int_t v = std::stoll(fields[0]) - ProgramOptions::queries_one_based;
+        int_t w = std::stoll(fields[1]) - ProgramOptions::queries_one_based;
+        queries.add_vertices(v, w);
         return true;
     }
 
@@ -59,12 +58,14 @@ private:
             print_error(line, 5, cnt);
             return false;
         }
-        int_t v = std::stoll(fields[0]) - po::queries_one_based;
-        int_t w = std::stoll(fields[1]) - po::queries_one_based;
+        int_t v = std::stoll(fields[0]) - ProgramOptions::queries_one_based;
+        int_t w = std::stoll(fields[1]) - ProgramOptions::queries_one_based;
         // Ignore SpydrPick's 3rd field.
         bool flag = std::stoi(fields[3]);
         real_t score = std::stod(fields[4]);
-        queries.emplace_back(v, w, flag, score);
+        queries.add_vertices(v, w);
+        queries.add_flag(flag);
+        queries.add_score(score);
         return true;
     }
 
@@ -74,13 +75,16 @@ private:
             print_error(line, 6, cnt);
             return false;
         }
-        int_t v = std::stoll(fields[0]) - po::queries_one_based;
-        int_t w = std::stoll(fields[1]) - po::queries_one_based;
+        int_t v = std::stoll(fields[0]) - ProgramOptions::queries_one_based;
+        int_t w = std::stoll(fields[1]) - ProgramOptions::queries_one_based;
         int_t distance = std::stoll(fields[2]);
         bool flag = std::stoi(fields[3]);
         real_t score = std::stod(fields[4]);
         int_t count = std::stoll(fields[5]);
-        queries.emplace_back(v, w, flag, score, distance, count);
+        queries.add_vertices(v, w);
+        queries.add_flag(flag);
+        queries.add_score(score);
+        queries.add_distance(distance, count);
         return true;
     }
 
