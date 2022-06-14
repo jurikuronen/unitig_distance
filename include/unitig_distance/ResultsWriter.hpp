@@ -1,6 +1,7 @@
 #pragma once
 
 #include <fstream>
+#include <numeric>
 
 #include "DistanceVector.hpp"
 #include "ProgramOptions.hpp"
@@ -11,7 +12,7 @@ class ResultsWriter {
 public:
     static void output_results(const std::string& out_filename, const Queries& queries, const DistanceVector& dv) {
         std::vector<int_t> indices(queries.size());
-        std::fill(indices.begin(), indices.end(), 0);
+        std::iota(indices.begin(), indices.end(), 0);
         output_results(out_filename, queries, dv, indices);
     }
 
