@@ -9,8 +9,9 @@ See also the project [gfa1_parser](https://github.com/jurikuronen/gfa1_parser) w
 
 - [Installation from source with a C++11 compliant compiler](#installation-from-source-with-a-c11-compliant-compiler)
 - [Input files](#input-files)
-  - [General graph](#general-graph)
-  - [Compacted de Bruijn Graph](#compacted-de-bruijn-graph)
+  - [Graph files](#graph-files)
+    - [General graph](#general-graph)
+    - [Compacted de Bruijn graph](#compacted-de-bruijn-graph)
     - [Single genome graphs](#single-genome-graphs)
   - [Distance queries file](#distance-queries-file)
 - [Usage](#usage)
@@ -30,43 +31,52 @@ make
 This will create an executable named `unitig_distance` inside the `bin` directory.
 
 ## Input files
-unitig_distance reads as input text files with **space-separated values** whose paths and any additional options should be provided as command line arguments. This section details how the input files should be prepared and provided.
+All input files for unitig_distance should be text files with **space-separated values** whose paths and any additional options are provided with command line arguments. This section details how the input files should be prepared and provided.
 
-### General Graph
+### Graph files
+#### General Graph
 The simplest graph input file for unitig_distance is an edges file (`-E [ --edges-file ] arg`) where lines should have the format
 ```
 v w (weight)
 ```
-for vertices `v` and `w` connected by an edge with weight `weight`. The `weight` field is optional and defaults to the value 1.0. The vertices must be sequentially mapped starting from 0 or 1 (`-1g [ --graphs-one-based ]`).
+for vertices `v` and `w` connected by an edge with weight `weight`. The `weight` column is optional and defaults to the value 1.0. The vertices must be sequentially mapped starting from 0 or 1 (`-1g [ --graphs-one-based ]`).
 
-### Compacted de Bruijn Graph
+#### Compacted de Bruijn Graph
 To construct a compacted de Bruijn graph, unitig_distance needs to know the value of the k-mer length `k` (`-k [ --k-mer-length ] arg`) and requires a separate unitigs file (`-U [ --unitigs-file ] arg`) where each line has the format
 ```
 id sequence
 ```
-where `sequence` is the unitig's sequence. The unitigs should be in the correct order with respect to the vertex mapping. The field `id` is not used by unitig_distance, but is required to retain compatibility with other programs. The unitig `sequence` together with the k-mer length `k` will be used to determine self-edge weights.
+where `sequence` is the unitig's sequence. The unitigs should be in the correct order with respect to the vertex mapping. The column `id` is not used by unitig_distance, but is required to retain compatibility with other programs. The unitig `sequence` together with the k-mer length `k` will be used to determine self-edge weights.
 
 The lines in the edges file (`-E [ --edges-file ] arg`) should have the extended format
 ```
 v w edge_type (overlap)
 ```
-where `v` and `w` correspond to distinct unitigs (according to the order in the unitigs file) which are connected according to the `edge_type` (FF, RR, FR or RF, indicating the overlap type of the forward/reverse complement sequences). The `overlap` field is optional and mostly used to distinguish between `k-1`-overlapping edges (default) and `0`-overlapping edges. Edges of the latter type are skipped in unitig_distance, since they often correspond to read errors in the genome sequences.
+where `v` and `w` correspond to distinct unitigs (according to the order in the unitigs file) which are connected according to the `edge_type` (FF, RR, FR or RF, indicating the overlap type of the forward/reverse complement sequences). The `overlap` column is optional and mostly used to distinguish between `k-1`-overlapping edges (default) and `0`-overlapping edges. Edges of the latter type are skipped in unitig_distance, since they often correspond to read errors in the genome sequences.
 
 #### Single genome graphs
-After providing the necessary files to construct a [compacted de Bruijn graph](#compacted-de-bruijn-graph), unitig_distance can also construct all the individual *single genome graphs* that compose the full graph. Each single genome graph requires a similar edges file as the full compacted de Bruijn graph. All such edge file paths should be collected in a single genome graph paths file (`-S [ --sgg-paths-file ] arg`) with one single genome graph edges file path per line. Distance calculation can be restricted to the single genome graphs only (`-r [ --run-sggs-only]`).
+After providing the necessary files to construct a [compacted de Bruijn graph](#compacted-de-bruijn-graph), unitig_distance can also construct all the individual *single genome graphs* that compose the full graph. Each single genome graph requires a similar edges file as the full compacted de Bruijn graph. All such edge file paths should be collected in a single genome graph paths file (`-S [ --sgg-paths-file ] arg`) with one single genome graph edges file path per line. In the distance calculations, unitig_distance will report the mean distance across the single genome graphs. Distance calculation can also be restricted to the single genome graphs only (`-r [ --run-sggs-only]`).
 
 ### Distance queries file
-The simplest format for the queries file (`-Q [ --queries-file ] arg`) is a file where each line has the format
+The queries file (`-Q [ --queries-file ] arg`) may use one of the six input line formats below:
 ```
-v w
+format_id       input_line_format                   output_line_format
+0               v w                                 v w distance (count)
+1               v w score                           v w distance score (count)
+2               v w distance score                  v w distance score (count)
+3               v w distance flag score             v w distance flag score (count)
+4               v w distance score count            v w distance score (count)
+5               v w distance flag score count       v w distance flag score (count)
 ```
-that is, each line is a distance query for vertices `v` and `w`. The vertices in the distance query must be sequentially mapped starting from 0 or 1 (`-1q [ --queries-one-based ]`). **Note: the distance queries file can use 1-based numbering for the vertices even if the graph files do not.**
+Each line is a distance query for vertices `v` and `w` and format 0 is the simplest input type. For each vertex pair, unitig_distance will calculate their distance and optionally, in the case of single genome graphs, the *count* of single genome graphs where the query's vertex pair is connected.
 
-If the distance queries file is the output of a program such as [SpydrPick](https://github.com/santeripuranen/SpydrPick) that has calculated the top pairwise scores for a set of unitig pairs, unitig_distance assumes that the line format is
-```
-v w distance flag score
-```
-where the third column `distance` will be replaced by unitig_distance, fourth column is is a Boolean value and the fifth `score` column will be used to calculate some statistics. The `flag` and `score` fields will be written back to unitig_distance's output files &ndash; only the `distance` field will be replaced.
+Formats 1 to 5 are meant for advanced inputs that are the output of another program such as [SpydrPick](https://github.com/santeripuranen/SpydrPick) that has calculated the top pairwise scores for a set of unitig pairs. Then the input file may already contain a distance column (whose values will be corrected and replaced by unitig_distance), a flag column and a score column. The flag column is stored but ignored, but the score column may be used in outlier determination. All columns will be retained in the output files, but pay attention to the output line format.
+
+Formats 4 to 5 are typically used when unitig_distance's output is re-used as input for the outlier tools mode (see [Usage - Determining outliers from supplied scores](#determining-outliers-from-supplied-scores)).
+
+unitig_distance will try to automatically determine the queries format. It may also be specified manually with the `-q [ --queries-format ] arg` option, where `arg` should take one of the `format_id`s.
+
+If the vertices are 1-based, please supply the option (`-1q [ --queries-one-based ]). **Note: the distance queries file can use 1-based numbering for the vertices even if the graph files do not.**
 
 Restricting the number of queries to be read from the queries file can be done with `-n [ --n-queries ] arg (=inf)`.
 
@@ -92,6 +102,7 @@ Distance queries:
   -Q  [ --queries-file ] arg                  Path to queries file.
   -1q [ --queries-one-based ]                 Queries file uses one-based numbering.
   -n  [ --n-queries ] arg (=inf)              Number of queries to read from the queries file.
+  -q  [ --queries-format ] arg (-1)           Set queries format manually (0..5).
   -d  [ --max-distance ] arg (=inf)           Maximum allowed graph distance (for constraining the searches).
                                               
 Tools for determining outliers:               
@@ -147,6 +158,8 @@ unitig_distance's output follows the following line format:
 v w distance (flag) (score) (count)
 ```
 The `flag` and `score` columns are written if the original queries file contained them. The `count` column is written if the `distance` column refers to single genome graph mean distances (see [Usage - Calculating mean distances in single genome graphs](#calculating-mean-distances-in-single-genome-graphs)).
+
+See [Input files - Distance queries file](#distance-queries-file) for an informative table.
 
 
 ### Determining outliers from supplied scores
