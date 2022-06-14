@@ -119,6 +119,8 @@ public:
         return "invalid format";
     }
 
+    static std::size_t get_queries_n_fields(int_t queries_format) { return queries_format + 2 - (queries_format > 3); }
+
     static std::tuple<int_t, int_t, int_t, int_t> get_field_indices(int_t queries_format) {
         bool ot_mode = ProgramOptions::operating_mode == OperatingMode::OUTLIER_TOOLS;
 

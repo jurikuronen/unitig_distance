@@ -41,7 +41,7 @@ public:
 
         int_t distance_field, flag_field, score_field, count_field;
         std::tie(distance_field, flag_field, score_field, count_field) = Utils::get_field_indices(queries_format);
-        std::size_t n_fields = queries_format + 2 - (queries_format > 3);
+        std::size_t n_fields = Utils::get_queries_n_fields(queries_format);
 
         if (distance_field && count_field) queries.set_mean_distances();
 
