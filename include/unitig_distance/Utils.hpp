@@ -86,6 +86,38 @@ public:
         return true;
     }
 
+    /*
+        Attempts to automatically deduce the format the queries file is using.
+        -1: invalid format.
+         0: v w
+         1: v w s
+         2: v w d s
+         3: v w d f s
+         4: v w d s c
+         5: v w d f s c
+    */
+    static int_t deduce_queries_format(const std::string& line) {
+        auto fields_sz = get_fields(line).size();
+        bool ot_mode = ProgramOptions::operating_mode == OperatingMode::OUTLIER_TOOLS;
+        if (fields_sz < 2 || fields_sz > 6) return -1;
+        if (fields_sz <= 4) return fields_sz - 2;
+        if (fields_sz == 6) return 5;
+        if (ot_mode) return 4; // Count field should be available only in outlier tools mode.
+        return 3;
+    }
+
+    static std::string get_queries_format_string(int_t queries_format) {
+        switch (queries_format) {
+            case 0: return "v w";
+            case 1: return "v w score";
+            case 2: return "v w distance score";
+            case 3: return "v w distance flag score";
+            case 4: return "v w distance score count";
+            case 5: return "v w distance flag score count";
+        }
+        return "invalid format";
+    }
+
 private:
 
 };

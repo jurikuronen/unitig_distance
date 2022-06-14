@@ -11,6 +11,7 @@ std::string ProgramOptions::sggs_filename = "";
 std::string ProgramOptions::out_stem = "out";
 int_t ProgramOptions::k = 0; 
 int_t ProgramOptions::n_queries = INT_T_MAX;
+int_t ProgramOptions::queries_format = -1;
 real_t ProgramOptions::max_distance = REAL_T_MAX;
 int_t ProgramOptions::n_threads = 1; 
 int_t ProgramOptions::sgg_count_threshold = 10;

@@ -28,6 +28,7 @@ public:
         set_value(out_stem, "-o", "--output-stem");
         set_value(k, "-k", "--k-mer-length");
         set_value(n_queries, "-n", "--n-queries");
+        set_value(queries_format, "-q", "--queries-format");
         set_value(max_distance, "-d", "--max-distance");
         set_value(n_threads, "-t", "--threads");
         set_value(sgg_count_threshold, "-Cc", "--sgg-count-threshold");
@@ -83,6 +84,7 @@ public:
         double_push_back(arguments, "  --queries-file", queries_filename);
         double_push_back(arguments, "  --queries-one-based", queries_one_based ? "TRUE" : "FALSE");
         double_push_back(arguments, "  --n-queries", n_queries == INT_T_MAX ? "ALL" : std::to_string(n_queries));
+        double_push_back(arguments, "  --queries-format", queries_format < 0 ? "AUTOM" : std::to_string(queries_format));
         double_push_back(arguments, "  --max-distance", max_distance == REAL_T_MAX ? "INF" : std::to_string(max_distance));
         if (has_operating_mode(OperatingMode::OUTLIER_TOOLS)) {
             double_push_back(arguments, "  --output-outliers", output_outliers ? "TRUE" : "FALSE");
@@ -113,6 +115,7 @@ public:
     static std::string out_stem;
     static int_t k;
     static int_t n_queries;
+    static int_t queries_format;
     static real_t max_distance;
     static int_t n_threads;
     static int_t sgg_count_threshold;
@@ -153,6 +156,10 @@ private:
             std::cerr << "Missing queries filename.\n";
             ok = false;
         }
+        if (queries_format > 5) {
+            std::cerr << "Queries format must be less than 6.\n";
+            ok = false;
+        }
         // Normal operating modes.
         if (operating_mode != OperatingMode::OUTLIER_TOOLS) {
             if (edges_filename.empty()) {
@@ -161,6 +168,12 @@ private:
             }
             if (has_operating_mode(OperatingMode::CDBG) && k <= 0) {
                 std::cerr << "Missing k-mer length.\n";
+                ok = false;
+            }
+        } else {
+            // Correct queries format required, i.e. 4 or 5.
+            if (queries_format >= 0 && queries_format < 4) {
+                std::cerr << "Queries format must be 4 or 5 in outlier tools mode." << std::endl;
                 ok = false;
             }
         }
@@ -206,6 +219,7 @@ private:
             "  -Q  [ --queries-file ] arg", "Path to queries file.",
             "  -1q [ --queries-one-based ]", "Queries file uses one-based numbering.",
             "  -n  [ --n-queries ] arg (=inf)", "Number of queries to read from the queries file.",
+            "  -q  [ --queries-format ] arg (-1)", "Set queries format manually (0..5).",
             "  -d  [ --max-distance ] arg (=inf)", "Maximum allowed graph distance (for constraining the searches).",
             "", "",
             "Tools for determining outliers:", "",
