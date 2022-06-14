@@ -31,7 +31,7 @@ int main(int argc, char** argv) {
 
     // Read queries.
     const Queries queries = QueriesReader::read_queries();
-    if (queries.size() == 0) return fail_with_error("Failed to read queries.");
+    if (queries.size() == 0) return fail_with_error("Error: Failed to read queries.");
     if (ProgramOptions::verbose) PrintUtils::print_tbss_tsmasm(timer, "Read", Utils::neat_number_str(queries.size()), "lines from queries file");
 
     // Set up outlier tools.
@@ -49,7 +49,7 @@ int main(int argc, char** argv) {
 
     // Construct the graph according to operating mode.
     Graph graph = GraphBuilder::build_correct_graph();
-    if (graph.size() == 0) return fail_with_error("Failed to construct main graph.");
+    if (graph.size() == 0) return fail_with_error("Error: Failed to construct main graph.");
     if (ProgramOptions::verbose) {
         PrintUtils::print_tbss_tsmasm_noendl(timer, "Constructed main graph");
         graph.print_details();

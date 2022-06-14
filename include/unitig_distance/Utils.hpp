@@ -51,25 +51,25 @@ public:
     static bool sanity_check_input_files() {
         if (ProgramOptions::operating_mode != OperatingMode::OUTLIER_TOOLS) {
             if (!Utils::file_is_good(ProgramOptions::edges_filename)) {
-                std::cerr << "Can't open " << ProgramOptions::edges_filename << std::endl;
+                std::cerr << "Error: Can't open " << ProgramOptions::edges_filename << std::endl;
                 return false;
             }
 
             if (ProgramOptions::has_operating_mode(OperatingMode::CDBG)) {
                 if (!Utils::file_is_good(ProgramOptions::unitigs_filename)) {
-                    std::cerr << "Can't open " << ProgramOptions::unitigs_filename << std::endl;
+                    std::cerr << "Error: Can't open " << ProgramOptions::unitigs_filename << std::endl;
                     return false;
                 }
 
                 if (ProgramOptions::has_operating_mode(OperatingMode::SGGS)) {
                     if (!Utils::file_is_good(ProgramOptions::sggs_filename)) {
-                        std::cerr << "Can't open " << ProgramOptions::sggs_filename << std::endl;
+                        std::cerr << "Error: Can't open " << ProgramOptions::sggs_filename << std::endl;
                         return false;
                     }
                     std::ifstream ifs(ProgramOptions::sggs_filename);
                     for (std::string path_edges; std::getline(ifs, path_edges); ) {
                         if (!Utils::file_is_good(path_edges)) {
-                            std::cerr << "Can't open " << path_edges << std::endl;
+                            std::cerr << "Error: Can't open " << path_edges << std::endl;
                             return false;
                         }
                     }
@@ -79,7 +79,7 @@ public:
 
         if (!ProgramOptions::queries_filename.empty()) {
             if (!Utils::file_is_good(ProgramOptions::queries_filename)) {
-                std::cerr << "Can't open " << ProgramOptions::queries_filename << std::endl;
+                std::cerr << "Error: Can't open " << ProgramOptions::queries_filename << std::endl;
                 return false;
             }
         }

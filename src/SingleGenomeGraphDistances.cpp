@@ -25,7 +25,7 @@ DistanceVector calculate_sgg_distances(const Graph& graph, const SearchJobs& sea
     std::size_t n_sggs = path_edge_files.size(), batch_size = ProgramOptions::n_threads;
 
     if (n_sggs == 0) {
-        std::cerr << "Couldn't read single genome graph files." << std::endl;
+        std::cerr << "Error: Couldn't read single genome graph files." << std::endl;
         return DistanceVector();
     }
 
@@ -64,7 +64,7 @@ DistanceVector calculate_sgg_distances(const Graph& graph, const SearchJobs& sea
 
         for (const auto& sg_graph : sg_graphs) {
             if (sg_graph.size() == 0) {
-                std::cerr << "Failed to construct single genome graph." << std::endl;
+                std::cerr << "Error: Failed to construct single genome graph." << std::endl;
                 return DistanceVector();
             }
         }

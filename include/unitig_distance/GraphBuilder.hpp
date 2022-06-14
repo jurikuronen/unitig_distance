@@ -21,7 +21,7 @@ public:
         for (std::string line; std::getline(ifs, line); ) {
             auto fields = Utils::get_fields(line);
             if (fields.size() < 2) {
-                std::cerr << "Wrong number of fields in graph edges file: " << edges_filename << std::endl;
+                std::cerr << "Error: Wrong number of fields in graph edges file: " << edges_filename << std::endl;
                 return Graph();
             }
             int_t v = std::stoll(fields[0]) - one_based;
@@ -48,7 +48,7 @@ public:
         for (std::string line; std::getline(ifs_unitigs, line); ) {
             auto fields = Utils::get_fields(line);
             if (fields.size() < 2) {
-                std::cerr << "Wrong number of fields in compacted de Bruijn graph unitigs file: " << unitigs_filename << std::endl;
+                std::cerr << "Error: Wrong number of fields in compacted de Bruijn graph unitigs file: " << unitigs_filename << std::endl;
                 return Graph();
             }
             real_t self_edge_weight = (real_t) fields[1].size() - kmer_length;
@@ -65,7 +65,7 @@ public:
         for (std::string line; std::getline(ifs_edges, line); ) {
             auto fields = Utils::get_fields(line);
             if (fields.size() < 3) {
-                std::cerr << "Wrong number of fields in compacted de Bruijn graph edges file:" << edges_filename << std::endl;
+                std::cerr << "Error: Wrong number of fields in compacted de Bruijn graph edges file:" << edges_filename << std::endl;
                 return Graph();
             }
             bool good_overlap = fields.size() < 4 || std::stoll(fields[3]) != 0;
@@ -87,7 +87,7 @@ public:
         for (std::string line; std::getline(ifs_edges, line); ) {
             auto fields = Utils::get_fields(line);
             if (fields.size() < 3) {
-                std::cout << "Wrong number of fields in single genome graph edges file: " << edges_filename << std::endl;
+                std::cout << "Error: Wrong number of fields in single genome graph edges file: " << edges_filename << std::endl;
                 return Graph();
             }
             bool good_overlap = fields.size() < 4 || std::stoll(fields[3]) != 0;
@@ -114,7 +114,7 @@ public:
     static Graph build_correct_graph() {
         if (ProgramOptions::has_operating_mode(OperatingMode::GENERAL)) return build_ordinary_graph(ProgramOptions::edges_filename, ProgramOptions::graphs_one_based);
         if (ProgramOptions::has_operating_mode(OperatingMode::CDBG)) return build_cdbg(ProgramOptions::unitigs_filename, ProgramOptions::edges_filename, ProgramOptions::k, ProgramOptions::graphs_one_based);
-        std::cout << "Program logic error." << std::endl;
+        std::cout << "Error: Program logic error." << std::endl;
         return Graph();
     }
 

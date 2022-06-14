@@ -153,27 +153,27 @@ private:
         bool ok = true;
         // Always require queries.
         if (queries_filename.empty()) {
-            std::cerr << "Missing queries filename.\n";
+            std::cerr << "Error: Missing queries filename.\n";
             ok = false;
         }
         if (queries_format > 5) {
-            std::cerr << "Queries format must be less than 6.\n";
+            std::cerr << "Error: Queries format must be less than 6.\n";
             ok = false;
         }
         // Normal operating modes.
         if (operating_mode != OperatingMode::OUTLIER_TOOLS) {
             if (edges_filename.empty()) {
-                std::cerr << "Missing edges filename.\n";
+                std::cerr << "Error: Missing edges filename.\n";
                 ok = false;
             }
             if (has_operating_mode(OperatingMode::CDBG) && k <= 0) {
-                std::cerr << "Missing k-mer length.\n";
+                std::cerr << "Error: Missing k-mer length.\n";
                 ok = false;
             }
         } else {
             // Correct queries format required, i.e. 4 or 5.
             if (queries_format >= 0 && queries_format < 4) {
-                std::cerr << "Queries format must be 4 or 5 in outlier tools mode." << std::endl;
+                std::cerr << "Error: Queries format must be 4 or 5 in outlier tools mode." << std::endl;
                 ok = false;
             }
         }

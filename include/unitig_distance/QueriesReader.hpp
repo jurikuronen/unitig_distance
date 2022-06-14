@@ -28,11 +28,11 @@ public:
 
         int_t queries_format = ProgramOptions::queries_format < 0 ? Utils::deduce_queries_format(line) : ProgramOptions::queries_format;
         if (queries_format < 0) {
-            std::cerr << "Could not automatically deduce queries format. Please set it with option -q [ --queries-type ] arg." << std::endl;
+            std::cerr << "Error: Could not automatically deduce queries format. Please set it with option -q [ --queries-type ] arg." << std::endl;
             return Queries();
         }
         if (ProgramOptions::operating_mode == OperatingMode::OUTLIER_TOOLS && queries_format < 4) {
-            std::cerr << "Not enough columns (5 or 6 required) in queries file for outlier tools mode." << std::endl;
+            std::cerr << "Error: Not enough columns (5 or 6 required) in queries file for outlier tools mode." << std::endl;
             return Queries();
         }
         std::cout << "Reading queries with format: " << Utils::get_queries_format_string(queries_format) << std::endl;
@@ -72,7 +72,7 @@ public:
 
 private:
     static void print_error(const std::string& line, int_t n_columns, int_t count) {
-        std::cerr << "Not enough columns (" << n_columns << " required) in queries file \"" << ProgramOptions::queries_filename
+        std::cerr << "Error: Not enough columns (" << n_columns << " required) in queries file \"" << ProgramOptions::queries_filename
                   << "\" line " << count << " \"" << line << "\". Is the file space-separated?" << std::endl;
     }
 
