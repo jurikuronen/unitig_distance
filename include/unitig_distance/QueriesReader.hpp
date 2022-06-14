@@ -34,7 +34,7 @@ public:
             return queries;
         }
         if (ProgramOptions::operating_mode == OperatingMode::OUTLIER_TOOLS && queries_format < 4) {
-            std::cerr << "Queries format must be 4 or 5 in outlier tools mode." << std::endl;
+            std::cerr << "Not enough columns (5 or 6 required) in queries file for outlier tools mode." << std::endl;
             return queries;
         }
         std::cout << "Reading queries with format: " << Utils::get_queries_format_string(queries_format) << std::endl;
