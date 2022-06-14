@@ -1,7 +1,7 @@
 # unitig_distance
 unitig_distance is a command line program that calculates shortest path distances in a compacted de Bruijn graph which has been constructed from genome sequences. Since such graphs tend to be very large and do not admit straightforward decompositions, unitig_distance aims to speed up the calculations by smart arrangement of the graph search jobs and through parallel operation.
 
-unitig_distance can be used together with programs such as [SpydrPick](https://github.com/santeripuranen/SpydrPick) that calculate pairwise scores for the unitigs, but cannot calculate their distances in the underlying compacted de Bruijn graph. For such use cases, see [Input files - Distance queries file](#distance-queries-file), [Usage - Calculating distances in compacted de Bruijn graphs](#calculating-distances-in-compacted-de-bruijn-graphs) and [Usage - Determining outliers from supplied scores](#determining-outliers-from-supplied-scores).
+unitig_distance can be used together with programs such as [SpydrPick](https://github.com/santeripuranen/SpydrPick) that calculate pairwise scores for the unitigs, but cannot calculate their distances in the underlying compacted de Bruijn graph. For such use cases, see [Input files - Distance queries file](#distance-queries-file), [Usage - Calculating distances in a compacted de Bruijn graph](#calculating-distances-in-a-compacted-de-bruijn-graph) and [Usage - Determining outliers from supplied scores](#determining-outliers-from-supplied-scores).
 
 See also the project [gfa1_parser](https://github.com/jurikuronen/gfa1_parser) which can be used to create suitable input files for unitig_distance from a [Graphical Fragment Assembly (GFA) file](https://github.com/GFA-spec/GFA-spec/blob/master/GFA1.md).
 
@@ -76,7 +76,7 @@ Formats 4 to 5 are typically used when unitig_distance's output is re-used as in
 
 unitig_distance will try to automatically determine the queries format. It may also be specified manually with the `-q [ --queries-format ] arg` option, where `arg` should take one of the `format_id`s.
 
-If the vertices are 1-based, please supply the option (`-1q [ --queries-one-based ]). **Note: the distance queries file can use 1-based numbering for the vertices even if the graph files do not.**
+If the vertices are 1-based, please supply the option (`-1q [ --queries-one-based ]`). **Note: the distance queries file can use 1-based numbering for the vertices even if the graph files do not.**
 
 Restricting the number of queries to be read from the queries file can be done with `-n [ --n-queries ] arg (=inf)`.
 
