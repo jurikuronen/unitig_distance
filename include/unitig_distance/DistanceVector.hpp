@@ -10,7 +10,7 @@
 class DistanceVector {
 public:
     DistanceVector() = default;
-    DistanceVector(const DistanceVector& other) = delete;
+    DistanceVector(const DistanceVector& other) = default;
     DistanceVector(DistanceVector&& other) = default;
 
     DistanceVector(std::size_t sz) : m_distances(sz), m_mean_distances(false) { }

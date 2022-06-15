@@ -26,11 +26,14 @@ public:
     }
 
     // Estimate outlier thresholds. Also estimate linkage disequilibrium distance if ld_distance < 0.
-    void determine_and_output_outliers(const DistanceVector& dv, const std::string& outliers_filename, const std::string& outlier_stats_filename) {
+    void determine_and_output_outliers(const DistanceVector& distances, const std::string& outliers_filename, const std::string& outlier_stats_filename) {
         if (!m_queries.extended_format()) {
             std::cout << "    OutlierTools: No scores for unitig pairs available. Cannot determine outliers." << std::endl;
             return;
         }
+
+        DistanceVector dv = fix_distances(distances);
+
         // Estimate ld distance if necessary.
         if (ProgramOptions::ld_distance < 0) {
             real_t largest_distance = calculate_largest_distance(dv);
@@ -83,6 +86,12 @@ private:
     real_t m_largest_score;
     real_t m_outlier_threshold;
     real_t m_extreme_outlier_threshold;
+
+    DistanceVector fix_distances(const DistanceVector& distances) {
+        DistanceVector dv = distances;
+        for (auto& d : dv) d.set_distance(Utils::fixed_distance(d, ProgramOptions::max_distance));
+        return dv;
+    }
 
     void calculate_query_values() {
         std::unordered_set<int_t> vs;

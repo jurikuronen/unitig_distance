@@ -11,6 +11,9 @@ public:
     real_t distance() const { return m_distance; }
     int_t count() const { return m_count; }
 
+    void set_distance(real_t distance) { m_distance = distance; }
+    void set_count(int_t count) { m_count = count; }
+
     Distance operator+(const Distance& other) {
         return Distance((distance() * count() + other.distance() * other.count()) / (count() + other.count()), count() + other.count());
     }
