@@ -23,9 +23,14 @@ public:
     Graph() : Graph(false, false) { }
     ~Graph() = default;
     Graph(const Graph& other) = default;
-    Graph(Graph&& other) : m_adj(std::move(other.m_adj)), m_one_based(other.m_one_based), m_two_sided(other.m_two_sided) { }
+    Graph(Graph&& other)
+    : m_adj(std::move(other.m_adj)),
+      m_self_edge_weights(std::move(other.m_self_edge_weights)),
+      m_one_based(other.m_one_based),
+      m_two_sided(other.m_two_sided)
+    { }
 
-    Graph(bool one_based, bool two_sided = false) : m_one_based(one_based), m_two_sided(two_sided) { }
+    Graph(bool one_based, bool two_sided = false) : m_adj(), m_self_edge_weights(), m_one_based(one_based), m_two_sided(two_sided) { }
 
     bool contains(int_t v) const { return v < (int_t) m_adj.size(); }
 
@@ -47,6 +52,13 @@ public:
         }
     }
 
+    void add_two_sided_node(real_t self_edge_weight) {
+        add_node();
+        add_node();
+        add_edge(size() - 2, size() - 1, self_edge_weight);
+        m_self_edge_weights.push_back(self_edge_weight);
+    }
+
     bool has_edge(int_t v, int_t w) const { return find_edge(v, w) != end(v); }
 
     void remove_edge(int_t v, int_t w) {
@@ -56,12 +68,6 @@ public:
             auto it2 = find_edge(w, v);
             (*this)[w].erase(it2);
         }
-    }
-
-    real_t max_edge_weight(int_t v) const {
-        real_t max_weight = 0.0;
-        for (auto it = begin(v); it != end(v); ++it) max_weight = std::max(max_weight, it->second);
-        return max_weight;
     }
 
     void disconnect_node(int_t v) {
@@ -79,7 +85,8 @@ public:
     std::size_t true_size() const { return size() / 2; }
     int_t left_node(int_t v) const { return v * 2; }
     int_t right_node(int_t v) const { return v * 2 + 1; }
-
+    int_t other_side(int_t v) const { return v ^ 1; }
+    real_t get_self_edge_weight(int_t v) const { return two_sided() ? m_self_edge_weights[v / 2] : 0.0; }
     bool one_based() const { return m_one_based; }
     bool two_sided() const { return m_two_sided; }
 
@@ -182,6 +189,9 @@ public:
 
 private:
     std::vector<edges_t> m_adj;
+
+    // Filled if graph nodes are two-sided.
+    std::vector<real_t> m_self_edge_weights;
 
     bool m_one_based;
     bool m_two_sided;

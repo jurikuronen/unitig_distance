@@ -56,9 +56,7 @@ public:
                 std::cerr << "self_edge_weight = " << self_edge_weight << " < 0.0 -- wrong k-mer length?" << std::endl;
                 return Graph();
             }
-            graph.add_node();
-            graph.add_node();
-            graph.add_edge(graph.size() - 2, graph.size() - 1, self_edge_weight);
+            graph.add_two_sided_node(self_edge_weight);
         }
 
         std::ifstream ifs_edges(edges_filename);
@@ -104,8 +102,8 @@ public:
             int_t v, w;
             std::tie(v, w) = edge;
             // Get self-edges from the original graph.
-            if (graph.degree(v) == 0) graph.add_edge(v, v ^ 1, cdbg.max_edge_weight(v));
-            if (graph.degree(w) == 0) graph.add_edge(w, w ^ 1, cdbg.max_edge_weight(w));
+            if (graph.degree(v) == 0) graph.add_edge(v, graph.other_side(v), cdbg.get_self_edge_weight(v));
+            if (graph.degree(w) == 0) graph.add_edge(w, graph.other_side(w), cdbg.get_self_edge_weight(w));
             graph.add_edge(v, w, 1.0); // Weight 1.0 by definition.
         }
         return graph;
