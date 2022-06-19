@@ -119,15 +119,41 @@ public:
         return "invalid format";
     }
 
-    static std::size_t get_queries_n_fields(int_t queries_format) { return queries_format + 2 - (queries_format > 3); }
+    static std::size_t get_queries_n_fields(int_t queries_format) {
+        switch (queries_format) {
+            case 0: return 2;
+            case 1: return 3;
+            case 2: return 4;
+            case 3: return 5;
+            case 4: return 5;
+            case 5: return 6;
+        }
+        return 0;
+    }
 
     static std::tuple<int_t, int_t, int_t, int_t> get_field_indices(int_t queries_format) {
         bool ot_mode = ProgramOptions::operating_mode == OperatingMode::OUTLIER_TOOLS;
 
         int_t distance_field = ot_mode ? 2 : 0;
-        int_t flag_field = queries_format == 3 || queries_format == 5 ? 3 : 0;
-        int_t score_field = queries_format > 1 ? 3 + (queries_format % 2) : 2 * (queries_format == 1);
-        int_t count_field = queries_format > 3 ? queries_format : 0;
+        int_t flag_field = 0;
+        int_t score_field = 0;
+        int_t count_field = 0;
+
+        if (queries_format == 1) {
+            score_field = 2;
+        } else if (queries_format == 2) {
+            score_field = 3;
+        } else if (queries_format == 3) {
+            flag_field = 3;
+            score_field = 4;
+        } else if (queries_format == 4) {
+            score_field = 3;
+            count_field = 4;
+        } else if (queries_format == 5) {
+            flag_field = 3;
+            score_field = 4;
+            count_field = 5;
+        }
 
         return std::make_tuple(distance_field, flag_field, score_field, count_field);
     }
