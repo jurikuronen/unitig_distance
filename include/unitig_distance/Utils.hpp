@@ -100,11 +100,14 @@ public:
     static int_t deduce_queries_format(const std::string& line) {
         auto fields_sz = get_fields(line).size();
         bool ot_mode = ProgramOptions::operating_mode == OperatingMode::OUTLIER_TOOLS;
-        if (fields_sz < 2 || fields_sz > 6) return -1;
-        if (fields_sz <= 4) return fields_sz - 2;
-        if (fields_sz == 6) return 5;
-        if (ot_mode) return 4; // Count field should be available only in outlier tools mode.
-        return 3;
+        switch (fields_sz) {
+            case 2: return 0;
+            case 3: return 1;
+            case 4: return 2;
+            case 5: return (ot_mode ? 4 : 3);
+            case 6: return 5;
+        }
+        return -1;
     }
 
     static std::string get_queries_format_string(int_t queries_format) {
