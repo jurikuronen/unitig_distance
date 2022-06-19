@@ -78,6 +78,10 @@ public:
 
     // Construct an edge-induced subgraph from the compacted de Bruijn graph. Will be used to construct a single genome graph.
     static Graph build_cdbg_subgraph(const Graph& cdbg, const std::string& edges_filename) {
+        if (!cdbg.two_sided()) {
+            std::cerr << "Error: build_cdbg_subgraph called with non-two-sided graph." << std::endl;
+            return Graph();
+        }
         Graph graph(cdbg.one_based(), false);
         std::vector<std::pair<int_t, int_t>> edges;
         std::ifstream ifs_edges(edges_filename);
