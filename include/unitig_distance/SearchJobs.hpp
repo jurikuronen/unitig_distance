@@ -10,6 +10,7 @@
 // Distance queries for node v.
 class SearchJob {
 public:
+    SearchJob() = delete;
     SearchJob(int_t v) : m_v(v)  { }
     const int_t v() const { return m_v; }
     const std::vector<int_t>& ws() const { return m_ws; }
@@ -30,6 +31,7 @@ private:
 // Clean up later.
 class SearchJobs {
 public:
+    SearchJobs() = delete;
     SearchJobs(const Queries& queries) : m_n_queries(queries.size()) {
         auto sz = queries.largest_v() + 1;
         // Store queries by vertex, storing also the original indices.

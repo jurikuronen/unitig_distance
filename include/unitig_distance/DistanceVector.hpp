@@ -9,7 +9,7 @@
 
 class DistanceVector {
 public:
-    DistanceVector() = default;
+    DistanceVector() : m_mean_distances(false) { }
     DistanceVector(const DistanceVector& other) = default;
     DistanceVector(DistanceVector&& other) = default;
 

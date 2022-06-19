@@ -20,6 +20,7 @@ DistanceVector calculate_sgg_distances(const Graph& graph, const SearchJobs& sea
 
 class SingleGenomeGraphDistances {
 public:
+    SingleGenomeGraphDistances() = delete;
     SingleGenomeGraphDistances(const SingleGenomeGraph& graph) : m_graph(graph), m_n_threads(ProgramOptions::n_threads), m_max_distance(ProgramOptions::max_distance) { }
 
     // Calculate distances for single genome graphs.

@@ -20,7 +20,10 @@ public:
       m_timer(timer),
       m_ld_distance(ProgramOptions::ld_distance),
       m_outlier_threshold(ProgramOptions::outlier_threshold),
-      m_extreme_outlier_threshold(ProgramOptions::outlier_threshold)
+      m_extreme_outlier_threshold(ProgramOptions::outlier_threshold),
+      m_largest_score(0.0),
+      m_n_vs(0),
+      m_v_coverage(0)
     {
         if (ProgramOptions::has_operating_mode(OperatingMode::OUTLIER_TOOLS) && queries.extended_format()) calculate_query_values();
     }
@@ -80,12 +83,12 @@ private:
     const Queries& m_queries;
     Timer& m_timer;
 
-    int_t m_n_vs;
-    int_t m_v_coverage;
     real_t m_ld_distance;
-    real_t m_largest_score;
     real_t m_outlier_threshold;
     real_t m_extreme_outlier_threshold;
+    real_t m_largest_score;
+    int_t m_n_vs;
+    int_t m_v_coverage;
 
     DistanceVector fix_distances(const DistanceVector& distances) {
         DistanceVector dv = distances;

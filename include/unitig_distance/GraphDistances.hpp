@@ -17,6 +17,7 @@
 
 class GraphDistances {
 public:
+    GraphDistances() = delete;
     GraphDistances(const Graph& graph, const Timer& timer)
     : m_graph(graph),
       m_timer(timer),

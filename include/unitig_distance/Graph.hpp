@@ -20,7 +20,7 @@ using adj_const_itr_t = typename std::vector<edges_t>::const_iterator;
 
 class Graph {
 public:
-    Graph() = default;
+    Graph() : Graph(false, false) { }
     ~Graph() = default;
     Graph(const Graph& other) = default;
     Graph(Graph&& other) : m_adj(std::move(other.m_adj)), m_one_based(other.m_one_based), m_two_sided(other.m_two_sided) { }
