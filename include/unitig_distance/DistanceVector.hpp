@@ -36,7 +36,7 @@ public:
     std::size_t size() const { return m_distances.size(); }
 
     bool storing_mean_distances() const { return m_mean_distances; }
-    void set_mean_distances() { m_mean_distances = true; }
+    void set_mean_distances(bool value = true) { m_mean_distances = value; }
 
     Distance& operator[](std::size_t idx) { return m_distances[idx]; }
     const Distance& operator[](std::size_t idx) const { return m_distances[idx]; }
