@@ -169,6 +169,10 @@ public:
             if (is_target[v]) {
                 --targets_left;
                 is_target[v] = false;
+                if (two_sided()) {
+                    --targets_left;
+                    is_target[other_side(v)] = false;
+                }
                 if (targets_left == 0) break; // Calculated distances for all targets.
             }            
             for (auto vw : (*this)[v]) {
