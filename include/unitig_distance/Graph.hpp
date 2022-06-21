@@ -131,6 +131,7 @@ public:
     Graph& operator=(const Graph& other) = delete;
     Graph& operator=(Graph&& other) {
         m_adj = std::move(other.m_adj);
+        m_self_edge_weights = std::move(other.m_self_edge_weights);
         m_one_based = other.m_one_based;
         m_two_sided = other.m_two_sided;
         return *this;
