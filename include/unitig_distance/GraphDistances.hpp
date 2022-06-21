@@ -20,10 +20,7 @@ public:
     GraphDistances() = delete;
     GraphDistances(const Graph& graph, const Timer& timer)
     : m_graph(graph),
-      m_timer(timer),
-      m_n_threads(ProgramOptions::n_threads),
-      m_max_distance(ProgramOptions::max_distance),
-      m_verbose(ProgramOptions::verbose)
+      m_timer(timer)
     { }
 
     // Calculate distances for general graphs and compacted de Bruijn graphs.
@@ -31,22 +28,22 @@ public:
         DistanceVector res(search_jobs.n_queries(), REAL_T_MAX);
 
         auto calculate_distance_block = [this, &search_jobs, &res](std::size_t thr, std::size_t block_start, std::size_t block_end) {
-            const auto& graph = m_graph;
-            bool two_sided = graph.two_sided();
-            for (std::size_t i = thr + block_start; i < block_end; i += m_n_threads) {
+            bool two_sided = m_graph.two_sided();
+            for (std::size_t i = thr + block_start; i < block_end; i += ProgramOptions::n_threads) {
                 const auto& job = search_jobs[i];
 
                 auto v = job.v();
-                if ((two_sided && !graph.contains(graph.left_node(v))) || !graph.contains(v)) continue;
+                if ((two_sided && !m_graph.contains(m_graph.left_node(v))) || !m_graph.contains(v)) continue;
 
                 auto sources = get_sources(v);
                 auto targets = get_targets(job.ws());
-                auto target_dist = graph.distance(sources, targets, m_max_distance);
+                auto target_dist = m_graph.distance(sources, targets, ProgramOptions::max_distance);
 
                 for (std::size_t w_idx = 0; w_idx < job.size(); ++w_idx) {
                     auto original_idx = job.original_index(w_idx);
                     if (two_sided) {
-                        res[original_idx] = std::min(target_dist[graph.left_node(w_idx)], target_dist[graph.right_node(w_idx)]);
+                        // target_dist contains w's both sides for each w_idx.
+                        res[original_idx] = std::min(target_dist[w_idx * 2], target_dist[w_idx * 2 + 1]);
                     } else {
                         res[original_idx] = target_dist[w_idx];
                     }
@@ -58,9 +55,9 @@ public:
             Timer t;
             std::size_t block_end = std::min(block_start + 10000, search_jobs.size());
             std::vector<std::thread> threads;
-            for (int_t thr = 0; thr < m_n_threads; ++thr) threads.emplace_back(calculate_distance_block, thr, block_start, block_end);
+            for (int_t thr = 0; thr < ProgramOptions::n_threads; ++thr) threads.emplace_back(calculate_distance_block, thr, block_start, block_end);
             for (auto& thr : threads) thr.join();
-            if (m_verbose) PrintUtils::print_tbss_tsm(m_timer, "Calculated distances for block", block_start + 1, '-', block_end, '/', search_jobs.size());
+            if (ProgramOptions::verbose) PrintUtils::print_tbss_tsm(m_timer, "Calculated distances for block", block_start + 1, '-', block_end, '/', search_jobs.size());
         }
 
         return res;
@@ -70,8 +67,6 @@ private:
     const Graph& m_graph;
     const Timer& m_timer;
 
-    int_t m_n_threads;
-    real_t m_max_distance;
     bool m_verbose;
     
     std::vector<std::pair<int_t, real_t>> get_sources(int_t v) {
