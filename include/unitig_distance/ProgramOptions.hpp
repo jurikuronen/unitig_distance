@@ -94,8 +94,9 @@ public:
                 double_push_back(arguments, "  --ld-distance-min", std::to_string(ld_distance_min));
                 double_push_back(arguments, "  --ld-distance-score", std::to_string(ld_distance_score));
                 double_push_back(arguments, "  --ld-distance-nth-score", std::to_string(ld_distance_nth_score));
+            } else {
+                double_push_back(arguments, "  --outlier-threshold", std::to_string(outlier_threshold));
             }
-            if (outlier_threshold >= 0.0) double_push_back(arguments, "  --outlier-threshold", std::to_string(outlier_threshold));
         }
         double_push_back(arguments, "  --output-stem", out_stem);
         double_push_back(arguments, "  --output-one-based", output_one_based ? "TRUE" : "FALSE");
