@@ -6,7 +6,9 @@
 #include <vector>
 
 #include "DistanceVector.hpp"
+#include "PrintUtils.hpp"
 #include "Queries.hpp"
+#include "Timer.hpp"
 #include "Utils.hpp"
 
 /*
@@ -21,7 +23,7 @@
 */
 class QueriesReader {
 public:
-    static Queries read_queries() {
+    static Queries read_queries(Timer& timer) {
         std::ifstream ifs(ProgramOptions::queries_filename);
         std::string line;
         std::getline(ifs, line);
@@ -35,7 +37,7 @@ public:
             std::cerr << "Error: Not enough columns (5 or 6 required) in queries file for outlier tools mode." << std::endl;
             return Queries();
         }
-        if (ProgramOptions::verbose) std::cout << "Reading queries with format: " << Utils::get_queries_format_string(queries_format) << std::endl;
+        if (ProgramOptions::verbose) PrintUtils::print_tbss_tsmasm(timer, "Reading queries with format:", Utils::get_queries_format_string(queries_format));
 
         Queries queries(queries_format);
 

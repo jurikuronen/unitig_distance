@@ -27,7 +27,7 @@ int main(int argc, char** argv) {
     if (ProgramOptions::verbose) ProgramOptions::print_run_details();
 
     // Read queries.
-    const auto queries = QueriesReader::read_queries();
+    const auto queries = QueriesReader::read_queries(timer);
     if (queries.size() == 0) return fail_with_error("Error: Failed to read queries.");
     if (ProgramOptions::verbose) PrintUtils::print_tbss_tsmasm(timer, "Read", Utils::neat_number_str(queries.size()), "lines from queries file");
 
