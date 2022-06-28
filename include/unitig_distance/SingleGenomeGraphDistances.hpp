@@ -40,11 +40,12 @@ public:
                 auto targets = get_sgg_targets(job.ws());
                 auto target_dist = graph.distance(sources, targets, m_max_distance);
 
-                std::vector<real_t> job_dist(job.ws().size(), m_max_distance);
+                // Map results.
                 std::map<int_t, real_t> dist;
                 for (std::size_t j = 0; j < targets.size(); ++j) dist[targets[j]] = target_dist[j];
 
                 // Now fix distances for (v, w) that were in paths.
+                std::vector<real_t> job_dist(job.ws().size(), m_max_distance);
                 process_job_distances(job_dist, graph.left_node(v), job.ws(), dist);
                 process_job_distances(job_dist, graph.right_node(v), job.ws(), dist);
 
