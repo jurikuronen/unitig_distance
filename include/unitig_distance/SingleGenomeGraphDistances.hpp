@@ -63,7 +63,7 @@ private:
     real_t m_max_distance;
 
     // Update source distance if source exists, otherwise add new source.
-    void update_source(std::vector<std::pair<int_t, real_t>>& sources, int_t mapped_idx, real_t distance) {
+    void add_source(std::vector<std::pair<int_t, real_t>>& sources, int_t mapped_idx, real_t distance) {
         auto it = sources.begin();
         while (it != sources.end() && it->first != (int_t) mapped_idx) ++it;
         if (it == sources.end()) sources.emplace_back(mapped_idx, distance);
@@ -82,12 +82,12 @@ private:
                 real_t distance;
                 // Add path start node.
                 std::tie(path_endpoint, distance) = m_graph.distance_to_start(v_path_idx, v_mapped_idx);
-                update_source(sources, path_endpoint, distance);
+                add_source(sources, path_endpoint, distance);
                 // Add path end node.
                 std::tie(path_endpoint, distance) = m_graph.distance_to_end(v_path_idx, v_mapped_idx);
-                update_source(sources, path_endpoint, distance);
+                add_source(sources, path_endpoint, distance);
             } else {
-                update_source(sources, v_mapped_idx, 0.0);
+                add_source(sources, v_mapped_idx, 0.0);
             }
         }
         return sources;
