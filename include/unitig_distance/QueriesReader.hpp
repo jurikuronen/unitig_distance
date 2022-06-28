@@ -46,6 +46,7 @@ public:
         if (distance_field && count_field) queries.set_mean_distances();
 
         int_t n = 0;
+        auto n_queries = ProgramOptions::n_queries > 0 ? ProgramOptions::n_queries : INT_T_MAX;
 
         do {
             auto fields = Utils::get_fields(line);
@@ -64,7 +65,7 @@ public:
                 queries.add_distance(distance, count);
             }
 
-            if (++n >= ProgramOptions::n_queries) break;
+            if (++n >= n_queries) break;
         } while (std::getline(ifs, line));
 
         return queries;
