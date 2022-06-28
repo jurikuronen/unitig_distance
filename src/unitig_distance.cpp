@@ -2,17 +2,14 @@
 #include <string>
 
 #include "QueriesReader.hpp"
-#include "Graph.hpp"
 #include "GraphBuilder.hpp"
 #include "GraphDistances.hpp"
 #include "OperatingMode.hpp"
 #include "OutlierTools.hpp"
 #include "PrintUtils.hpp"
 #include "ProgramOptions.hpp"
-#include "Queries.hpp"
 #include "ResultsWriter.hpp"
 #include "SearchJobs.hpp"
-#include "SingleGenomeGraph.hpp"
 #include "SingleGenomeGraphDistances.hpp"
 #include "Timer.hpp"
 #include "types.hpp"
@@ -30,12 +27,13 @@ int main(int argc, char** argv) {
     if (ProgramOptions::verbose) ProgramOptions::print_run_details();
 
     // Read queries.
-    const Queries queries = QueriesReader::read_queries();
+    const auto queries = QueriesReader::read_queries();
     if (queries.size() == 0) return fail_with_error("Error: Failed to read queries.");
     if (ProgramOptions::verbose) PrintUtils::print_tbss_tsmasm(timer, "Read", Utils::neat_number_str(queries.size()), "lines from queries file");
 
     // Set up outlier tools.
-    OutlierTools ot(queries, timer);
+    const OutlierTools ot(queries, timer);
+    if (ProgramOptions::verbose) PrintUtils::print_tbss_tsmasm(timer, "Set up outlier tools");
 
     // Operating in outliers tool mode only.
     if (ProgramOptions::operating_mode == OperatingMode::OUTLIER_TOOLS) {
@@ -48,7 +46,7 @@ int main(int argc, char** argv) {
     if (ProgramOptions::verbose) PrintUtils::print_tbss_tsmasm(timer, "Prepared", Utils::neat_number_str(search_jobs.size()), "search jobs");
 
     // Construct the graph according to operating mode.
-    Graph graph = GraphBuilder::build_correct_graph();
+    const auto graph = GraphBuilder::build_correct_graph();
     if (graph.size() == 0) return fail_with_error("Error: Failed to construct main graph.");
     if (ProgramOptions::verbose) {
         PrintUtils::print_tbss_tsmasm_noendl(timer, "Constructed main graph");
