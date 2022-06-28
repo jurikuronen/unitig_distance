@@ -21,14 +21,15 @@ DistanceVector calculate_sgg_distances(const Graph& graph, const SearchJobs& sea
 class SingleGenomeGraphDistances {
 public:
     SingleGenomeGraphDistances() = delete;
-    SingleGenomeGraphDistances(const SingleGenomeGraph& graph) : m_graph(graph), m_n_threads(ProgramOptions::n_threads), m_max_distance(ProgramOptions::max_distance) { }
+    SingleGenomeGraphDistances(const SingleGenomeGraph& graph) : m_graph(graph), m_max_distance(ProgramOptions::max_distance) { }
 
     // Calculate distances for single genome graphs.
     std::vector<std::unordered_map<int_t, Distance>> solve(const SearchJobs& search_jobs) {
-        std::vector<std::unordered_map<int_t, Distance>> sgg_batch_distances(m_n_threads);
-        auto calculate_distance_block = [this, &search_jobs, &sgg_batch_distances](std::size_t thr) {
+        auto n_threads = ProgramOptions::n_threads;
+        std::vector<std::unordered_map<int_t, Distance>> sgg_batch_distances(n_threads);
+        auto calculate_distance_block = [this, &search_jobs, &sgg_batch_distances, n_threads](std::size_t thr) {
             const auto& graph = m_graph;
-            for (std::size_t i = thr; i < search_jobs.size(); i += m_n_threads) {
+            for (std::size_t i = thr; i < search_jobs.size(); i += n_threads) {
                 const auto& job = search_jobs[i];
 
                 auto v = job.v();
@@ -50,8 +51,8 @@ public:
                 add_job_distances_to_sgg_distances(sgg_batch_distances[thr], job, job_dist);
             }
         };
-        std::vector<std::thread> threads(m_n_threads);
-        for (std::size_t thr = 0; thr < (std::size_t) m_n_threads; ++thr) threads[thr] = std::thread(calculate_distance_block, thr);
+        std::vector<std::thread> threads(n_threads);
+        for (std::size_t thr = 0; thr < (std::size_t) n_threads; ++thr) threads[thr] = std::thread(calculate_distance_block, thr);
         for (auto& thr : threads) thr.join();
         return sgg_batch_distances;
     }
@@ -59,7 +60,6 @@ public:
 private:
     const SingleGenomeGraph& m_graph;
 
-    int_t m_n_threads;
     real_t m_max_distance;
 
     // Update source distance if source exists, otherwise add new source.
