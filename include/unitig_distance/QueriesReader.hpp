@@ -37,7 +37,7 @@ public:
             std::cerr << "Error: Not enough columns (5 or 6 required) in queries file for outlier tools mode." << std::endl;
             return Queries();
         }
-        if (ProgramOptions::verbose) PrintUtils::print_tbss_tsmasm(timer, "Reading queries with format:", Utils::get_queries_format_string(queries_format));
+        if (ProgramOptions::verbose) PrintUtils::print_tbssasm(timer, "Reading queries with format:", Utils::get_queries_format_string(queries_format));
 
         Queries queries(queries_format);
 
