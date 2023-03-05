@@ -42,7 +42,7 @@ DistanceVector calculate_sgg_distances(const Graph& graph, const SearchJobs& sea
             t_deconstruct.add_time_since_mark();
             if (print_now) {
                 auto stslasl = t_deconstruct.get_stopwatch_time_since_lap_and_set_lap();
-                PrintUtils::print_tbss(timer, "Deconstructed single genome graphs", print_i, "-", i, "/", n_sggs, "in", stslasl);
+                PrintUtils::print_tbss(timer, "Deconstructing single genome graphs", print_i, "-", i, "/", n_sggs, "took", stslasl);
                 print_i = i + 1;
             }
             t_sgg.set_mark();
@@ -73,7 +73,7 @@ DistanceVector calculate_sgg_distances(const Graph& graph, const SearchJobs& sea
             t_sgg.add_time_since_mark();
             if (print_now) {
                 auto stslasl = t_sgg.get_stopwatch_time_since_lap_and_set_lap();
-                PrintUtils::print_tbss(timer, "Constructed single genome graphs", print_i, "-", i + batch, "/", n_sggs, "in", stslasl);
+                PrintUtils::print_tbss(timer, "Constructing single genome graphs", print_i, "-", i + batch, "/", n_sggs, "took", stslasl);
             }
             // Update n_nodes and n_edges.
             for (const auto& sg_graph : sg_graphs) {
@@ -101,7 +101,7 @@ DistanceVector calculate_sgg_distances(const Graph& graph, const SearchJobs& sea
             t_sgg_distances.add_time_since_mark();
             if (print_now) {
                 auto stslasl = t_sgg_distances.get_stopwatch_time_since_lap_and_set_lap();
-                PrintUtils::print_tbss(timer, "Calculated distances in the single genome graphs", print_i, "-", i + batch, "/", n_sggs, "in", stslasl);
+                PrintUtils::print_tbss(timer, "Calculating distances in the single genome graphs", print_i, "-", i + batch, "/", n_sggs, "took", stslasl);
             }
             t_deconstruct.set_mark();
         }
@@ -110,7 +110,7 @@ DistanceVector calculate_sgg_distances(const Graph& graph, const SearchJobs& sea
     if (ProgramOptions::verbose) {
         t_deconstruct.add_time_since_mark();
         auto stslasl = t_deconstruct.get_stopwatch_time_since_lap_and_set_lap();
-        PrintUtils::print_tbss(timer, "Deconstructed single genome graphs and distances", print_i, "-", n_sggs, "/", n_sggs, "in", stslasl);
+        PrintUtils::print_tbss(timer, "Deconstructing single genome graphs and distances", print_i, "-", n_sggs, "/", n_sggs, "took", stslasl);
     }
 
     // Set distance correctly for disconnected queries.
