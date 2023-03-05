@@ -33,6 +33,9 @@ public:
             if (flag_field) ofs << ' ' << queries.flag(idx);
             if (score_field) ofs << ' ' << queries.score(idx);
             if (write_counts) ofs << ' ' << dv[idx].count();
+            ofs << ' ' << dv[idx].m2();
+            ofs << ' ' << dv[idx].min();
+            ofs << ' ' << dv[idx].max();
             ofs << '\n';
         }
     }
