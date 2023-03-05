@@ -32,9 +32,10 @@ public:
         
         auto new_count = count_1 + count_2;
         auto new_distance = (distance_1 * count_1 + distance_2 * count_2) / new_count;
-        auto new_m2 = m2() + (distance_2 - distance_1) * (distance_2 - new_distance);
-        auto new_min = std::min(min(), std::min(distance_2, other.min()));
-        auto new_max = std::max(max(), std::max(distance_2, other.max()));
+        // Need to use member variables directly here.
+        auto new_m2 = m_m2 + (distance_2 - distance_1) * (distance_2 - new_distance);
+        auto new_min = std::min(m_min, std::min(distance_2, other.m_min));
+        auto new_max = std::max(m_max, std::max(distance_2, other.m_max));
 
         return Distance(new_distance, new_count, new_m2, new_min, new_max);
     }
