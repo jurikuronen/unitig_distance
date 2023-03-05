@@ -5,3 +5,6 @@ bin/
 *.swp
 *.swo
 
+# R history file.
+*.Rhistory
+
