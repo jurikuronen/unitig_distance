@@ -155,9 +155,9 @@ The output will be written to `<output_stem>.ud_sgg_0_based` in which the distan
 ### Output format
 unitig_distance's output follows the following line format:
 ```
-v w distance (flag) (score) (count)
+v w distance (flag) (score) (count) (M2) (min_distance) (max_distance)
 ```
-The `flag` and `score` columns are written if the original queries file contained them. The `count` column is written if the `distance` column refers to single genome graph mean distances (see [Usage - Calculating mean distances in single genome graphs](#calculating-mean-distances-in-single-genome-graphs)).
+The `flag` and `score` columns are written if the original queries file contained them. The `count` column is written if the `distance` column refers to single genome graph mean distances (see [Usage - Calculating mean distances in single genome graphs](#calculating-mean-distances-in-single-genome-graphs)). In such cases, the columns `M2`, `min_distance` and `max_distance` will be provided as well. The `min_distance` and `max_distance` are the minimum and maximum distance in the single genome graphs for a given unitig pair and `M2` is the sum of squares of differences from the current mean from which the unbiased sample variance can be calculated as: $s^2_n = \frac{M_{2, n}}{n - 1}$ (see Welford's online algorithm for calculating the variance).
 
 See [Input files - Distance queries file](#distance-queries-file) for an informative table.
 
